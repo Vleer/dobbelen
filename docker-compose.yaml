@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build:
+      context: ./dobbelen-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./dobbelen-backend
+      dockerfile: Dockerfile
+    ports:
+      - "48080:48080"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
