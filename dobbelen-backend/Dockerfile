@@ -19,8 +19,9 @@ WORKDIR /app
 # Copy the jar file from the build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expose port 48080
+# Expose ports
 EXPOSE 48080
+EXPOSE 5005
 
-# Run the jar file
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the jar file with remote debugging enabled
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "app.jar"]

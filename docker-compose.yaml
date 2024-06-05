@@ -14,6 +14,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "48080:48080"
+      - "5014:5005"  # Map host port 5014 to container port 5005
     networks:
       - app-network
 
