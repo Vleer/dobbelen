@@ -8,7 +8,7 @@ interface DiceHandProps {
 
 const DiceHand: React.FC<DiceHandProps> = ({ diceValues }) => {
   return (
-    <div className="dice-hand">
+    <div className="flex flex-wrap">
       {diceValues.map((value, index) => (
         <Dice key={index} value={value} />
       ))}

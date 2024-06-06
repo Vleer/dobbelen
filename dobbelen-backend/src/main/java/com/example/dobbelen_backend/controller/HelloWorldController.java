@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:48081, http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:48081", "http://localhost:3000"})
 public class HelloWorldController {
 
     @GetMapping("/hello")
