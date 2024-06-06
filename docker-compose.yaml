@@ -4,7 +4,7 @@ services:
       context: ./dobbelen-frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "48081:80"
     networks:
       - app-network
 

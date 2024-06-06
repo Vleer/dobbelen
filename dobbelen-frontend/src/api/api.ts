@@ -7,7 +7,7 @@ export interface Data {
 }
 
 export const fetchData = async (): Promise<Data[]> => {
-  const response = await axiosInstance.get<Data[]>("/endpoint");
+  const response = await axiosInstance.get<Data[]>("/hello");
   return response.data;
 };
 
