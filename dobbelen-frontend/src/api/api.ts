@@ -12,6 +12,6 @@ export const fetchData = async (): Promise<Data[]> => {
 };
 
 export const postData = async (data: Data): Promise<Data> => {
-  const response = await axiosInstance.post<Data>("/endpoint", data);
+  const response = await axiosInstance.post<Data>("/move", data);
   return response.data;
 };
