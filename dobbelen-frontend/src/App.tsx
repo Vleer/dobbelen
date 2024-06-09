@@ -1,5 +1,6 @@
 import DataFetcher from "./components/DataFetcher";
 import DataPoster from "./components/DataPoster";
+import DiceFetcher from "./components/DiceFetcher";
 import DiceHand from "./components/DiceHand";
 import React, { useState } from "react";
 
@@ -11,6 +12,12 @@ function App() {
       <DataPoster />
       <h1>Dice Game</h1>
       <DiceHand diceValues={diceValues} />
+      <DiceHand diceValues={diceValues} />
+      <DiceHand diceValues={diceValues} />
+      <DiceHand diceValues={diceValues} />
+      <DiceHand diceValues={diceValues} />
+      <DiceHand diceValues={diceValues} />
+      <DiceFetcher />
     </div>
   );
 }
