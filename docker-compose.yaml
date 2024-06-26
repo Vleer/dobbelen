@@ -10,7 +10,7 @@ services:
 
   backend:
     build:
-      context: ./dobbelen-backend
+      context: ./Henk
       dockerfile: Dockerfile
     ports:
       - "48080:48080"
