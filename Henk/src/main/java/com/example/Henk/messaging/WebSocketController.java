@@ -1,18 +1,18 @@
-@Controller
-public class WebSocketController {
-    private final SimpMessagingTemplate messagingTemplate;
+// @Controller
+// public class WebSocketController {
+//     private final SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    public WebSocketController(SimpMessagingTemplate messagingTemplate) {
-        this.messagingTemplate = messagingTemplate;
-    }
+//     @Autowired
+//     public WebSocketController(SimpMessagingTemplate messagingTemplate) {
+//         this.messagingTemplate = messagingTemplate;
+//     }
 
-    public void sendGameStateUpdate(Long gameId) {
-        Game game = gameService.getGameState(gameId);
-        messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
-    }
+//     public void sendGameStateUpdate(Long gameId) {
+//         Game game = gameService.getGameState(gameId);
+//         messagingTemplate.convertAndSend("/topic/game/" + gameId, game);
+//     }
 
-    public void sendBidUpdate(Long gameId, Bid bid) {
-        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/bids", bid);
-    }
-}
+//     public void sendBidUpdate(Long gameId, Bid bid) {
+//         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/bids", bid);
+//     }
+// }

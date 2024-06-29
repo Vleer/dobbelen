@@ -1,4 +1,7 @@
+version: '3'
+
 services:
+
   frontend:
     build:
       context: ./dobbelen-frontend
@@ -15,6 +18,18 @@ services:
     ports:
       - "48080:48080"
       - "5014:5005"  # Map host port 5014 to container port 5005
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: postgres  # Replace with your desired database name
+      POSTGRES_USER: postgres    # Replace with your desired username
+      POSTGRES_PASSWORD: postgres  # Replace with your desired password
+    ports:
+      - "5432:5432"  # Map default PostgreSQL port
     networks:
       - app-network
 

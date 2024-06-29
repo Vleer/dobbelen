@@ -1,3 +1,17 @@
+package com.example.Henk.service;
+
+import com.example.Henk.model.Game;
+import com.example.Henk.model.Player;
+import com.example.Henk.model.Bid;
+import com.example.Henk.repository.GameRepository;
+import com.example.Henk.repository.PlayerRepository;
+import com.example.Henk.repository.BidRepository;
+
+import java.time.LocalDateTime;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 @Service
 public class GameService {
     @Autowired
@@ -9,8 +23,8 @@ public class GameService {
     @Autowired
     private BidRepository bidRepository;
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    // @Autowired
+    // private RedisTemplate<String, Object> redisTemplate;
 
     // Method to create a new game
     public Game createGame() {

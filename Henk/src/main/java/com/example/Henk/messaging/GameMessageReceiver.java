@@ -1,10 +1,10 @@
-@Component
-public class GameMessageReceiver {
+// @Component
+// public class GameMessageReceiver {
 
-    @Autowired
-    private GameService gameService;
+//     @Autowired
+//     private GameService gameService;
 
-    public void receiveMessage(String message) {
-        // Handle the message (e.g., update game state)
-    }
-}
+//     public void receiveMessage(String message) {
+//         // Handle the message (e.g., update game state)
+//     }
+// }
