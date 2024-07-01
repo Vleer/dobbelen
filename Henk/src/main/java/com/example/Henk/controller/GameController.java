@@ -36,6 +36,17 @@ public class GameController {
         return ResponseEntity.ok(bid);
     }
 
+    @GetMapping("/getAllGames")
+    public ResponseEntity<Iterable<Game>> getAllGames() {
+        Iterable<Game> games = gameService.getAllGames();
+        return ResponseEntity.ok(games);
+    }
+    
+    public String getMethodName(@RequestParam String param) {
+        return new String();
+    }
+    
+
     @PostMapping("/challenge")
     public ResponseEntity<Void> challengeBid(@RequestParam Long gameId, @RequestParam Long challengerId) {
         gameService.challengeBid(gameId, challengerId);

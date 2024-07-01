@@ -6,9 +6,11 @@ import com.example.Henk.model.Bid;
 import com.example.Henk.repository.GameRepository;
 import com.example.Henk.repository.PlayerRepository;
 import com.example.Henk.repository.BidRepository;
+import java.util.List;
 
 import java.time.LocalDateTime;
 
+// import org.hibernate.mapping.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +44,11 @@ public class GameService {
         Player player = new Player();
         player.setUsername(username);
         player.setDiceCount(5);
-        player.setGameId(gameId);
+        player.setGame(game);
+
+        game.getPlayers().add(player);
+        gameRepository.save(game);
+
         return playerRepository.save(player);
     }
 
@@ -66,5 +72,9 @@ public class GameService {
     public Game getGameState(Long gameId) {
         return gameRepository.findById(gameId)
                 .orElseThrow(() -> new RuntimeException("Game not found"));
+    }
+
+    public List<Game> getAllGames() {
+        return gameRepository.findAll();
     }
 }
