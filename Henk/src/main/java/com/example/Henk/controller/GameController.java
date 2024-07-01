@@ -12,7 +12,7 @@ import com.example.Henk.model.Player;
 import com.example.Henk.model.Bid;
 
 @RestController
-@RequestMapping("/api/game")
+@RequestMapping("/")
 public class GameController {
     @Autowired
     private GameService gameService;
