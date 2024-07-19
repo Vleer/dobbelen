@@ -1,14 +1,14 @@
-# Use an official Gradle image to build the application
-FROM gradle:jdk21 AS build
+# Use an official Maven image to build the application
+FROM maven:3.9.8-eclipse-temurin-21 AS build
 
 WORKDIR /app
 
 # Copy build files
-COPY build.gradle settings.gradle ./
+COPY pom.xml ./
 COPY src ./src
 
 # Build the application
-RUN gradle build --no-daemon
+RUN mvn clean package -DskipTests
 
 # Use an official OpenJDK runtime as a parent image
 FROM openjdk:21-jdk-slim
@@ -17,7 +17,7 @@ FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # Copy the jar file from the build stage
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 
 # Expose ports
 EXPOSE 48080
