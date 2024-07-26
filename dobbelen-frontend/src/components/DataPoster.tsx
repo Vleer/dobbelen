@@ -20,7 +20,12 @@ const DataPoster: React.FC = () => {
           value={inputData.name}
           onChange={(e) => setInputData({ ...inputData, name: e.target.value })}
         />
-        <button type="submit">Submit</button>
+        <button
+          type="submit"
+          className="bg-green-700 hover:bg-green-800 text-white font-bold py-2 px-4 rounded"
+        >
+          Submit
+        </button>
       </form>
       {mutation.isLoading && <p>Loading...</p>}
       {mutation.isError && <p>Error: {mutation.error?.message}</p>}
