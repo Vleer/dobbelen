@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,8 +29,8 @@ public class Game {
     private String state;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    // Other fields like current player, current bid, etc.
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "game")
+    @JsonManagedReference
     private List<Player> players = new ArrayList<>();
 }

@@ -1,5 +1,7 @@
 package com.example.DobBackend.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,6 +24,7 @@ public class Player {
 
     @ManyToOne
     @JoinColumn(name = "gameId")
+    @JsonBackReference
     private Game game;
 
 }
