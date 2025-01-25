@@ -1,4 +1,4 @@
-package com.example.Henk.model;
+package com.example.DobBackend.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

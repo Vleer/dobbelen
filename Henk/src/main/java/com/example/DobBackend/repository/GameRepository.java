@@ -1,6 +1,6 @@
-package com.example.Henk.repository;
+package com.example.DobBackend.repository;
 
-import com.example.Henk.model.Game;
+import com.example.DobBackend.model.Game;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;

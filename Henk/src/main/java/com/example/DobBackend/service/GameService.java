@@ -1,11 +1,11 @@
-package com.example.Henk.service;
+package com.example.DobBackend.service;
 
-import com.example.Henk.model.Game;
-import com.example.Henk.model.Player;
-import com.example.Henk.model.Bid;
-import com.example.Henk.repository.GameRepository;
-import com.example.Henk.repository.PlayerRepository;
-import com.example.Henk.repository.BidRepository;
+import com.example.DobBackend.model.Game;
+import com.example.DobBackend.model.Player;
+import com.example.DobBackend.model.Bid;
+import com.example.DobBackend.repository.GameRepository;
+import com.example.DobBackend.repository.PlayerRepository;
+import com.example.DobBackend.repository.BidRepository;
 import java.util.List;
 
 import java.time.LocalDateTime;

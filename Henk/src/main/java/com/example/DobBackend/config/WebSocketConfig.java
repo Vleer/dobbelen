@@ -1,3 +1,4 @@
+package com.example.DobBackend.config;
 // @Configuration
 // @EnableWebSocketMessageBroker
 // public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {

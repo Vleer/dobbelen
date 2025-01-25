@@ -1,3 +1,4 @@
+package com.example.DobBackend.config;
 // @Configuration
 // public class RedisConfig {
 

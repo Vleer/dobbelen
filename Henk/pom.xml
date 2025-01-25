@@ -10,10 +10,10 @@
 		<!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>Henk</artifactId>
+	<artifactId>DobBackend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Henk</name>
-	<description>Henk backend</description>
+	<name>DobBackend</name>
+	<description>DobBackend backend</description>
 	<url/>
 	<licenses>
 		<license/>

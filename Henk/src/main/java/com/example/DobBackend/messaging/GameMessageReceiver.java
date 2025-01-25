@@ -1,3 +1,4 @@
+package com.example.DobBackend.messaging;
 // @Component
 // public class GameMessageReceiver {
 

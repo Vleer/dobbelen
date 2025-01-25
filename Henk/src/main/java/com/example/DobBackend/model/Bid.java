@@ -1,4 +1,4 @@
-package com.example.Henk.model;
+package com.example.DobBackend.model;
 
 import java.time.LocalDateTime;
 import jakarta.persistence.Entity;

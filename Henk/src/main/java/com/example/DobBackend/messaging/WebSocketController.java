@@ -1,3 +1,4 @@
+package com.example.DobBackend.messaging;
 // @Controller
 // public class WebSocketController {
 //     private final SimpMessagingTemplate messagingTemplate;

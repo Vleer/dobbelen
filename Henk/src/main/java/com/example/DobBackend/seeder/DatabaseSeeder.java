@@ -1,16 +1,16 @@
-package com.example.Henk.seeder;
+package com.example.DobBackend.seeder;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.example.Henk.repository.GameRepository;
-import com.example.Henk.repository.PlayerRepository;
+import com.example.DobBackend.repository.GameRepository;
+import com.example.DobBackend.repository.PlayerRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
-import com.example.Henk.model.Game;
-import com.example.Henk.model.Player;
+import com.example.DobBackend.model.Game;
+import com.example.DobBackend.model.Player;
 
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
@@ -41,7 +41,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // Create players and add them to the game
         Player player1 = new Player();
-        player1.setUsername("Henk");
+        player1.setUsername("DobBackend");
         player1.setDiceCount(5);
         player1.setGame(game);
         playerRepository.save(player1);

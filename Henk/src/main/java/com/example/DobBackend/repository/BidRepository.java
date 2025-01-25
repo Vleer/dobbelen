@@ -1,6 +1,6 @@
-package com.example.Henk.repository;
+package com.example.DobBackend.repository;
 
-import com.example.Henk.model.Bid;
+import com.example.DobBackend.model.Bid;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
