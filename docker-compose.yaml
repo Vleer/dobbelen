@@ -10,7 +10,7 @@ services:
 
   backend:
     build:
-      context: ./DobBackend
+      context: ./dobbelen-backend
       dockerfile: Dockerfile
     ports:
       - "48080:48080"
