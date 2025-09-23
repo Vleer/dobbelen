@@ -1,0 +1,111 @@
+package com.example.backend.dto;
+
+import com.example.backend.model.Game;
+import com.example.backend.model.Player;
+
+import java.util.List;
+
+public class GameResponse {
+    private String id;
+    private List<PlayerInfo> players;
+    private String state;
+    private String currentPlayerId;
+    private BidInfo currentBid;
+    private List<String> eliminatedPlayers;
+    private int roundNumber;
+    private String winner;
+
+    public GameResponse() {}
+
+    public GameResponse(Game game) {
+        this.id = game.getId();
+        this.players = game.getPlayers().stream()
+                .map(PlayerInfo::new)
+                .toList();
+        this.state = game.getState().name();
+        this.currentPlayerId = game.getCurrentPlayer() != null ? game.getCurrentPlayer().getId() : null;
+        this.currentBid = game.getCurrentBid() != null ? new BidInfo(game.getCurrentBid()) : null;
+        this.eliminatedPlayers = game.getEliminatedPlayers();
+        this.roundNumber = game.getRoundNumber();
+        this.winner = game.getWinner();
+    }
+
+    // Getters and Setters
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
+    public List<PlayerInfo> getPlayers() { return players; }
+    public void setPlayers(List<PlayerInfo> players) { this.players = players; }
+
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+
+    public String getCurrentPlayerId() { return currentPlayerId; }
+    public void setCurrentPlayerId(String currentPlayerId) { this.currentPlayerId = currentPlayerId; }
+
+    public BidInfo getCurrentBid() { return currentBid; }
+    public void setCurrentBid(BidInfo currentBid) { this.currentBid = currentBid; }
+
+    public List<String> getEliminatedPlayers() { return eliminatedPlayers; }
+    public void setEliminatedPlayers(List<String> eliminatedPlayers) { this.eliminatedPlayers = eliminatedPlayers; }
+
+    public int getRoundNumber() { return roundNumber; }
+    public void setRoundNumber(int roundNumber) { this.roundNumber = roundNumber; }
+
+    public String getWinner() { return winner; }
+    public void setWinner(String winner) { this.winner = winner; }
+
+    public static class PlayerInfo {
+        private String id;
+        private String name;
+        private int diceCount;
+        private boolean isEliminated;
+
+        public PlayerInfo(Player player) {
+            this.id = player.getId();
+            this.name = player.getName();
+            this.diceCount = player.getDice().size();
+            this.isEliminated = player.isEliminated();
+        }
+
+        // Getters and Setters
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+
+        public int getDiceCount() { return diceCount; }
+        public void setDiceCount(int diceCount) { this.diceCount = diceCount; }
+
+        public boolean isEliminated() { return isEliminated; }
+        public void setEliminated(boolean eliminated) { isEliminated = eliminated; }
+    }
+
+    public static class BidInfo {
+        private String playerId;
+        private int quantity;
+        private int faceValue;
+        private String type;
+
+        public BidInfo(com.example.backend.model.Bid bid) {
+            this.playerId = bid.getPlayerId();
+            this.quantity = bid.getQuantity();
+            this.faceValue = bid.getFaceValue();
+            this.type = bid.getType().name();
+        }
+
+        // Getters and Setters
+        public String getPlayerId() { return playerId; }
+        public void setPlayerId(String playerId) { this.playerId = playerId; }
+
+        public int getQuantity() { return quantity; }
+        public void setQuantity(int quantity) { this.quantity = quantity; }
+
+        public int getFaceValue() { return faceValue; }
+        public void setFaceValue(int faceValue) { this.faceValue = faceValue; }
+
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+    }
+}
