@@ -168,6 +168,41 @@ public class GameService {
         return new GameResult(game, spotOnPlayerId, actualCount, currentBid.getQuantity());
     }
 
+    public GameResult processBid(String gameId, String playerId, int quantity, int faceValue) {
+        Game game = getGame(gameId);
+
+        if (game.getState() != GameState.IN_PROGRESS) {
+            throw new IllegalStateException("Game is not in progress");
+        }
+
+        Player currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer == null || !currentPlayer.getId().equals(playerId)) {
+            throw new IllegalArgumentException("It's not this player's turn");
+        }
+
+        if (game.getEliminatedPlayers().contains(playerId)) {
+            throw new IllegalArgumentException("Player is eliminated");
+        }
+
+        Bid newBid = new Bid(playerId, quantity, faceValue, BidType.RAISE);
+
+        if (!isBidValid(newBid, game.getCurrentBid())) {
+            throw new IllegalArgumentException("Invalid bid. Must increase quantity or face value");
+        }
+
+        game.setCurrentBid(newBid);
+
+        // Move to next player
+        game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+
+        // Skip eliminated players
+        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())) {
+            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+        }
+
+        return new GameResult(game, null, 0, 0);
+    }
+
     public static class GameResult {
         private final Game game;
         private final String eliminatedPlayerId;

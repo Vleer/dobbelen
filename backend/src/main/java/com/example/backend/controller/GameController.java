@@ -1,7 +1,6 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.CreateGameRequest;
-import com.example.backend.dto.GameResponse;
+import com.example.backend.dto.*;
 import com.example.backend.model.Game;
 import com.example.backend.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +58,49 @@ public class GameController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{gameId}/bid")
+    public ResponseEntity<ActionResponse> makeBid(@PathVariable String gameId, @RequestBody BidRequest request) {
+        try {
+            GameService.GameResult result = gameService.processBid(gameId, request.getPlayerId(), request.getQuantity(),
+                    request.getFaceValue());
+            ActionResponse response = new ActionResponse(result.getGame(), "Bid placed successfully");
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{gameId}/doubt")
+    public ResponseEntity<ActionResponse> doubtBid(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            GameService.GameResult result = gameService.processDoubt(gameId, request.getPlayerId());
+            String message = result.getEliminatedPlayerId() != null
+                    ? String.format("Player eliminated! Actual count: %d, Bid: %d", result.getActualCount(),
+                            result.getBidQuantity())
+                    : "Doubt processed";
+            ActionResponse response = new ActionResponse(result.getGame(), message, result.getEliminatedPlayerId(),
+                    result.getActualCount(), result.getBidQuantity());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{gameId}/spot-on")
+    public ResponseEntity<ActionResponse> spotOn(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            GameService.GameResult result = gameService.processSpotOn(gameId, request.getPlayerId());
+            String message = result.getGame().getWinner() != null ? "Spot On correct! Round won!"
+                    : String.format("Spot On incorrect! Actual count: %d, Bid: %d", result.getActualCount(),
+                            result.getBidQuantity());
+            ActionResponse response = new ActionResponse(result.getGame(), message, result.getEliminatedPlayerId(),
+                    result.getActualCount(), result.getBidQuantity());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
