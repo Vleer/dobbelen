@@ -107,3 +107,87 @@ On each turn, players must choose one of three options:
      * Player B wins the round immediately.
      * Otherwise, Player B is eliminated, and the round continues.
 
+frontend:
+
+Table Layout (Container)
+
+Base container:
+A centered, responsive table container (e.g., <div class="game-table">) using flexbox or CSS grid.
+
+Aspect ratio close to 4:3 or 16:9, to maintain a rectangular poker-table look.
+
+Position: relative, so child elements (players, dice, UI controls) can be placed absolutely.
+
+Player Positioning
+
+Yourself (local player):
+
+Positioned bottom center.
+
+Container includes:
+
+Dice row: 5 dice shown in order, horizontally aligned, fixed width per die.
+
+Cup placeholder: a small closed-cup element next to dice, usually centered above them.
+
+Username label: directly under the dice row.
+
+Action controls (Raise, Doubt, Spot On): displayed just beneath the player area.
+
+Opponent Left:
+
+Positioned bottom left quadrant (rotated 90° orientation optional).
+
+Displays cup only (closed).
+
+Username placed under the cup.
+
+Eliminated state: cup grayed out or semi-transparent.
+
+Opponent Right:
+
+Positioned bottom right quadrant, mirroring the left opponent.
+
+Same structure: cup + username.
+
+Opponent Across:
+
+Positioned top center.
+
+Cup is centered, username below.
+
+Optional placeholder for dice revealed only at end-of-round.
+
+Bid & Turn Information
+
+Center overlay panel (like a pot in poker):
+
+Shows current bid (e.g., “Four Threes”).
+
+Displays turn indicator (highlight current player’s cup with a border or glow).
+
+Updates via WebSocket /topic/game/{gameId}/bids events.
+
+Event Handling Integration
+
+WebSocket updates:
+
+Subscribed clients listen for:
+
+stateUpdate → refresh overall table layout.
+
+bidUpdate → update central bid display.
+
+playerEliminated → gray out opponent’s cup.
+
+diceResults → reveal dice at round end.
+
+turnUpdate (from TurnManagerService) → highlight the active player.
+
+Game controls (bottom UI panel):
+
+Buttons for Raise, Doubt, Spot On.
+
+Clicking emits /app/game/{gameId}/bid or /app/game/{gameId}/challenge calls.
+
+These controls are enabled only if it’s your turn (state provided by /api/game/state).

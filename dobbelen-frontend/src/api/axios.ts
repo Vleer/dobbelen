@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:48080", // Replace with your backend base URL
+  baseURL: "http://localhost:8080", // Backend running on port 8080
   headers: {
     "Content-Type": "application/json",
   },
