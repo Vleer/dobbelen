@@ -2,9 +2,10 @@ import React from "react";
 
 interface DiceProps {
   value: number;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const Dice: React.FC<DiceProps> = ({ value }) => {
+const Dice: React.FC<DiceProps> = ({ value, size = 'md' }) => {
   const renderDots = (num: number) => {
     switch (num) {
       case 1:
@@ -136,8 +137,19 @@ const Dice: React.FC<DiceProps> = ({ value }) => {
     }
   };
 
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'w-6 h-6 m-0.5';
+      case 'lg':
+        return 'w-16 h-16 m-2';
+      default: // 'md'
+        return 'w-12 h-12 m-1';
+    }
+  };
+
   return (
-    <div className="relative w-12 h-12 bg-white border border-black rounded-lg flex items-center justify-center m-1">
+    <div className={`relative bg-white border border-black rounded-lg flex items-center justify-center ${getSizeClasses()}`}>
       {renderDots(value)}
     </div>
   );

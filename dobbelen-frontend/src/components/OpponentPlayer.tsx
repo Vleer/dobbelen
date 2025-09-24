@@ -5,9 +5,11 @@ interface OpponentPlayerProps {
   player: Player;
   position: number; // 0 = left, 1 = right, 2 = across, etc.
   isMyTurn: boolean;
+  showDice?: boolean; // Show dice when revealed at end of round
+  previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
 }
 
-const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn }) => {
+const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, showDice = false, previousBid }) => {
   const getPositionClasses = () => {
     switch (position) {
       case 0: // Left opponent
@@ -31,17 +33,34 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
           {isMyTurn && <span className="ml-1 text-yellow-600 text-xs">(Turn)</span>}
         </div>
 
-        {/* Cup - Always closed for opponents */}
+        {/* Cup - Always closed for opponents, or dice if revealed */}
         <div className="flex justify-center mb-1">
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
-            <span className="text-white text-xs">C</span>
-          </div>
+          {showDice && player.dice && player.dice.length > 0 ? (
+            <div className="flex space-x-1">
+              {player.dice.map((value, index) => (
+                <div key={index} className="w-4 h-4 bg-white border border-black rounded text-xs flex items-center justify-center">
+                  {value}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
+              <span className="text-white text-xs">C</span>
+            </div>
+          )}
         </div>
 
         {/* Dice Count (hidden for opponents) */}
         <div className="text-center text-xs text-gray-500">
           {player.diceCount} dice
         </div>
+
+        {/* Previous Bid Display */}
+        {previousBid && previousBid.playerId === player.id && (
+          <div className="text-center text-xs text-blue-600 font-bold mt-1">
+            Bid: {previousBid.quantity} of {previousBid.faceValue}s
+          </div>
+        )}
 
         {/* Eliminated State */}
         {player.eliminated && (

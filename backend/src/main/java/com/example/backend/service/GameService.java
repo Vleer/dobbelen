@@ -114,6 +114,22 @@ public class GameService {
                 .findFirst()
                 .ifPresent(Player::eliminate);
 
+        // Reroll dice for all remaining active players
+        for (Player player : game.getActivePlayers()) {
+            player.rollDice();
+        }
+
+        // Reset the current bid after elimination
+        game.setCurrentBid(null);
+
+        // Always adjust current player index to skip eliminated players
+        int attempts = 0;
+        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+                && attempts < game.getPlayers().size()) {
+            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            attempts++;
+        }
+
         // Check if round is over
         if (game.getActivePlayers().size() <= 1) {
             game.setState(GameState.ROUND_ENDED);
@@ -156,6 +172,22 @@ public class GameService {
                     .findFirst()
                     .ifPresent(Player::eliminate);
 
+            // Reroll dice for all remaining active players
+            for (Player player : game.getActivePlayers()) {
+                player.rollDice();
+            }
+
+            // Reset the current bid after elimination
+            game.setCurrentBid(null);
+
+            // Always adjust current player index to skip eliminated players
+            int attempts = 0;
+            while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+                    && attempts < game.getPlayers().size()) {
+                game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+                attempts++;
+            }
+
             // Check if round is over
             if (game.getActivePlayers().size() <= 1) {
                 game.setState(GameState.ROUND_ENDED);
@@ -172,12 +204,17 @@ public class GameService {
         Game game = getGame(gameId);
 
         if (game.getState() != GameState.IN_PROGRESS) {
-            throw new IllegalStateException("Game is not in progress");
+            throw new IllegalStateException("Game is not in progress. Current state: " + game.getState());
         }
 
         Player currentPlayer = game.getCurrentPlayer();
-        if (currentPlayer == null || !currentPlayer.getId().equals(playerId)) {
-            throw new IllegalArgumentException("It's not this player's turn");
+        if (currentPlayer == null) {
+            throw new IllegalArgumentException("No current player found");
+        }
+
+        if (!currentPlayer.getId().equals(playerId)) {
+            throw new IllegalArgumentException("It's not this player's turn. Current player: " + currentPlayer.getId()
+                    + ", Requested player: " + playerId);
         }
 
         if (game.getEliminatedPlayers().contains(playerId)) {
@@ -187,17 +224,26 @@ public class GameService {
         Bid newBid = new Bid(playerId, quantity, faceValue, BidType.RAISE);
 
         if (!isBidValid(newBid, game.getCurrentBid())) {
-            throw new IllegalArgumentException("Invalid bid. Must increase quantity or face value");
+            String currentBidStr = game.getCurrentBid() != null
+                    ? game.getCurrentBid().getQuantity() + " of " + game.getCurrentBid().getFaceValue()
+                    : "none";
+            throw new IllegalArgumentException("Invalid bid. Current bid: " + currentBidStr +
+                    ", New bid: " + quantity + " of " + faceValue + ". Must increase quantity or face value");
         }
 
+        // Store the current bid as previous before setting the new one
+        game.setPreviousBid(game.getCurrentBid());
         game.setCurrentBid(newBid);
 
         // Move to next player
         game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
 
-        // Skip eliminated players
-        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())) {
+        // Skip eliminated players - ensure we don't get stuck in infinite loop
+        int attempts = 0;
+        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+                && attempts < game.getPlayers().size()) {
             game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            attempts++;
         }
 
         return new GameResult(game, null, 0, 0);

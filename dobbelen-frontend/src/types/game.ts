@@ -3,6 +3,7 @@ export interface Player {
   name: string;
   diceCount: number;
   eliminated: boolean;
+  dice: number[];
 }
 
 export interface Bid {
@@ -18,6 +19,7 @@ export interface Game {
   state: string;
   currentPlayerId: string;
   currentBid: Bid | null;
+  previousBid: Bid | null;
   eliminatedPlayers: string[];
   roundNumber: number;
   winner: string | null;
@@ -53,6 +55,7 @@ export interface GameResponse {
   state: string;
   currentPlayerId: string;
   currentBid: Bid | null;
+  previousBid: Bid | null;
   eliminatedPlayers: string[];
   roundNumber: number;
   winner: string | null;

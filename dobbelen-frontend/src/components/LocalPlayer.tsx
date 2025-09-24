@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Player } from '../types/game';
 import DiceHand from './DiceHand';
 
@@ -7,17 +7,16 @@ interface LocalPlayerProps {
   isMyTurn: boolean;
   onAction: (action: string, data?: any) => void;
   disabled: boolean;
+  currentBid: any;
+  previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, disabled }) => {
-  const [bidQuantity, setBidQuantity] = useState(1);
-  const [bidFaceValue, setBidFaceValue] = useState(1);
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, disabled, currentBid, previousBid }) => {
+  // Use real dice values from the backend
+  const diceValues = player.dice || [];
 
-  // Generate mock dice for local player (in real game, this would come from server)
-  const mockDice = Array.from({ length: player.diceCount }, () => Math.floor(Math.random() * 6) + 1);
-
-  const handleBid = () => {
-    onAction('bid', { quantity: bidQuantity, faceValue: bidFaceValue });
+  const handleBidSelect = (quantity: number, faceValue: number) => {
+    onAction('bid', { quantity, faceValue });
   };
 
   const handleDoubt = () => {
@@ -31,75 +30,48 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, d
   return (
     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
       {/* Player Container */}
-      <div className={`bg-white p-4 rounded-lg shadow-lg border-2 ${isMyTurn ? 'border-yellow-400' : 'border-gray-300'}`}>
+      <div className={`bg-green-800 p-6 rounded-2xl shadow-2xl border-4 ${isMyTurn ? 'border-yellow-400' : 'border-green-600'} ${player.eliminated ? 'opacity-50' : ''}`}>
         {/* Username */}
-        <div className="text-center mb-2">
-          <span className="font-bold text-lg">{player.name}</span>
-          {isMyTurn && <span className="ml-2 text-yellow-600">(Your Turn)</span>}
+        <div className="text-center mb-4">
+          <span className="font-bold text-xl text-white">{player.name}</span>
+          {isMyTurn && <span className="ml-2 text-yellow-300 text-lg">(Your Turn)</span>}
         </div>
 
         {/* Dice Row */}
-        <div className="flex justify-center mb-2">
-          <DiceHand diceValues={mockDice} />
+        <div className="flex justify-center mb-4">
+          <DiceHand diceValues={diceValues} />
         </div>
 
         {/* Cup Placeholder */}
-        <div className="flex justify-center mb-2">
-          <div className="w-8 h-8 bg-amber-600 rounded-full border-2 border-amber-800 flex items-center justify-center">
-            <span className="text-white text-xs">C</span>
+        <div className="flex justify-center mb-4">
+          <div className="w-10 h-10 bg-amber-600 rounded-full border-3 border-amber-800 flex items-center justify-center shadow-lg">
+            <span className="text-white text-sm font-bold">C</span>
           </div>
         </div>
 
+        {/* Previous Bid Display */}
+        {previousBid && previousBid.playerId === player.id && (
+          <div className="text-center text-blue-300 font-bold text-sm mb-2">
+            Previous Bid: {previousBid.quantity} of {previousBid.faceValue}s
+          </div>
+        )}
+
         {/* Action Controls - Only show if it's your turn and not eliminated */}
         {isMyTurn && !player.eliminated && (
-          <div className="space-y-2">
-            {/* Bid Controls */}
-            <div className="flex items-center space-x-2">
-              <label className="text-sm">Bid:</label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={bidQuantity}
-                onChange={(e) => setBidQuantity(parseInt(e.target.value) || 1)}
-                className="w-16 p-1 border rounded text-center"
-                disabled={disabled}
-              />
-              <select
-                value={bidFaceValue}
-                onChange={(e) => setBidFaceValue(parseInt(e.target.value))}
-                className="p-1 border rounded"
-                disabled={disabled}
-              >
-                <option value={1}>Ones</option>
-                <option value={2}>Twos</option>
-                <option value={3}>Threes</option>
-                <option value={4}>Fours</option>
-                <option value={5}>Fives</option>
-                <option value={6}>Sixes</option>
-              </select>
-              <button
-                onClick={handleBid}
-                disabled={disabled}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
-              >
-                Raise
-              </button>
-            </div>
-
+          <div className="space-y-4">
             {/* Action Buttons */}
-            <div className="flex space-x-2">
+            <div className="flex space-x-3 justify-center">
               <button
                 onClick={handleDoubt}
-                disabled={disabled}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 disabled:bg-gray-400"
+                disabled={disabled || !currentBid}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:bg-gray-500 font-bold shadow-lg text-lg"
               >
                 Doubt
               </button>
               <button
                 onClick={handleSpotOn}
-                disabled={disabled}
-                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
+                disabled={disabled || !currentBid}
+                className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:bg-gray-500 font-bold shadow-lg text-lg"
               >
                 Spot On
               </button>
@@ -109,7 +81,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, d
 
         {/* Eliminated State */}
         {player.eliminated && (
-          <div className="text-center text-red-600 font-bold">
+          <div className="text-center text-red-300 font-bold text-xl bg-red-900 rounded-lg p-3">
             ELIMINATED
           </div>
         )}

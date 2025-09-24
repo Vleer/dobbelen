@@ -10,6 +10,7 @@ public class Game {
     private GameState state;
     private int currentPlayerIndex;
     private Bid currentBid;
+    private Bid previousBid;
     private List<String> eliminatedPlayers;
     private int roundNumber;
     private String winner;
@@ -44,6 +45,14 @@ public class Game {
 
     public Bid getCurrentBid() { return currentBid; }
     public void setCurrentBid(Bid currentBid) { this.currentBid = currentBid; }
+
+    public Bid getPreviousBid() {
+        return previousBid;
+    }
+
+    public void setPreviousBid(Bid previousBid) {
+        this.previousBid = previousBid;
+    }
 
     public List<String> getEliminatedPlayers() { return eliminatedPlayers; }
     public void setEliminatedPlayers(List<String> eliminatedPlayers) { this.eliminatedPlayers = eliminatedPlayers; }

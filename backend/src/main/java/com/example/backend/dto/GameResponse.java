@@ -3,6 +3,7 @@ package com.example.backend.dto;
 import com.example.backend.model.Game;
 import com.example.backend.model.Player;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GameResponse {
@@ -11,6 +12,7 @@ public class GameResponse {
     private String state;
     private String currentPlayerId;
     private BidInfo currentBid;
+    private BidInfo previousBid;
     private List<String> eliminatedPlayers;
     private int roundNumber;
     private String winner;
@@ -25,6 +27,7 @@ public class GameResponse {
         this.state = game.getState().name();
         this.currentPlayerId = game.getCurrentPlayer() != null ? game.getCurrentPlayer().getId() : null;
         this.currentBid = game.getCurrentBid() != null ? new BidInfo(game.getCurrentBid()) : null;
+        this.previousBid = game.getPreviousBid() != null ? new BidInfo(game.getPreviousBid()) : null;
         this.eliminatedPlayers = game.getEliminatedPlayers();
         this.roundNumber = game.getRoundNumber();
         this.winner = game.getWinner();
@@ -46,6 +49,14 @@ public class GameResponse {
     public BidInfo getCurrentBid() { return currentBid; }
     public void setCurrentBid(BidInfo currentBid) { this.currentBid = currentBid; }
 
+    public BidInfo getPreviousBid() {
+        return previousBid;
+    }
+
+    public void setPreviousBid(BidInfo previousBid) {
+        this.previousBid = previousBid;
+    }
+
     public List<String> getEliminatedPlayers() { return eliminatedPlayers; }
     public void setEliminatedPlayers(List<String> eliminatedPlayers) { this.eliminatedPlayers = eliminatedPlayers; }
 
@@ -60,12 +71,14 @@ public class GameResponse {
         private String name;
         private int diceCount;
         private boolean isEliminated;
+        private List<Integer> dice;
 
         public PlayerInfo(Player player) {
             this.id = player.getId();
             this.name = player.getName();
             this.diceCount = player.getDice().size();
             this.isEliminated = player.isEliminated();
+            this.dice = new ArrayList<>(player.getDice());
         }
 
         // Getters and Setters
@@ -80,6 +93,14 @@ public class GameResponse {
 
         public boolean isEliminated() { return isEliminated; }
         public void setEliminated(boolean eliminated) { isEliminated = eliminated; }
+
+        public List<Integer> getDice() {
+            return dice;
+        }
+
+        public void setDice(List<Integer> dice) {
+            this.dice = dice;
+        }
     }
 
     public static class BidInfo {

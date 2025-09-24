@@ -26,75 +26,39 @@ export class AIService {
   }
 
   generateRandomAction(currentBid: any): { action: string; data?: any } {
-    const actions = ['bid', 'doubt', 'spotOn'];
-    const weights = [0.7, 0.2, 0.1]; // 70% bid, 20% doubt, 10% spot on
-
     // If no current bid, must bid
     if (!currentBid) {
       return this.generateBidAction();
     }
 
-    // Weighted random selection
-    const random = Math.random();
-    let cumulativeWeight = 0;
-
-    for (let i = 0; i < actions.length; i++) {
-      cumulativeWeight += weights[i];
-      if (random <= cumulativeWeight) {
-        switch (actions[i]) {
-          case 'bid':
-            return this.generateBidAction(currentBid);
-          case 'doubt':
-            return { action: 'doubt' };
-          case 'spotOn':
-            return { action: 'spotOn' };
-        }
-      }
-    }
-
-    // Fallback to bid
+    // AI always raises by 1 - simple strategy
     return this.generateBidAction(currentBid);
   }
 
   private generateBidAction(currentBid?: any): { action: string; data: any } {
     if (!currentBid) {
-      // First bid - random quantity 1-3, random face value 1-6
+      // First bid - start with 1 of any value
       return {
         action: 'bid',
         data: {
-          quantity: Math.floor(Math.random() * 3) + 1,
+          quantity: 1,
           faceValue: Math.floor(Math.random() * 6) + 1
         }
       };
     }
 
-    // Generate a valid bid (must increase quantity or face value)
+    // AI always raises by 1 - simple strategy
     const currentQuantity = currentBid.quantity;
     const currentFaceValue = currentBid.faceValue;
 
-    // 60% chance to increase quantity, 40% chance to increase face value
-    if (Math.random() < 0.6) {
-      // Increase quantity
-      return {
-        action: 'bid',
-        data: {
-          quantity: currentQuantity + Math.floor(Math.random() * 2) + 1,
-          faceValue: currentFaceValue
-        }
-      };
-    } else {
-      // Increase face value (and possibly quantity)
-      const newFaceValue = Math.min(6, currentFaceValue + Math.floor(Math.random() * 2) + 1);
-      const newQuantity = newFaceValue > currentFaceValue ? currentQuantity : currentQuantity + 1;
-      
-      return {
-        action: 'bid',
-        data: {
-          quantity: newQuantity,
-          faceValue: newFaceValue
-        }
-      };
-    }
+    // Always increase quantity by 1
+    return {
+      action: 'bid',
+      data: {
+        quantity: currentQuantity + 1,
+        faceValue: currentFaceValue
+      }
+    };
   }
 
   // Simulate AI thinking delay

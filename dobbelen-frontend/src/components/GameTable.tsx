@@ -5,6 +5,7 @@ import { aiService } from '../services/aiService';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
+import BidSelector from './BidSelector';
 import GameSetup from './GameSetup';
 
 const GameTable: React.FC = () => {
@@ -67,20 +68,26 @@ const GameTable: React.FC = () => {
             quantity: data.quantity,
             faceValue: data.faceValue
           });
+          setGame(response.game);
           break;
         case 'doubt':
           response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
+          setGame(response.game);
           break;
         case 'spotOn':
           response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
+          setGame(response.game);
+          break;
+        case 'newRound':
+          response = await gameApi.startNewRound(game.id);
+          setGame(response);
           break;
         default:
           throw new Error('Unknown action');
       }
-      
-      setGame(response.game);
-    } catch (err) {
-      setError(`Failed to ${action}`);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || `Failed to ${action}`;
+      setError(errorMessage);
       console.error(`Error with ${action}:`, err);
     } finally {
       setIsLoading(false);
@@ -121,18 +128,19 @@ const GameTable: React.FC = () => {
                 quantity: aiAction.data.quantity,
                 faceValue: aiAction.data.faceValue
               });
+              setGame(response.game);
               break;
             case 'doubt':
               response = await gameApi.doubtBid(game.id, { playerId: game.currentPlayerId });
+              setGame(response.game);
               break;
             case 'spotOn':
               response = await gameApi.spotOn(game.id, { playerId: game.currentPlayerId });
+              setGame(response.game);
               break;
             default:
               throw new Error('Unknown AI action');
           }
-          
-          setGame(response.game);
         } catch (err) {
           console.error('AI action failed:', err);
           setError('AI action failed');
@@ -171,6 +179,8 @@ const GameTable: React.FC = () => {
           isMyTurn={isMyTurn()}
           onAction={handleAction}
           disabled={isLoading}
+          currentBid={game.currentBid}
+          previousBid={game.previousBid}
         />
       )}
 
@@ -181,6 +191,8 @@ const GameTable: React.FC = () => {
           player={opponent}
           position={index}
           isMyTurn={game.currentPlayerId === opponent.id}
+          showDice={game.state === 'ROUND_ENDED' || game.winner !== null}
+          previousBid={game.previousBid}
         />
       ))}
 
@@ -190,8 +202,17 @@ const GameTable: React.FC = () => {
         currentPlayerId={game.currentPlayerId}
         players={game.players}
         roundNumber={game.roundNumber}
-        winner={game.winner}
+        winner={game.winner || undefined}
       />
+
+      {/* Bid Selector - Draggable */}
+      {localPlayer && isMyTurn() && !localPlayer.eliminated && (
+        <BidSelector
+          currentBid={game.currentBid}
+          onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
+          disabled={isLoading}
+        />
+      )}
 
       {/* Error Display */}
       {error && (
@@ -205,6 +226,15 @@ const GameTable: React.FC = () => {
         <div>Game ID: {game.id}</div>
         <div>Round: {game.roundNumber}</div>
         <div>State: {game.state}</div>
+        {game.state === 'ROUND_ENDED' && (
+          <button
+            onClick={() => handleAction('newRound')}
+            disabled={isLoading}
+            className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
+          >
+            New Round
+          </button>
+        )}
       </div>
     </div>
   );
