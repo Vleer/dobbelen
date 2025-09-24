@@ -10,9 +10,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, isLoading, error })
   const [username, setUsername] = useState('');
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Player 1', 'AI Player 2']);
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [aiCount, setAiCount] = useState(2);
 
   const addPlayer = () => {
-    if (newPlayerName.trim() && playerNames.length < 6) {
+    if (newPlayerName.trim() && playerNames.length < 8) {
       setPlayerNames([...playerNames, newPlayerName.trim()]);
       setNewPlayerName('');
     }
@@ -21,6 +22,17 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, isLoading, error })
   const removePlayer = (index: number) => {
     if (playerNames.length > 1) {
       setPlayerNames(playerNames.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateAiCount = (count: number) => {
+    if (count >= 1 && count <= 6) {
+      setAiCount(count);
+      const newPlayerNames = [];
+      for (let i = 1; i <= count; i++) {
+        newPlayerNames.push(`AI Player ${i}`);
+      }
+      setPlayerNames(newPlayerNames);
     }
   };
 
@@ -58,45 +70,58 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, isLoading, error })
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              AI Opponents (1-4 AI players)
+              Number of AI Players (1-6)
             </label>
+            <div className="flex space-x-2 mb-4">
+              {[1, 2, 3, 4, 5, 6].map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => updateAiCount(count)}
+                  className={`px-3 py-2 rounded ${
+                    aiCount === count
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+            
             <div className="space-y-2">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center space-x-2">
-                  <span className="flex-1 p-2 border rounded">{name}</span>
-                  {playerNames.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePlayer(index)}
-                      className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      ×
-                    </button>
-                  )}
+                  <span className="flex-1 p-2 border rounded bg-gray-50">{name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removePlayer(index)}
+                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {playerNames.length < 4 && (
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={newPlayerName}
-                onChange={(e) => setNewPlayerName(e.target.value)}
-                placeholder="Enter player name"
-                className="flex-1 p-2 border rounded"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPlayer())}
-              />
-              <button
-                type="button"
-                onClick={addPlayer}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Add
-              </button>
-            </div>
-          )}
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              value={newPlayerName}
+              onChange={(e) => setNewPlayerName(e.target.value)}
+              placeholder="Add custom AI name"
+              className="flex-1 p-2 border rounded"
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPlayer())}
+            />
+            <button
+              type="button"
+              onClick={addPlayer}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Add
+            </button>
+          </div>
 
           {error && (
             <div className="text-red-500 text-sm text-center">{error}</div>

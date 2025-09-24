@@ -14,6 +14,8 @@ public class Game {
     private List<String> eliminatedPlayers;
     private int roundNumber;
     private String winner;
+    private String gameWinner;
+    private int dealerIndex;
 
     public Game() {
         this.id = UUID.randomUUID().toString();
@@ -22,12 +24,16 @@ public class Game {
         this.currentPlayerIndex = 0;
         this.eliminatedPlayers = new ArrayList<>();
         this.roundNumber = 1;
+        this.dealerIndex = 0;
     }
 
     public Game(List<Player> players) {
         this();
         this.players = new ArrayList<>(players);
         this.state = GameState.IN_PROGRESS;
+        // Randomize starting player and dealer
+        this.currentPlayerIndex = (int) (Math.random() * players.size());
+        this.dealerIndex = (int) (Math.random() * players.size());
     }
 
     // Getters and Setters
@@ -63,6 +69,14 @@ public class Game {
     public String getWinner() { return winner; }
     public void setWinner(String winner) { this.winner = winner; }
 
+    public String getGameWinner() {
+        return gameWinner;
+    }
+
+    public void setGameWinner(String gameWinner) {
+        this.gameWinner = gameWinner;
+    }
+
     public Player getCurrentPlayer() {
         if (players.isEmpty() || currentPlayerIndex >= players.size()) {
             return null;
@@ -74,5 +88,31 @@ public class Game {
         return players.stream()
                 .filter(player -> !eliminatedPlayers.contains(player.getId()))
                 .toList();
+    }
+
+    public boolean hasGameWinner() {
+        return players.stream().anyMatch(player -> player.getWinTokens() >= 7);
+    }
+
+    public Player getGameWinnerPlayer() {
+        return players.stream()
+                .filter(player -> player.getWinTokens() >= 7)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public int getDealerIndex() {
+        return dealerIndex;
+    }
+
+    public void setDealerIndex(int dealerIndex) {
+        this.dealerIndex = dealerIndex;
+    }
+
+    public Player getDealer() {
+        if (players.isEmpty() || dealerIndex >= players.size()) {
+            return null;
+        }
+        return players.get(dealerIndex);
     }
 }

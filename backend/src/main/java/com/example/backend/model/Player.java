@@ -9,11 +9,13 @@ public class Player {
     private String name;
     private List<Integer> dice;
     private boolean isEliminated;
+    private int winTokens;
 
     public Player() {
         this.id = UUID.randomUUID().toString();
         this.dice = new ArrayList<>();
         this.isEliminated = false;
+        this.winTokens = 0;
     }
 
     public Player(String name) {
@@ -37,6 +39,10 @@ public class Player {
         this.dice.clear();
     }
 
+    public void addWinToken() {
+        this.winTokens++;
+    }
+
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -49,4 +55,12 @@ public class Player {
 
     public boolean isEliminated() { return isEliminated; }
     public void setEliminated(boolean eliminated) { isEliminated = eliminated; }
+
+    public int getWinTokens() {
+        return winTokens;
+    }
+
+    public void setWinTokens(int winTokens) {
+        this.winTokens = winTokens;
+    }
 }

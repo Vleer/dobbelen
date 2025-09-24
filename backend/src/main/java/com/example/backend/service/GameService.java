@@ -47,7 +47,15 @@ public class GameService {
     public void startNewRound(String gameId) {
         Game game = getGame(gameId);
         
-        // Reset all players for new round
+        // Check if game is already completed
+        if (game.hasGameWinner()) {
+            System.out.println("Game already has winner, not starting new round");
+            return; // Don't start new round if game is over
+        }
+
+        System.out.println("Starting new round " + (game.getRoundNumber() + 1) + " for game " + gameId);
+
+        // Reset all players for new round (but keep win tokens)
         for (Player player : game.getPlayers()) {
             player.reset();
             player.rollDice();
@@ -55,11 +63,16 @@ public class GameService {
         
         // Reset game state
         game.setEliminatedPlayers(new ArrayList<>());
-        game.setCurrentPlayerIndex(0);
+        // Randomize starting player
+        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
         game.setCurrentBid(null);
+        game.setPreviousBid(null);
         game.setWinner(null);
         game.setState(GameState.IN_PROGRESS);
         game.setRoundNumber(game.getRoundNumber() + 1);
+
+        System.out.println("New round started. State: " + game.getState() + ", Current player: "
+                + game.getCurrentPlayer().getName());
     }
 
     public int countDiceWithValue(List<Player> players, int faceValue, boolean wildOnes) {
@@ -132,9 +145,27 @@ public class GameService {
 
         // Check if round is over
         if (game.getActivePlayers().size() <= 1) {
-            game.setState(GameState.ROUND_ENDED);
             if (game.getActivePlayers().size() == 1) {
-                game.setWinner(game.getActivePlayers().get(0).getId());
+                Player roundWinner = game.getActivePlayers().get(0);
+                game.setWinner(roundWinner.getId());
+                roundWinner.addWinToken();
+
+                // Check if this player has won the entire game
+                if (roundWinner.getWinTokens() >= 7) {
+                    game.setGameWinner(roundWinner.getId());
+                    game.setState(GameState.GAME_ENDED);
+                    System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
+                            + roundWinner.getWinTokens() + " tokens");
+                } else {
+                    // Pass dealer button to the winner
+                    game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                    System.out.println("Dealer button passed to: " + roundWinner.getName());
+
+                    // Start new round automatically
+                    System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
+                            + roundWinner.getWinTokens() + " tokens");
+                    startNewRound(gameId);
+                }
             }
         }
 
@@ -154,9 +185,26 @@ public class GameService {
         
         if (actualCount == currentBid.getQuantity()) {
             // Spot on is correct - all other players are eliminated
-            game.setState(GameState.ROUND_ENDED);
             game.setWinner(spotOnPlayerId);
             
+            // Award win token to the spot on player
+            Player spotOnPlayer = game.getPlayers().stream()
+                    .filter(p -> p.getId().equals(spotOnPlayerId))
+                    .findFirst()
+                    .orElse(null);
+            if (spotOnPlayer != null) {
+                spotOnPlayer.addWinToken();
+
+                // Check if this player has won the entire game
+                if (spotOnPlayer.getWinTokens() >= 7) {
+                    game.setGameWinner(spotOnPlayer.getId());
+                    game.setState(GameState.GAME_ENDED);
+                } else {
+                    // Start new round automatically
+                    startNewRound(gameId);
+                }
+            }
+
             // Eliminate all other players
             for (Player player : game.getActivePlayers()) {
                 if (!player.getId().equals(spotOnPlayerId)) {
@@ -190,9 +238,23 @@ public class GameService {
 
             // Check if round is over
             if (game.getActivePlayers().size() <= 1) {
-                game.setState(GameState.ROUND_ENDED);
                 if (game.getActivePlayers().size() == 1) {
-                    game.setWinner(game.getActivePlayers().get(0).getId());
+                    Player roundWinner = game.getActivePlayers().get(0);
+                    game.setWinner(roundWinner.getId());
+                    roundWinner.addWinToken();
+
+                    // Check if this player has won the entire game
+                    if (roundWinner.getWinTokens() >= 7) {
+                        game.setGameWinner(roundWinner.getId());
+                        game.setState(GameState.GAME_ENDED);
+                    } else {
+                        // Pass dealer button to the winner
+                        game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                        System.out.println("Dealer button passed to: " + roundWinner.getName());
+
+                        // Start new round automatically
+                        startNewRound(gameId);
+                    }
                 }
             }
         }

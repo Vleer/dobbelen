@@ -78,10 +78,6 @@ const GameTable: React.FC = () => {
           response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
           setGame(response.game);
           break;
-        case 'newRound':
-          response = await gameApi.startNewRound(game.id);
-          setGame(response);
-          break;
         default:
           throw new Error('Unknown action');
       }
@@ -89,6 +85,11 @@ const GameTable: React.FC = () => {
       const errorMessage = err.response?.data?.message || err.message || `Failed to ${action}`;
       setError(errorMessage);
       console.error(`Error with ${action}:`, err);
+      
+      // If there's an error, try to refresh the game state
+      if (game) {
+        refreshGame();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -110,15 +111,26 @@ const GameTable: React.FC = () => {
 
   // Handle AI turns
   useEffect(() => {
+    console.log('Game state check:', {
+      game: game?.id,
+      state: game?.state,
+      currentPlayerId: game?.currentPlayerId,
+      isAITurn: isAITurn(),
+      isLoading,
+      gameWinner: game?.gameWinner
+    });
+    
     if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS') {
       const handleAITurn = async () => {
         try {
           setIsLoading(true);
           await aiService.simulateThinking();
           
-          const aiAction = aiService.generateRandomAction(game.currentBid);
+          const aiAction = aiService.generateRandomAction(game.currentBid, game.players.length);
           const currentPlayer = game.players.find(p => p.id === game.currentPlayerId);
           console.log(`AI ${currentPlayer?.name} chooses:`, aiAction);
+          console.log('Current bid:', game.currentBid);
+          console.log('AI action data:', aiAction.data);
           
           let response;
           switch (aiAction.action) {
@@ -141,12 +153,17 @@ const GameTable: React.FC = () => {
             default:
               throw new Error('Unknown AI action');
           }
-        } catch (err) {
-          console.error('AI action failed:', err);
-          setError('AI action failed');
-        } finally {
-          setIsLoading(false);
-        }
+        } catch (err: any) {
+            console.error('AI action failed:', err);
+            console.error('Error details:', err.response?.data);
+            const errorMessage = err.response?.data?.message || err.message || 'AI action failed';
+            setError(errorMessage);
+            
+            // Refresh game state on AI error
+            refreshGame();
+          } finally {
+            setIsLoading(false);
+          }
       };
 
       handleAITurn();
@@ -159,6 +176,40 @@ const GameTable: React.FC = () => {
 
   if (!game) {
     return <GameSetup onCreateGame={createGame} isLoading={isLoading} error={error} />;
+  }
+
+  // Check for game completion
+  if (game.gameWinner) {
+    const winner = game.players.find(p => p.id === game.gameWinner);
+    return (
+      <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden flex items-center justify-center">
+        {/* Background */}
+        <div
+          className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
+          style={{ backgroundImage: "url(resources/bg.webp)" }}
+        />
+        
+        {/* Victory Screen */}
+        <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
+          <div className="text-6xl mb-4">🎲👑</div>
+          <h1 className="text-5xl font-bold text-green-800 mb-4">
+            Dobbelkoning!
+          </h1>
+          <h2 className="text-3xl font-bold text-green-700 mb-6">
+            {winner?.name} has won the game!
+          </h2>
+          <div className="text-xl text-green-600 mb-8">
+            {winner?.name} collected 7 win tokens and is the ultimate Liar's Dice champion!
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg"
+          >
+            Play Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const localPlayer = getLocalPlayer();
@@ -177,6 +228,7 @@ const GameTable: React.FC = () => {
         <LocalPlayer 
           player={localPlayer} 
           isMyTurn={isMyTurn()}
+          isDealer={game.dealerId === localPlayer.id}
           onAction={handleAction}
           disabled={isLoading}
           currentBid={game.currentBid}
@@ -191,6 +243,7 @@ const GameTable: React.FC = () => {
           player={opponent}
           position={index}
           isMyTurn={game.currentPlayerId === opponent.id}
+          isDealer={game.dealerId === opponent.id}
           showDice={game.state === 'ROUND_ENDED' || game.winner !== null}
           previousBid={game.previousBid}
         />
@@ -226,15 +279,6 @@ const GameTable: React.FC = () => {
         <div>Game ID: {game.id}</div>
         <div>Round: {game.roundNumber}</div>
         <div>State: {game.state}</div>
-        {game.state === 'ROUND_ENDED' && (
-          <button
-            onClick={() => handleAction('newRound')}
-            disabled={isLoading}
-            className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-          >
-            New Round
-          </button>
-        )}
       </div>
     </div>
   );

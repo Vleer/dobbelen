@@ -16,6 +16,8 @@ public class GameResponse {
     private List<String> eliminatedPlayers;
     private int roundNumber;
     private String winner;
+    private String gameWinner;
+    private String dealerId;
 
     public GameResponse() {}
 
@@ -31,6 +33,8 @@ public class GameResponse {
         this.eliminatedPlayers = game.getEliminatedPlayers();
         this.roundNumber = game.getRoundNumber();
         this.winner = game.getWinner();
+        this.gameWinner = game.getGameWinner();
+        this.dealerId = game.getDealer() != null ? game.getDealer().getId() : null;
     }
 
     // Getters and Setters
@@ -66,12 +70,29 @@ public class GameResponse {
     public String getWinner() { return winner; }
     public void setWinner(String winner) { this.winner = winner; }
 
+    public String getGameWinner() {
+        return gameWinner;
+    }
+
+    public void setGameWinner(String gameWinner) {
+        this.gameWinner = gameWinner;
+    }
+
+    public String getDealerId() {
+        return dealerId;
+    }
+
+    public void setDealerId(String dealerId) {
+        this.dealerId = dealerId;
+    }
+
     public static class PlayerInfo {
         private String id;
         private String name;
         private int diceCount;
         private boolean isEliminated;
         private List<Integer> dice;
+        private int winTokens;
 
         public PlayerInfo(Player player) {
             this.id = player.getId();
@@ -79,6 +100,7 @@ public class GameResponse {
             this.diceCount = player.getDice().size();
             this.isEliminated = player.isEliminated();
             this.dice = new ArrayList<>(player.getDice());
+            this.winTokens = player.getWinTokens();
         }
 
         // Getters and Setters
@@ -100,6 +122,14 @@ public class GameResponse {
 
         public void setDice(List<Integer> dice) {
             this.dice = dice;
+        }
+
+        public int getWinTokens() {
+            return winTokens;
+        }
+
+        public void setWinTokens(int winTokens) {
+            this.winTokens = winTokens;
         }
     }
 

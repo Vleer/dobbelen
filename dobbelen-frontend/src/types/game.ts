@@ -4,6 +4,7 @@ export interface Player {
   diceCount: number;
   eliminated: boolean;
   dice: number[];
+  winTokens: number;
 }
 
 export interface Bid {
@@ -23,6 +24,8 @@ export interface Game {
   eliminatedPlayers: string[];
   roundNumber: number;
   winner: string | null;
+  gameWinner: string | null;
+  dealerId: string | null;
 }
 
 export interface CreateGameRequest {
@@ -59,4 +62,6 @@ export interface GameResponse {
   eliminatedPlayers: string[];
   roundNumber: number;
   winner: string | null;
+  gameWinner: string | null;
+  dealerId: string | null;
 }

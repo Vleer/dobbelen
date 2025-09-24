@@ -5,13 +5,14 @@ import DiceHand from './DiceHand';
 interface LocalPlayerProps {
   player: Player;
   isMyTurn: boolean;
+  isDealer: boolean;
   onAction: (action: string, data?: any) => void;
   disabled: boolean;
   currentBid: any;
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, disabled, currentBid, previousBid }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid }) => {
   // Use real dice values from the backend
   const diceValues = player.dice || [];
 
@@ -34,8 +35,17 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, d
         {/* Username */}
         <div className="text-center mb-4">
           <span className="font-bold text-xl text-white">{player.name}</span>
-          {isMyTurn && <span className="ml-2 text-yellow-300 text-lg">(Your Turn)</span>}
+          {isMyTurn && <span className="ml-2 text-yellow-300 text-lg">🪙</span>}
         </div>
+
+        {/* Dealer Button */}
+        {isDealer && (
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-8 h-8 bg-white border-2 border-black rounded-full">
+              <span className="text-black text-sm font-bold">D</span>
+            </div>
+          </div>
+        )}
 
         {/* Dice Row */}
         <div className="flex justify-center mb-4">
@@ -48,6 +58,13 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, onAction, d
             <span className="text-white text-sm font-bold">C</span>
           </div>
         </div>
+
+        {/* Win Tokens */}
+        {player.winTokens > 0 && (
+          <div className="text-center text-yellow-300 font-bold text-sm mb-2">
+            🏆 {player.winTokens} wins
+          </div>
+        )}
 
         {/* Previous Bid Display */}
         {previousBid && previousBid.playerId === player.id && (
