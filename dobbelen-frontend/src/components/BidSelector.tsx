@@ -151,7 +151,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
     return (
       <div
         ref={containerRef}
-        className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-sm w-full select-none"
+        className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-sm w-full select-none relative z-10"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
@@ -220,7 +220,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
   return (
     <div
       ref={containerRef}
-      className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-md select-none"
+      className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-md select-none relative z-10"
       style={{
         position: 'fixed',
         left: position.x,

@@ -36,7 +36,8 @@ export class WebSocketService {
         console.log('🔌 SockJS connection closed:', event);
       };
       socket.onerror = (error: any) => {
-        console.error('❌ SockJS connection error:', error);
+        console.warn('⚠️ SockJS connection warning (non-critical):', error);
+        // Don't show SockJS errors to users as they're often non-critical
       };
       
       this.stompClient = new Client({
@@ -61,10 +62,12 @@ export class WebSocketService {
           console.log('📡 Subscribed to /topic/game/' + gameId);
         },
         onStompError: (error) => {
-          console.error('❌ WebSocket STOMP error:', error);
+          console.warn('⚠️ WebSocket STOMP warning (non-critical):', error);
+          // Don't show STOMP errors to users as they're often non-critical
         },
         onWebSocketError: (error) => {
-          console.error('❌ WebSocket connection error:', error);
+          console.warn('⚠️ WebSocket connection warning (non-critical):', error);
+          // Don't show WebSocket errors to users as they're often non-critical
         },
         onDisconnect: () => {
           console.log('🔌 WebSocket disconnected');

@@ -11,6 +11,7 @@ import BidSelector from './BidSelector';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
+import DiceHandSVG from './DiceHandSVG';
 
 interface GameTableProps {
   game?: Game | null;
@@ -303,11 +304,14 @@ const GameTable: React.FC<GameTableProps> = ({
         style={{ backgroundImage: "url(resources/bg.webp)" }}
       />
       
-      {/* Mobile Layout */}
+      {/* Mobile Layout - Clean Vertical Stack */}
       <div className="md:hidden">
-        {/* Opponent Players - Top section with more space */}
-        <div className="absolute top-20 left-0 right-0 px-2 py-2 z-10">
-          <div className="flex flex-wrap justify-center gap-2">
+        {/* Header Spacer - Account for fixed header */}
+        <div className="h-16"></div>
+        
+        {/* Opponent Players - Top section */}
+        <div className="px-2 py-2">
+          <div className="flex flex-wrap justify-center gap-1">
             {opponents.map((opponent, index) => {
               const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
               return (
@@ -327,8 +331,27 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* Bid Selector - Center section with more space from orange bar */}
-        <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-20 w-full px-4">
+        {/* Mobile Bid Display - Below players with separator */}
+        {game.currentBid && (
+          <div className="px-4 py-2">
+            <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
+              <div className="flex items-center justify-center space-x-3">
+                <div className="text-lg font-bold text-white">
+                  {game.players.find(p => p.id === game.currentBid?.playerId)?.name || 'Unknown'} {t('game.bids')}
+                </div>
+                <div className="text-xl font-bold text-amber-200">
+                  {game.currentBid.quantity} {t(`game.${game.currentBid.faceValue === 1 ? 'ones' : game.currentBid.faceValue === 2 ? 'twos' : game.currentBid.faceValue === 3 ? 'threes' : game.currentBid.faceValue === 4 ? 'fours' : game.currentBid.faceValue === 5 ? 'fives' : 'sixes'}`)}
+                </div>
+                <div className="flex items-center space-x-1">
+                  <DiceHandSVG diceValues={Array(game.currentBid.quantity).fill(game.currentBid.faceValue)} size="sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bid Selector - Center section with proper spacing */}
+        <div className="px-4 py-4">
           {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
             <BidSelector
               currentBid={game.currentBid}
@@ -347,9 +370,9 @@ const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Local Player - Just above footer, not in footer */}
+        {/* Local Player - Bottom section */}
         {localPlayer && (
-          <div className="absolute bottom-20 left-0 right-0 z-10">
+          <div className="px-2 py-2">
             <LocalPlayer 
               player={localPlayer} 
               isMyTurn={isMyTurn()}
@@ -423,28 +446,30 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
       </div>
 
-      {/* Center Bid Display */}
-      <BidDisplay 
-        currentBid={game.currentBid}
-        currentPlayerId={game.currentPlayerId}
-        players={game.players}
-        roundNumber={game.roundNumber}
-        winner={game.winner || undefined}
-      />
+      {/* Center Bid Display - Desktop only */}
+      <div className="hidden md:block">
+        <BidDisplay 
+          currentBid={game.currentBid}
+          currentPlayerId={game.currentPlayerId}
+          players={game.players}
+          roundNumber={game.roundNumber}
+          winner={game.winner || undefined}
+        />
+      </div>
 
       {/* Game Result Display */}
       <GameResultDisplay game={game} />
 
 
-      {/* Error Display */}
-      {error && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded">
+      {/* Error Display - Only show critical errors, not WebSocket warnings */}
+      {error && !error.toLowerCase().includes('stomp') && !error.toLowerCase().includes('websocket') && !error.toLowerCase().includes('connection') && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded z-50">
           {error}
         </div>
       )}
 
-      {/* Top Header Bar - Mobile optimized */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4">
+      {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4 bg-green-800 bg-opacity-90">
         {/* Left side - Back Button */}
         <div>
           {onBack && (
