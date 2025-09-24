@@ -1,4 +1,4 @@
-# Build stage
+# Build stage - using Alpine for smaller size and ARM64 support
 FROM node:18-alpine AS builder
 
 # Set working directory
@@ -16,7 +16,7 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
+# Production stage - using Alpine for smaller size and ARM64 support
 FROM nginx:alpine
 
 # Install curl for health checks

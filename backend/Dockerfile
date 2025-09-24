@@ -1,4 +1,4 @@
-# Use OpenJDK 21 as base image
+# Use OpenJDK 17 as base image (supports ARM64 for Raspberry Pi)
 FROM eclipse-temurin:17-jdk-jammy
 
 # Install curl for health checks
