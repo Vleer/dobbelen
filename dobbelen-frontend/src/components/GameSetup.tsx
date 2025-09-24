@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 
 interface GameSetupProps {
   onCreateGame: (playerNames: string[], username: string) => void;
+  onMultiplayer: () => void;
   isLoading: boolean;
   error: string;
 }
 
-const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, isLoading, error }) => {
+const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLoading, error }) => {
   const [username, setUsername] = useState('');
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Player 1', 'AI Player 2']);
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -139,6 +140,18 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, isLoading, error })
         <div className="mt-4 text-sm text-gray-600 text-center">
           <p>Each player starts with 5 dice.</p>
           <p>Take turns bidding, doubting, or calling spot-on!</p>
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <button
+            onClick={onMultiplayer}
+            className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-lg"
+          >
+            🎮 Play Multiplayer Online
+          </button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Create or join a game with friends using a shareable link
+          </p>
         </div>
       </div>
     </div>

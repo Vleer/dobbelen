@@ -2,18 +2,87 @@ import React, { useState, useEffect } from 'react';
 import { Game, Player, CreateGameRequest } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
+import { webSocketService } from '../services/websocketService';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
 import GameSetup from './GameSetup';
 
-const GameTable: React.FC = () => {
-  const [game, setGame] = useState<Game | null>(null);
-  const [localPlayerId, setLocalPlayerId] = useState<string>('');
-  const [username, setUsername] = useState<string>('');
+interface GameTableProps {
+  game?: Game | null;
+  username?: string;
+  playerId?: string;
+  onBack?: () => void;
+}
+
+const GameTable: React.FC<GameTableProps> = ({ 
+  game: initialGame, 
+  username: initialUsername, 
+  playerId: initialPlayerId, 
+  onBack
+}) => {
+  const [game, setGame] = useState<Game | null>(initialGame || null);
+  const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // Connect WebSocket for all games (all games are multiplayer)
+  useEffect(() => {
+    console.log('WebSocket useEffect triggered:', { gameId: game?.id, localPlayerId });
+    if (game && localPlayerId) {
+      console.log('Connecting WebSocket for game:', game.id);
+      try {
+        webSocketService.connect(game.id, (updatedGame) => {
+          console.log('WebSocket game update received:', updatedGame);
+          setGame(updatedGame);
+        });
+      } catch (error) {
+        console.error('Failed to connect WebSocket:', error);
+        // Fallback to polling if WebSocket fails
+        console.log('Falling back to polling for game');
+      }
+      
+      // Cleanup on unmount
+      return () => {
+        console.log('Disconnecting WebSocket for game:', game.id);
+        webSocketService.disconnect();
+      };
+    } else {
+      console.log('WebSocket not connected - conditions not met:', { hasGame: !!game, hasLocalPlayerId: !!localPlayerId });
+    }
+  }, [game?.id, localPlayerId, game]);
+
+  // Polling fallback for all games (in case WebSocket fails)
+  useEffect(() => {
+    console.log('Polling useEffect triggered:', { gameId: game?.id, localPlayerId });
+    if (game && localPlayerId) {
+      console.log('Starting polling for game:', game.id);
+      const pollInterval = setInterval(async () => {
+        try {
+          console.log('Polling game updates for game:', game.id);
+          const updatedGame = await gameApi.getMultiplayerGame(game.id);
+          console.log('Polled game state:', updatedGame.state, 'currentPlayerId:', updatedGame.currentPlayerId, 'myPlayerId:', localPlayerId);
+          
+          // Check if the current player has changed
+          if (game.currentPlayerId !== updatedGame.currentPlayerId) {
+            console.log('🎯 TURN CHANGE DETECTED! Old:', game.currentPlayerId, 'New:', updatedGame.currentPlayerId);
+          }
+          
+          setGame(updatedGame);
+        } catch (err) {
+          console.error('Error polling game updates:', err);
+        }
+      }, 1000); // Poll every 1 second for faster updates
+
+      return () => {
+        console.log('Clearing polling interval for game:', game.id);
+        clearInterval(pollInterval);
+      };
+    } else {
+      console.log('Polling not started - conditions not met:', { hasGame: !!game, hasLocalPlayerId: !!localPlayerId });
+    }
+  }, [game?.id, localPlayerId, game]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {
     setIsLoading(true);
@@ -22,7 +91,6 @@ const GameTable: React.FC = () => {
       const request: CreateGameRequest = { playerNames };
       const gameResponse = await gameApi.createGame(request);
       setGame(gameResponse);
-      setUsername(userUsername);
       
       // Find the human player (first player in AI mode, or by username)
       const humanPlayer = gameResponse.players.find(p => p.name === userUsername) || gameResponse.players[0];
@@ -55,32 +123,14 @@ const GameTable: React.FC = () => {
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;
-
+    
     setIsLoading(true);
     setError('');
-
+    
     try {
-      let response;
-      switch (action) {
-        case 'bid':
-          response = await gameApi.makeBid(game.id, {
-            playerId: localPlayerId,
-            quantity: data.quantity,
-            faceValue: data.faceValue
-          });
-          setGame(response.game);
-          break;
-        case 'doubt':
-          response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
-          setGame(response.game);
-          break;
-        case 'spotOn':
-          response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
-          setGame(response.game);
-          break;
-        default:
-          throw new Error('Unknown action');
-      }
+      // Use WebSocket for all games (all games are multiplayer)
+      webSocketService.sendAction(action.toUpperCase(), data, localPlayerId);
+      // The game state will be updated via WebSocket subscription
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || `Failed to ${action}`;
       setError(errorMessage);
@@ -132,23 +182,16 @@ const GameTable: React.FC = () => {
           console.log('Current bid:', game.currentBid);
           console.log('AI action data:', aiAction.data);
           
-          let response;
+          // Use WebSocket for AI actions (all games are multiplayer)
           switch (aiAction.action) {
             case 'bid':
-              response = await gameApi.makeBid(game.id, {
-                playerId: game.currentPlayerId,
-                quantity: aiAction.data.quantity,
-                faceValue: aiAction.data.faceValue
-              });
-              setGame(response.game);
+              webSocketService.sendAction('BID', aiAction.data, game.currentPlayerId);
               break;
             case 'doubt':
-              response = await gameApi.doubtBid(game.id, { playerId: game.currentPlayerId });
-              setGame(response.game);
+              webSocketService.sendAction('DOUBT', {}, game.currentPlayerId);
               break;
             case 'spotOn':
-              response = await gameApi.spotOn(game.id, { playerId: game.currentPlayerId });
-              setGame(response.game);
+              webSocketService.sendAction('SPOT_ON', {}, game.currentPlayerId);
               break;
             default:
               throw new Error('Unknown AI action');
@@ -168,14 +211,14 @@ const GameTable: React.FC = () => {
 
       handleAITurn();
     }
-  }, [game?.currentPlayerId, game?.state, isLoading]);
+  }, [game?.currentPlayerId, game?.state, isLoading, game, isAITurn]);
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;
   };
 
   if (!game) {
-    return <GameSetup onCreateGame={createGame} isLoading={isLoading} error={error} />;
+    return <GameSetup onCreateGame={createGame} onMultiplayer={() => {}} isLoading={isLoading} error={error} />;
   }
 
   // Check for game completion
@@ -279,7 +322,18 @@ const GameTable: React.FC = () => {
         <div>Game ID: {game.id}</div>
         <div>Round: {game.roundNumber}</div>
         <div>State: {game.state}</div>
+        <div>Mode: Multiplayer</div>
       </div>
+
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+        >
+          ← Back
+        </button>
+      )}
     </div>
   );
 };

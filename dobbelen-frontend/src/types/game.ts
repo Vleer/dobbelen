@@ -26,10 +26,18 @@ export interface Game {
   winner: string | null;
   gameWinner: string | null;
   dealerId: string | null;
+  isMultiplayer: boolean;
+  maxPlayers: number;
+  isWaitingForPlayers: boolean;
 }
 
 export interface CreateGameRequest {
   playerNames: string[];
+}
+
+export interface JoinGameRequest {
+  gameId: string;
+  playerName: string;
 }
 
 export interface BidRequest {
@@ -64,4 +72,7 @@ export interface GameResponse {
   winner: string | null;
   gameWinner: string | null;
   dealerId: string | null;
+  isMultiplayer: boolean;
+  maxPlayers: number;
+  isWaitingForPlayers: boolean;
 }

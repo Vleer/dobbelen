@@ -1,6 +1,9 @@
 package com.example.backend.service;
 
 import com.example.backend.model.*;
+import com.example.backend.dto.*;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameService {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
@@ -298,6 +304,7 @@ public class GameService {
         game.setCurrentBid(newBid);
 
         // Move to next player
+        int oldPlayerIndex = game.getCurrentPlayerIndex();
         game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
 
         // Skip eliminated players - ensure we don't get stuck in infinite loop
@@ -307,6 +314,9 @@ public class GameService {
             game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
             attempts++;
         }
+
+        System.out.println("TURN CHANGE: Player " + playerId + " made bid, moved from index " + oldPlayerIndex + " to "
+                + game.getCurrentPlayerIndex() + ", current player: " + game.getCurrentPlayer().getId());
 
         return new GameResult(game, null, 0, 0);
     }
@@ -328,5 +338,129 @@ public class GameService {
         public String getEliminatedPlayerId() { return eliminatedPlayerId; }
         public int getActualCount() { return actualCount; }
         public int getBidQuantity() { return bidQuantity; }
+    }
+
+    // Multiplayer methods
+    public Game createMultiplayerGame() {
+        Game game = new Game();
+        game.setMultiplayer(true);
+        game.setMaxPlayers(6);
+        game.setWaitingForPlayers(true);
+        game.setState(GameState.WAITING_FOR_PLAYERS);
+        games.put(game.getId(), game);
+        return game;
+    }
+
+    public Game joinGame(String gameId, String playerName) {
+        System.out.println("JOIN ATTEMPT: GameId=" + gameId + ", PlayerName=" + playerName + ", Timestamp="
+                + System.currentTimeMillis());
+
+        Game game = getGame(gameId);
+        if (game == null) {
+            System.out.println("JOIN FAILED: Game not found for ID=" + gameId);
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (!game.canJoin()) {
+            System.out.println("JOIN FAILED: Cannot join game, current players=" + game.getPlayers().size() + ", max="
+                    + game.getMaxPlayers());
+            throw new IllegalArgumentException("Cannot join game");
+        }
+
+        // Check if player with this name already exists
+        boolean playerExists = game.getPlayers().stream()
+                .anyMatch(p -> p.getName().equals(playerName));
+
+        if (playerExists) {
+            System.out.println("JOIN FAILED: Player already exists with name=" + playerName);
+            throw new IllegalArgumentException("Player with name '" + playerName + "' already exists in this game");
+        }
+
+        Player player = new Player(playerName);
+        game.getPlayers().add(player);
+
+        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size());
+
+        // Don't auto-start the game - let the host control when to start
+        // The game will remain in WAITING_FOR_PLAYERS state until manually started
+
+        return game;
+    }
+
+    public void addPlayerToGame(String gameId, String playerName) {
+        joinGame(gameId, playerName);
+    }
+
+    public void startMultiplayerGame(String gameId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getPlayers().size() < 1) {
+            throw new IllegalArgumentException("Not enough players to start game");
+        }
+
+        // Initialize all players
+        for (Player player : game.getPlayers()) {
+            player.reset();
+            player.rollDice();
+        }
+
+        // Randomize starting player and dealer
+        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
+        game.setDealerIndex((int) (Math.random() * game.getPlayers().size()));
+
+        game.setState(GameState.IN_PROGRESS);
+        game.setWaitingForPlayers(false);
+        game.setCurrentBid(null);
+        game.setPreviousBid(null);
+        game.setEliminatedPlayers(new ArrayList<>());
+        game.setRoundNumber(1);
+
+        // Ensure this is a multiplayer game
+        game.setMultiplayer(true);
+        game.setMaxPlayers(6);
+
+        System.out.println(
+                "START GAME COMPLETE: Game state=" + game.getState() + ", Players=" + game.getPlayers().size()
+                        + ", isMultiplayer=" + game.isMultiplayer());
+        broadcastGameUpdate(gameId); // Broadcast game started
+    }
+
+    public GameResponse getGameResponse(String gameId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        return new GameResponse(game);
+    }
+
+    // Broadcast updates for multiplayer
+    public void broadcastGameUpdate(String gameId) {
+        try {
+            GameResponse gameResponse = getGameResponse(gameId);
+            messagingTemplate.convertAndSend("/topic/game/" + gameId,
+                    new WebSocketMessage("GAME_UPDATED", gameResponse, gameId, null));
+        } catch (Exception e) {
+            System.err.println("Error broadcasting game update: " + e.getMessage());
+        }
+    }
+
+    // Override existing methods to broadcast updates
+    public GameResult processBidWithBroadcast(String gameId, String playerId, int quantity, int faceValue) {
+        GameResult result = processBid(gameId, playerId, quantity, faceValue);
+        // WebSocket controller will handle broadcasting
+        return result;
+    }
+
+    public GameResult processDoubtWithBroadcast(String gameId, String playerId) {
+        GameResult result = processDoubt(gameId, playerId);
+        // WebSocket controller will handle broadcasting
+        return result;
+    }
+
+    public GameResult processSpotOnWithBroadcast(String gameId, String playerId) {
+        GameResult result = processSpotOn(gameId, playerId);
+        // WebSocket controller will handle broadcasting
+        return result;
     }
 }

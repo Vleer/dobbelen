@@ -4,7 +4,8 @@ import {
   BidRequest, 
   ActionRequest, 
   ActionResponse, 
-  GameResponse 
+  GameResponse,
+  JoinGameRequest
 } from "../types/game";
 
 export const gameApi = {
@@ -53,6 +54,28 @@ export const gameApi = {
   // Health check
   healthCheck: async (): Promise<string> => {
     const response = await axiosInstance.get<string>("/api/games/health");
+    return response.data;
+  },
+
+  // Multiplayer endpoints
+  createMultiplayerGame: async (): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>("/api/games/multiplayer/create");
+    return response.data;
+  },
+
+  joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameResponse> => {
+    const request: JoinGameRequest = { gameId, playerName };
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, request);
+    return response.data;
+  },
+
+  getMultiplayerGame: async (gameId: string): Promise<GameResponse> => {
+    const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`);
+    return response.data;
+  },
+
+  startMultiplayerGame: async (gameId: string): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/start`);
     return response.data;
   }
 };

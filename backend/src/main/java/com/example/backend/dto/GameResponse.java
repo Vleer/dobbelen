@@ -18,6 +18,9 @@ public class GameResponse {
     private String winner;
     private String gameWinner;
     private String dealerId;
+    private boolean isMultiplayer;
+    private int maxPlayers;
+    private boolean isWaitingForPlayers;
 
     public GameResponse() {}
 
@@ -35,6 +38,9 @@ public class GameResponse {
         this.winner = game.getWinner();
         this.gameWinner = game.getGameWinner();
         this.dealerId = game.getDealer() != null ? game.getDealer().getId() : null;
+        this.isMultiplayer = game.isMultiplayer();
+        this.maxPlayers = game.getMaxPlayers();
+        this.isWaitingForPlayers = game.isWaitingForPlayers();
     }
 
     // Getters and Setters
@@ -84,6 +90,30 @@ public class GameResponse {
 
     public void setDealerId(String dealerId) {
         this.dealerId = dealerId;
+    }
+
+    public boolean isMultiplayer() {
+        return isMultiplayer;
+    }
+
+    public void setMultiplayer(boolean multiplayer) {
+        this.isMultiplayer = multiplayer;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public void setMaxPlayers(int maxPlayers) {
+        this.maxPlayers = maxPlayers;
+    }
+
+    public boolean isWaitingForPlayers() {
+        return isWaitingForPlayers;
+    }
+
+    public void setWaitingForPlayers(boolean waitingForPlayers) {
+        this.isWaitingForPlayers = waitingForPlayers;
     }
 
     public static class PlayerInfo {

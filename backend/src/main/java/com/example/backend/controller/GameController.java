@@ -108,4 +108,49 @@ public class GameController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Game service is running!");
     }
+
+    // Multiplayer endpoints
+    @PostMapping("/multiplayer/create")
+    public ResponseEntity<GameResponse> createMultiplayerGame() {
+        try {
+            Game game = gameService.createMultiplayerGame();
+            GameResponse response = new GameResponse(game);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/join")
+    public ResponseEntity<GameResponse> joinMultiplayerGame(@PathVariable String gameId,
+            @RequestBody JoinGameRequest request) {
+        try {
+            Game game = gameService.joinGame(gameId, request.getPlayerName());
+            GameResponse response = new GameResponse(game);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/multiplayer/{gameId}")
+    public ResponseEntity<GameResponse> getMultiplayerGame(@PathVariable String gameId) {
+        try {
+            GameResponse response = gameService.getGameResponse(gameId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/start")
+    public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId) {
+        try {
+            gameService.startMultiplayerGame(gameId);
+            GameResponse response = gameService.getGameResponse(gameId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.example.backend.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Random;
 
 public class Game {
     private String id;
@@ -16,21 +17,38 @@ public class Game {
     private String winner;
     private String gameWinner;
     private int dealerIndex;
+    private boolean isMultiplayer;
+    private int maxPlayers;
+    private boolean isWaitingForPlayers;
 
     public Game() {
-        this.id = UUID.randomUUID().toString();
+        this.id = generateShortGameId();
         this.players = new ArrayList<>();
         this.state = GameState.WAITING_FOR_PLAYERS;
         this.currentPlayerIndex = 0;
         this.eliminatedPlayers = new ArrayList<>();
         this.roundNumber = 1;
         this.dealerIndex = 0;
+        this.isMultiplayer = false;
+        this.maxPlayers = 6;
+        this.isWaitingForPlayers = true;
+    }
+
+    private String generateShortGameId() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            result.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return result.toString();
     }
 
     public Game(List<Player> players) {
         this();
         this.players = new ArrayList<>(players);
         this.state = GameState.IN_PROGRESS;
+        this.isWaitingForPlayers = false;
         // Randomize starting player and dealer
         this.currentPlayerIndex = (int) (Math.random() * players.size());
         this.dealerIndex = (int) (Math.random() * players.size());
@@ -114,5 +132,33 @@ public class Game {
             return null;
         }
         return players.get(dealerIndex);
+    }
+
+    public boolean isMultiplayer() {
+        return isMultiplayer;
+    }
+
+    public void setMultiplayer(boolean multiplayer) {
+        this.isMultiplayer = multiplayer;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public void setMaxPlayers(int maxPlayers) {
+        this.maxPlayers = maxPlayers;
+    }
+
+    public boolean isWaitingForPlayers() {
+        return isWaitingForPlayers;
+    }
+
+    public void setWaitingForPlayers(boolean waitingForPlayers) {
+        this.isWaitingForPlayers = waitingForPlayers;
+    }
+
+    public boolean canJoin() {
+        return isMultiplayer && isWaitingForPlayers && players.size() < maxPlayers;
     }
 }

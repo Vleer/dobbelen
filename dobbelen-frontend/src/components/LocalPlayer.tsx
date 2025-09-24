@@ -16,9 +16,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   // Use real dice values from the backend
   const diceValues = player.dice || [];
 
-  const handleBidSelect = (quantity: number, faceValue: number) => {
-    onAction('bid', { quantity, faceValue });
-  };
+  // const handleBidSelect = (quantity: number, faceValue: number) => {
+  //   onAction('bid', { quantity, faceValue });
+  // };
 
   const handleDoubt = () => {
     onAction('doubt');
