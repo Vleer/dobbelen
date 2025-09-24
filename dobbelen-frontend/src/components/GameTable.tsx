@@ -350,6 +350,38 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         )}
 
+        {/* Mobile Game Result Display - Below bid display, above bid selector */}
+        {game.showAllDice && (
+          <div className="px-4 py-2">
+            <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-6 shadow-2xl text-center">
+              {/* Result Status */}
+              <div className="text-xl font-bold text-amber-200 mb-3">
+                {game.lastActualCount !== undefined && game.lastBidQuantity !== undefined && game.lastBidFaceValue !== undefined ? (
+                  game.lastActualCount >= game.lastBidQuantity ? (
+                    t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue: game.lastBidFaceValue }) + ' ' + t('game.result.bidWasCorrect')
+                  ) : (
+                    t('game.result.thereWereOnly', { actualCount: game.lastActualCount, faceValue: game.lastBidFaceValue }) + ' ' + t('game.result.bidWasWrong')
+                  )
+                ) : ''}
+              </div>
+              
+              {/* Winner Message */}
+              {game.winner && (
+                <div className="text-2xl font-bold text-green-300 mb-3">
+                  {t('game.result.winsRound', { playerName: game.players.find(p => p.id === game.winner)?.name || 'Unknown Player' })}
+                </div>
+              )}
+              
+              {/* Eliminated Player */}
+              {game.lastEliminatedPlayerId && (
+                <div className="text-lg font-bold text-red-300">
+                  {t('game.result.isEliminated', { playerName: game.players.find(p => p.id === game.lastEliminatedPlayerId)?.name || 'Unknown Player' })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Bid Selector - Center section with proper spacing */}
         <div className="px-4 py-4">
           {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
@@ -457,8 +489,10 @@ const GameTable: React.FC<GameTableProps> = ({
         />
       </div>
 
-      {/* Game Result Display */}
-      <GameResultDisplay game={game} />
+      {/* Game Result Display - Desktop only */}
+      <div className="hidden md:block">
+        <GameResultDisplay game={game} />
+      </div>
 
 
       {/* Error Display - Only show critical errors, not WebSocket warnings */}
