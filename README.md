@@ -1,3 +1,48 @@
+# 🎲 Dobbelen - Liar's Dice Game
+
+A multiplayer web-based implementation of Liar's Dice with AI opponents, real-time gameplay, and mobile-responsive design.
+
+## 🚀 Quick Start with Docker
+
+The easiest way to run the game is using Docker Compose:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd dobbelen
+
+# Run with Docker Compose
+docker-compose up --build
+```
+
+Then open http://localhost:3000 in your browser.
+
+For detailed Docker setup instructions, see [DOCKER_README.md](DOCKER_README.md).
+
+## 🛠️ Manual Setup
+
+### Prerequisites
+- Java 17+
+- Node.js 18+
+- Gradle (for backend)
+
+### Backend (Spring Boot)
+```bash
+cd backend
+./gradlew bootRun
+```
+
+### Frontend (React)
+```bash
+cd dobbelen-frontend
+npm install
+npm start
+```
+
+---
+
+## 🎮 Game Rules
+
 ### Liar's Dice Variation: "Endurance Round"
 
 This variation of Liar's Dice introduces new mechanics to extend gameplay and emphasize strategic endurance.
