@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: dobbelen-backend
     ports:
-      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:8081:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_ADDRESS=0.0.0.0
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile
     container_name: dobbelen-frontend
     ports:
-      - "3000:80"
+      - "0.0.0.0:3000:80"
     depends_on:
       - backend
     networks:
