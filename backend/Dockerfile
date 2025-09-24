@@ -19,8 +19,9 @@ RUN chmod +x gradlew
 # Copy source code
 COPY src src
 
-# Build the application with proper Java version
-RUN ./gradlew build -x test --no-daemon
+# Build the application with reduced memory usage for Raspberry Pi
+ENV GRADLE_OPTS="-Xmx512m -XX:MaxMetaspaceSize=256m"
+RUN ./gradlew build -x test --no-daemon --parallel --max-workers=1
 
 # Expose port 8080
 EXPOSE 8080
