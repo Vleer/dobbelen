@@ -10,6 +10,11 @@ export class AIService {
   private static instance: AIService;
   private aiPlayers: Set<string> = new Set();
 
+  // Getter for debugging
+  get registeredPlayers(): Set<string> {
+    return this.aiPlayers;
+  }
+
   static getInstance(): AIService {
     if (!AIService.instance) {
       AIService.instance = new AIService();

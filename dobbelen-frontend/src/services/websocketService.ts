@@ -12,9 +12,21 @@ export class WebSocketService {
     this.gameId = gameId;
     this.onGameUpdate = onGameUpdate;
 
+    // Get the backend URL based on environment
+    const getBackendUrl = () => {
+      if (process.env.NODE_ENV === 'development') {
+        const hostname = window.location.hostname;
+        return `http://${hostname}:8080`;
+      }
+      return process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+    };
+
+    const backendUrl = getBackendUrl();
+    const wsUrl = `${backendUrl}/ws`;
+
     try {
-      console.log('Creating SockJS connection to http://localhost:8080/ws');
-      const socket = new SockJS('http://localhost:8080/ws');
+      console.log('Creating SockJS connection to', wsUrl);
+      const socket = new SockJS(wsUrl);
       
       // Add SockJS event listeners for debugging
       socket.onopen = () => {

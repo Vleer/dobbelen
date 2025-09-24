@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Game } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
+import { aiService } from '../services/aiService';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
@@ -25,7 +26,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [error, setError] = useState('');
   const [game, setGame] = useState<Game | null>(null);
   const [isHost, setIsHost] = useState(false);
-  const [aiPlayerCount, setAiPlayerCount] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -94,6 +94,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         const updatedGame = await gameApi.getMultiplayerGame(gameId);
         console.log('Polled game state:', updatedGame.state, 'players:', updatedGame.players.length);
         
+        // Register AI players when game is updated
+        updatedGame.players.forEach(player => {
+          if (player.name.startsWith('AI Player')) {
+            aiService.registerAIPlayer(player.id, player.name);
+            console.log('Registered AI player:', player.name, player.id);
+          }
+        });
+        
         // Check if game has started
         if (updatedGame.state === 'IN_PROGRESS' && game.state === 'WAITING_FOR_PLAYERS') {
           console.log('Game started! Transitioning to game table...');
@@ -126,18 +134,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       const gameResponse = await gameApi.createMultiplayerGame();
       console.log('Game created successfully:', gameResponse);
 
-      // First, add the host (creator) to the game
-      let updatedGame = await gameApi.joinMultiplayerGame(gameResponse.id, playerName);
+      // Add the host (creator) to the game
+      const updatedGame = await gameApi.joinMultiplayerGame(gameResponse.id, playerName);
       console.log('Host joined game successfully:', updatedGame);
-
-      // Then add AI players if requested
-      if (aiPlayerCount > 0) {
-        for (let i = 0; i < aiPlayerCount; i++) {
-          const aiName = `AI Player ${i + 1}`;
-          updatedGame = await gameApi.joinMultiplayerGame(gameResponse.id, aiName);
-          console.log(`Added AI player ${i + 1}:`, updatedGame);
-        }
-      }
 
       setGame(updatedGame);
       setGameId(updatedGame.id);
@@ -247,31 +246,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               </div>
             </div>
 
-            {/* AI Players */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('lobby.players')} (AI)
-              </label>
-              <div className="flex items-center justify-center space-x-4">
-                <button
-                  onClick={() => setAiPlayerCount(Math.max(0, aiPlayerCount - 1))}
-                  className="w-12 h-12 bg-gray-300 text-gray-700 rounded-full hover:bg-gray-400 text-xl font-bold"
-                  disabled={aiPlayerCount <= 0}
-                >
-                  -
-                </button>
-                <span className="text-2xl font-bold text-green-600 min-w-[3rem] text-center">
-                  {aiPlayerCount}
-                </span>
-                <button
-                  onClick={() => setAiPlayerCount(Math.min(5, aiPlayerCount + 1))}
-                  className="w-12 h-12 bg-gray-300 text-gray-700 rounded-full hover:bg-gray-400 text-xl font-bold"
-                  disabled={aiPlayerCount >= 5}
-                >
-                  +
-                </button>
-              </div>
-            </div>
 
             {/* Main Action Buttons */}
             <div className="space-y-4">
@@ -294,14 +268,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   {t('lobby.joinGame')}
                 </label>
                 <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={gameId}
-                    onChange={(e) => setGameId(e.target.value.toUpperCase())}
-                    className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-mono text-center"
-                    placeholder={t('lobby.gameId')}
-                    maxLength={6}
-                  />
+                      <input
+                        type="text"
+                        value={gameId}
+                        onChange={(e) => setGameId(e.target.value.toLowerCase())}
+                        className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-mono text-center"
+                        placeholder={t('lobby.gameId')}
+                        maxLength={3}
+                      />
                   <button
                     onClick={joinGame}
                     disabled={isJoining || !gameId.trim() || !playerName.trim()}
@@ -317,7 +291,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-green-800 mb-2">
-                {isHost ? '🎮 ' + t('lobby.createGame') + '!' : '✅ ' + t('lobby.joinGame') + '!'}
+                {isHost ? '🎮 ' + t('lobby.createGame') + '!' : '✅ ' + t('lobby.joinGame') + ''}
               </h2>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <p className="text-sm text-gray-600 mb-1">{t('lobby.gameId')}</p>
@@ -326,7 +300,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             </div>
 
             <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="font-bold mb-3 text-lg">{t('lobby.players')} ({game.players.length}/{game.maxPlayers})</h3>
+              <h3 className="font-bold mb-3 text-lg">{t('lobby.players')} ({game.players.length})</h3>
               <div className="grid grid-cols-2 gap-2">
                 {game.players.map((player, index) => (
                   <div key={player.id} className="flex items-center bg-white p-2 rounded">
@@ -350,9 +324,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 <button
                   onClick={addAIPlayer}
                   className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold"
-                  disabled={game.players.length >= game.maxPlayers}
+                  disabled={game.players.length >= 6}
                 >
-                  🤖 {t('lobby.addAiPlayer')} ({game.players.length}/{game.maxPlayers})
+                  🤖 {t('lobby.addAiPlayer')} ({game.players.length}/6)
                 </button>
                 <button
                   onClick={async () => {
@@ -371,13 +345,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   }}
                   className="w-full py-4 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xl"
                 >
-                  🚀 {t('lobby.startGame')} ({game.players.length} {t('lobby.players')})
+                      🚀 {t('lobby.startGame')}
                 </button>
               </div>
             )}
 
             <div className="text-center text-gray-600">
-              {game.isWaitingForPlayers ? '⏳ ' + t('lobby.waitingForHost') : '🎯 ' + t('lobby.startGame') + '...'}
+              {game.isWaitingForPlayers ? '⏳ ' + t('lobby.waitingForHost') : ''}
             </div>
           </div>
         )}

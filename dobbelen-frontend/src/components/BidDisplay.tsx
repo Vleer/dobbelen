@@ -41,23 +41,20 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
 
   return (
-    <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-6 shadow-2xl">
-      <div className="text-center">
-        <div className="text-xl font-bold text-white mb-3">
+    <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-amber-900 border-2 border-amber-700 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96">
+      <div className="flex items-center justify-center space-x-6">
+        <div className="text-xl font-bold text-white">
           {bidderName} {t('game.bids')}
         </div>
-        <div className="text-2xl font-bold text-amber-200 mb-4">
+        <div className="text-2xl font-bold text-amber-200">
           {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
         </div>
         
         {/* Dice Visualization */}
-        <div className="flex justify-center mb-3">
-          <DiceHand diceValues={diceValues} />
+        <div className="flex items-center space-x-2">
+          <DiceHand diceValues={diceValues} size="md" />
         </div>
-        
-        <div className="text-sm text-red-200">
-          {currentBid.quantity} {t('game.dice')} {t('common.showing')} {currentBid.faceValue}
-        </div>
+ 
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
+import LanguageSelector from './LanguageSelector';
 
 interface GameTableProps {
   game?: Game | null;
@@ -30,15 +31,33 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
+  const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(false);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
     console.log('WebSocket useEffect triggered:', { gameId: game?.id, localPlayerId });
     if (game && localPlayerId) {
       console.log('Connecting WebSocket for game:', game.id);
+      
+      // Register AI players when game is loaded
+      game.players.forEach(player => {
+        if (player.name.startsWith('AI Player')) {
+          aiService.registerAIPlayer(player.id, player.name);
+          console.log('Registered AI player:', player.name, player.id);
+        }
+      });
+      
       try {
         webSocketService.connect(game.id, (updatedGame) => {
           console.log('WebSocket game update received:', updatedGame);
+          
+          // Register any new AI players
+          updatedGame.players.forEach(player => {
+            if (player.name.startsWith('AI Player')) {
+              aiService.registerAIPlayer(player.id, player.name);
+            }
+          });
+          
           setGame(updatedGame);
         });
       } catch (error) {
@@ -184,10 +203,11 @@ const GameTable: React.FC<GameTableProps> = ({
       isAITurn: isAITurn(),
       isLoading,
       gameWinner: game?.gameWinner,
-      showAllDice: game?.showAllDice
+      showAllDice: game?.showAllDice,
+      registeredAIPlayers: Array.from(aiService.registeredPlayers)
     });
     
-    if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS') {
+    if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS' && !game.showAllDice) {
       const handleAITurn = async () => {
         try {
           setIsLoading(true);
@@ -357,23 +377,47 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Game Info */}
-      <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded">
-        <div>{t('lobby.gameId')}: {game.id}</div>
-        <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
-        <div>{t('common.state')}: {game.state}</div>
-        <div>{t('game.modeMultiplayer')}</div>
-      </div>
+      {/* Top Header Bar */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-50">
+        {/* Left side - Back Button */}
+        <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-medium shadow-lg"
+            >
+              ← Back
+            </button>
+          )}
+        </div>
 
-      {/* Back Button */}
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute top-4 left-4 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-        >
-          ← Back
-        </button>
-      )}
+        {/* Right side - Game Info and Language Selector */}
+        <div className="flex items-center space-x-4">
+          {/* Game Info */}
+          <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+            <div className="flex items-center justify-between p-2">
+              <button
+                onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
+                className="text-white hover:text-gray-300 mr-2"
+              >
+                {isGameInfoMinimized ? '▶' : '▼'}
+              </button>
+              <span className="text-sm font-bold">Game Info</span>
+            </div>
+            {!isGameInfoMinimized && (
+              <div className="px-2 pb-2">
+                <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
+                <div>{t('common.state')}: {game.state}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Language Selector */}
+          <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+            <LanguageSelector />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

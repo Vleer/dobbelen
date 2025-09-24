@@ -46,10 +46,10 @@ public class Game {
     }
 
     private String generateShortGameId() {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        String chars = "abcdefghijklmnopqrstuvwxyz";
         Random random = new Random();
         StringBuilder result = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 3; i++) {
             result.append(chars.charAt(random.nextInt(chars.length())));
         }
         return result.toString();

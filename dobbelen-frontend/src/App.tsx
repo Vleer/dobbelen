@@ -47,10 +47,12 @@ function App() {
   return (
     <LanguageProvider>
       <div className="min-h-screen bg-gray-900 relative">
-        {/* Language Selector - Top Right */}
-        <div className="absolute top-4 right-4 z-50">
-          <LanguageSelector />
-        </div>
+        {/* Language Selector - Only show in lobby */}
+        {appState === 'lobby' && (
+          <div className="absolute top-4 right-4 z-50">
+            <LanguageSelector />
+          </div>
+        )}
 
         {appState === 'lobby' ? (
           <MultiplayerLobby

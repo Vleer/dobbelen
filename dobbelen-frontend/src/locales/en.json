@@ -5,7 +5,7 @@
   "lobby.createGame": "🎮 Create New Game",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
-  "lobby.enterGameId": "Enter 6-character ID",
+  "lobby.enterGameId": "Enter 3-character ID",
   "lobby.username": "Your Username",
   "lobby.enterUsername": "Enter your username",
   "lobby.or": "OR",
