@@ -10,21 +10,23 @@ interface LocalPlayerProps {
   disabled: boolean;
   currentBid: any;
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
+  showDice?: boolean; // Show dice when revealed at end of round
+  previousRoundPlayer?: Player; // Player from previous round for dice display
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid }) => {
-  // Use real dice values from the backend
-  const diceValues = player.dice || [];
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer }) => {
+  // Use previous round dice if showing reveal, otherwise current dice
+  const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
 
 
   return (
     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
       {/* Player Container */}
-      <div className={`bg-green-800 p-6 rounded-3xl shadow-2xl border-4 ${isMyTurn ? 'border-yellow-400' : 'border-green-600'} ${player.eliminated ? 'opacity-50' : ''}`}>
+      <div className={`bg-green-800 p-6 rounded-3xl shadow-2xl border-4 ${isMyTurn ? 'border-green-300' : 'border-green-600'} ${player.eliminated ? 'opacity-50' : ''}`}>
         {/* Username */}
         <div className="text-center mb-4">
           <span className="font-bold text-xl text-white">{player.name}</span>
-          {isMyTurn && <span className="ml-2 text-yellow-300 text-lg">🪙</span>}
+          {isMyTurn && <span className="ml-2 text-green-200 text-lg">🪙</span>}
         </div>
 
         {/* Dealer Button */}
@@ -57,7 +59,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
         {/* Previous Bid Display */}
         {previousBid && previousBid.playerId === player.id && (
-          <div className="text-center text-blue-300 font-bold text-sm mb-2">
+          <div className="text-center text-amber-200 font-bold text-sm mb-2">
             Previous Bid: {previousBid.quantity} of {previousBid.faceValue}s
           </div>
         )}

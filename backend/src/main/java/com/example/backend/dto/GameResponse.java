@@ -22,6 +22,11 @@ public class GameResponse {
     private int maxPlayers;
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
+    private List<PlayerInfo> previousRoundPlayers;
+    private Integer lastActualCount;
+    private Integer lastBidQuantity;
+    private Integer lastBidFaceValue;
+    private String lastEliminatedPlayerId;
 
     public GameResponse() {}
 
@@ -43,6 +48,13 @@ public class GameResponse {
         this.maxPlayers = game.getMaxPlayers();
         this.isWaitingForPlayers = game.isWaitingForPlayers();
         this.showAllDice = game.isShowAllDice();
+        this.previousRoundPlayers = game.getPreviousRoundPlayers().stream()
+                .map(PlayerInfo::new)
+                .toList();
+        this.lastActualCount = game.getLastActualCount();
+        this.lastBidQuantity = game.getLastBidQuantity();
+        this.lastBidFaceValue = game.getLastBidFaceValue();
+        this.lastEliminatedPlayerId = game.getLastEliminatedPlayerId();
     }
 
     // Getters and Setters
@@ -124,6 +136,46 @@ public class GameResponse {
 
     public void setShowAllDice(boolean showAllDice) {
         this.showAllDice = showAllDice;
+    }
+
+    public List<PlayerInfo> getPreviousRoundPlayers() {
+        return previousRoundPlayers;
+    }
+
+    public void setPreviousRoundPlayers(List<PlayerInfo> previousRoundPlayers) {
+        this.previousRoundPlayers = previousRoundPlayers;
+    }
+
+    public Integer getLastActualCount() {
+        return lastActualCount;
+    }
+
+    public void setLastActualCount(Integer lastActualCount) {
+        this.lastActualCount = lastActualCount;
+    }
+
+    public Integer getLastBidQuantity() {
+        return lastBidQuantity;
+    }
+
+    public void setLastBidQuantity(Integer lastBidQuantity) {
+        this.lastBidQuantity = lastBidQuantity;
+    }
+
+    public Integer getLastBidFaceValue() {
+        return lastBidFaceValue;
+    }
+
+    public void setLastBidFaceValue(Integer lastBidFaceValue) {
+        this.lastBidFaceValue = lastBidFaceValue;
+    }
+
+    public String getLastEliminatedPlayerId() {
+        return lastEliminatedPlayerId;
+    }
+
+    public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
+        this.lastEliminatedPlayerId = lastEliminatedPlayerId;
     }
 
     public static class PlayerInfo {

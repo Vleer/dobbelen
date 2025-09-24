@@ -20,6 +20,11 @@ public class Game {
     private int maxPlayers;
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
+    private List<Player> previousRoundPlayers; // Store players' dice from previous round
+    private Integer lastActualCount; // Store actual count from last doubt/spot-on
+    private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
+    private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
+    private String lastEliminatedPlayerId; // Store eliminated player from last action
 
     public Game() {
         this.id = generateShortGameId();
@@ -33,6 +38,11 @@ public class Game {
         this.maxPlayers = 6;
         this.isWaitingForPlayers = true;
         this.showAllDice = false;
+        this.previousRoundPlayers = new ArrayList<>();
+        this.lastActualCount = null;
+        this.lastBidQuantity = null;
+        this.lastBidFaceValue = null;
+        this.lastEliminatedPlayerId = null;
     }
 
     private String generateShortGameId() {
@@ -169,5 +179,45 @@ public class Game {
 
     public boolean canJoin() {
         return isMultiplayer && isWaitingForPlayers && players.size() < maxPlayers;
+    }
+
+    public List<Player> getPreviousRoundPlayers() {
+        return previousRoundPlayers;
+    }
+
+    public void setPreviousRoundPlayers(List<Player> previousRoundPlayers) {
+        this.previousRoundPlayers = previousRoundPlayers;
+    }
+
+    public Integer getLastActualCount() {
+        return lastActualCount;
+    }
+
+    public void setLastActualCount(Integer lastActualCount) {
+        this.lastActualCount = lastActualCount;
+    }
+
+    public Integer getLastBidQuantity() {
+        return lastBidQuantity;
+    }
+
+    public void setLastBidQuantity(Integer lastBidQuantity) {
+        this.lastBidQuantity = lastBidQuantity;
+    }
+
+    public Integer getLastBidFaceValue() {
+        return lastBidFaceValue;
+    }
+
+    public void setLastBidFaceValue(Integer lastBidFaceValue) {
+        this.lastBidFaceValue = lastBidFaceValue;
+    }
+
+    public String getLastEliminatedPlayerId() {
+        return lastEliminatedPlayerId;
+    }
+
+    public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
+        this.lastEliminatedPlayerId = lastEliminatedPlayerId;
     }
 }

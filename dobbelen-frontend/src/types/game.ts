@@ -30,6 +30,11 @@ export interface Game {
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;
+  previousRoundPlayers: Player[];
+  lastActualCount?: number;
+  lastBidQuantity?: number;
+  lastBidFaceValue?: number;
+  lastEliminatedPlayerId?: string;
 }
 
 export interface CreateGameRequest {
@@ -77,4 +82,9 @@ export interface GameResponse {
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;
+  previousRoundPlayers: Player[];
+  lastActualCount?: number;
+  lastBidQuantity?: number;
+  lastBidFaceValue?: number;
+  lastEliminatedPlayerId?: string;
 }

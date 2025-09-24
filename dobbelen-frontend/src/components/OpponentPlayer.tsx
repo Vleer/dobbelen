@@ -9,14 +9,21 @@ interface OpponentPlayerProps {
   isDealer: boolean;
   showDice?: boolean; // Show dice when revealed at end of round
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
+  previousRoundPlayer?: Player; // Player from previous round for dice display
 }
 
-const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid }) => {
+const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid, previousRoundPlayer }) => {
   // Debug logging
   console.log(`OpponentPlayer ${player.name}:`, {
     showDice,
     hasDice: player.dice && player.dice.length > 0,
-    diceValues: player.dice
+    diceValues: player.dice,
+    previousRoundPlayer: previousRoundPlayer ? {
+      id: previousRoundPlayer.id,
+      name: previousRoundPlayer.name,
+      hasDice: previousRoundPlayer.dice && previousRoundPlayer.dice.length > 0,
+      diceValues: previousRoundPlayer.dice
+    } : null
   });
 
   const getPositionClasses = () => {
@@ -35,13 +42,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
   return (
     <div className={getPositionClasses()}>
           {/* Player Container - Big Circle with Dark Red Background */}
-          <div className={`w-32 h-32 bg-red-900 rounded-full shadow-lg border-4 ${isMyTurn ? 'border-yellow-400' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center`}>
+          <div className={`w-32 h-32 bg-red-900 rounded-full shadow-lg border-4 ${isMyTurn ? 'border-green-300' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center`}>
         {/* Content with counter-rotation for text readability */}
         <div className={position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''}>
           {/* Username */}
           <div className="text-center mb-2">
             <span className="font-bold text-sm text-white">{player.name}</span>
-            {isMyTurn && <span className="ml-1 text-yellow-300 text-sm">🪙</span>}
+            {isMyTurn && <span className="ml-1 text-green-200 text-sm">🪙</span>}
           </div>
 
           {/* Dealer Button */}
@@ -55,9 +62,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
           {/* Cup - Always closed for opponents, or dice if revealed */}
           <div className="flex justify-center mb-1">
-            {showDice && player.dice && player.dice.length > 0 ? (
+            {showDice && previousRoundPlayer && previousRoundPlayer.dice && previousRoundPlayer.dice.length > 0 ? (
               <div className="flex flex-col items-center space-y-1">
-                <DiceHand diceValues={player.dice} />
+                <DiceHand diceValues={previousRoundPlayer.dice} />
                 <div className="text-xs text-yellow-300 font-bold">REVEALED</div>
               </div>
             ) : (
@@ -74,14 +81,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
           {/* Win Tokens */}
           {player.winTokens > 0 && (
-            <div className="text-center text-xs text-yellow-400 font-bold mb-1">
+              <div className="text-center text-xs text-amber-300 font-bold mb-1">
               🏆 {player.winTokens}
             </div>
           )}
 
           {/* Previous Bid Display */}
           {previousBid && previousBid.playerId === player.id && (
-            <div className="text-center text-xs text-blue-300 font-bold mb-1">
+              <div className="text-center text-xs text-amber-200 font-bold mb-1">
               {previousBid.quantity} of {previousBid.faceValue}s
             </div>
           )}

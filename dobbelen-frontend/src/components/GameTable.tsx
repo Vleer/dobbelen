@@ -7,6 +7,7 @@ import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
+import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 
 interface GameTableProps {
@@ -130,7 +131,8 @@ const GameTable: React.FC<GameTableProps> = ({
     
     try {
       // Use WebSocket for all games (all games are multiplayer)
-      webSocketService.sendAction(action.toUpperCase(), data, localPlayerId);
+      const actionName = action === 'spotOn' ? 'SPOT_ON' : action.toUpperCase();
+      webSocketService.sendAction(actionName, data, localPlayerId);
       
       // If doubt or spot-on, disable betting for 5 seconds
       if (action === 'doubt' || action === 'spotOn') {
@@ -289,21 +291,38 @@ const GameTable: React.FC<GameTableProps> = ({
           disabled={isLoading || bettingDisabled}
           currentBid={game.currentBid}
           previousBid={game.previousBid}
+          showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+          previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
         />
       )}
 
       {/* Opponents */}
-      {opponents.map((opponent, index) => (
-        <OpponentPlayer
-          key={opponent.id}
-          player={opponent}
-          position={index}
-          isMyTurn={game.currentPlayerId === opponent.id}
-          isDealer={game.dealerId === opponent.id}
-          showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
-          previousBid={game.previousBid}
-        />
-      ))}
+      {opponents.map((opponent, index) => {
+        const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
+        console.log(`GameTable - Opponent ${opponent.name}:`, {
+          showAllDice: game.showAllDice,
+          state: game.state,
+          winner: game.winner,
+          previousRoundPlayer: previousRoundPlayer ? {
+            id: previousRoundPlayer.id,
+            name: previousRoundPlayer.name,
+            dice: previousRoundPlayer.dice
+          } : null,
+          previousRoundPlayers: game.previousRoundPlayers?.map(p => ({ id: p.id, name: p.name, dice: p.dice }))
+        });
+        return (
+          <OpponentPlayer
+            key={opponent.id}
+            player={opponent}
+            position={index}
+            isMyTurn={game.currentPlayerId === opponent.id}
+            isDealer={game.dealerId === opponent.id}
+            showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+            previousBid={game.previousBid}
+            previousRoundPlayer={previousRoundPlayer}
+          />
+        );
+      })}
 
       {/* Center Bid Display */}
       <BidDisplay 
@@ -313,6 +332,9 @@ const GameTable: React.FC<GameTableProps> = ({
         roundNumber={game.roundNumber}
         winner={game.winner || undefined}
       />
+
+      {/* Game Result Display */}
+      <GameResultDisplay game={game} />
 
       {/* Bid Selector - Draggable */}
       {localPlayer && isMyTurn() && !localPlayer.eliminated && (

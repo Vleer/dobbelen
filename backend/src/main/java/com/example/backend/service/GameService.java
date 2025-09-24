@@ -117,6 +117,10 @@ public class GameService {
         List<Player> activePlayers = game.getActivePlayers();
         int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), true);
         
+        System.out.println("DOUBT: Player " + doubtingPlayerId + " doubted " +
+                currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
+                "Actual count: " + actualCount);
+
         String eliminatedPlayerId;
         if (actualCount >= currentBid.getQuantity()) {
             // Bid was accurate or understated - doubter is eliminated
@@ -125,6 +129,24 @@ public class GameService {
             // Bid was overstated - bidder is eliminated
             eliminatedPlayerId = currentBid.getPlayerId();
         }
+
+        // Store previous round players before rerolling (deep copy)
+        List<Player> previousPlayers = new ArrayList<>();
+        for (Player player : game.getPlayers()) {
+            Player copy = new Player(player.getName());
+            copy.setId(player.getId());
+            copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
+            copy.setEliminated(player.isEliminated());
+            copy.setWinTokens(player.getWinTokens());
+            previousPlayers.add(copy);
+        }
+        game.setPreviousRoundPlayers(previousPlayers);
+
+        // Store result data
+        game.setLastActualCount(actualCount);
+        game.setLastBidQuantity(currentBid.getQuantity());
+        game.setLastBidFaceValue(currentBid.getFaceValue());
+        game.setLastEliminatedPlayerId(eliminatedPlayerId);
 
         // Show all dice for 5 seconds
         game.setShowAllDice(true);
@@ -137,10 +159,8 @@ public class GameService {
                 .findFirst()
                 .ifPresent(Player::eliminate);
 
-        // Reroll dice for all remaining active players
-        for (Player player : game.getActivePlayers()) {
-            player.rollDice();
-        }
+        // Schedule dice reroll after 5 seconds
+        scheduleDiceReroll(gameId);
 
         // Reset the current bid after elimination
         game.setCurrentBid(null);
@@ -196,23 +216,61 @@ public class GameService {
         List<Player> activePlayers = game.getActivePlayers();
         int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), true);
         
+        System.out.println("SPOT ON: Player " + spotOnPlayerId + " called spot on for " +
+                currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
+                "Actual count: " + actualCount);
+
         if (actualCount == currentBid.getQuantity()) {
+            // Store previous round players before rerolling (deep copy)
+            List<Player> previousPlayers = new ArrayList<>();
+            for (Player player : game.getPlayers()) {
+                Player copy = new Player(player.getName());
+                copy.setId(player.getId());
+                copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
+                copy.setEliminated(player.isEliminated());
+                copy.setWinTokens(player.getWinTokens());
+                previousPlayers.add(copy);
+            }
+            game.setPreviousRoundPlayers(previousPlayers);
+
+            // Store result data
+            game.setLastActualCount(actualCount);
+            game.setLastBidQuantity(currentBid.getQuantity());
+            game.setLastBidFaceValue(currentBid.getFaceValue());
+            game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
+
             // Show all dice for 5 seconds
             game.setShowAllDice(true);
             broadcastGameUpdate(gameId); // Broadcast dice reveal
             
             // Spot on is correct - round resets with same players
-            // Reroll dice for all active players
-            for (Player player : game.getActivePlayers()) {
-                player.rollDice();
-            }
-
             // Reset the current bid
             game.setCurrentBid(null);
 
             // Move to next player
             game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+
+            // Schedule dice reroll after 5 seconds
+            scheduleDiceReroll(gameId);
         } else {
+            // Store previous round players before rerolling (deep copy)
+            List<Player> previousPlayers = new ArrayList<>();
+            for (Player player : game.getPlayers()) {
+                Player copy = new Player(player.getName());
+                copy.setId(player.getId());
+                copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
+                copy.setEliminated(player.isEliminated());
+                copy.setWinTokens(player.getWinTokens());
+                previousPlayers.add(copy);
+            }
+            game.setPreviousRoundPlayers(previousPlayers);
+
+            // Store result data
+            game.setLastActualCount(actualCount);
+            game.setLastBidQuantity(currentBid.getQuantity());
+            game.setLastBidFaceValue(currentBid.getFaceValue());
+            game.setLastEliminatedPlayerId(spotOnPlayerId);
+
             // Show all dice for 5 seconds
             game.setShowAllDice(true);
             broadcastGameUpdate(gameId); // Broadcast dice reveal
@@ -224,10 +282,8 @@ public class GameService {
                     .findFirst()
                     .ifPresent(Player::eliminate);
 
-            // Reroll dice for all remaining active players
-            for (Player player : game.getActivePlayers()) {
-                player.rollDice();
-            }
+            // Schedule dice reroll after 5 seconds
+            scheduleDiceReroll(gameId);
 
             // Reset the current bid after elimination
             game.setCurrentBid(null);
@@ -472,6 +528,26 @@ public class GameService {
             public void run() {
                 Game game = games.get(gameId);
                 if (game != null) {
+                    game.setShowAllDice(false);
+                    broadcastGameUpdate(gameId);
+                }
+            }
+        }, 5000); // 5 seconds
+    }
+
+    private void scheduleDiceReroll(String gameId) {
+        // Use a simple timer to reroll dice after 5 seconds
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                Game game = games.get(gameId);
+                if (game != null) {
+                    // Reroll dice for all remaining active players
+                    for (Player player : game.getActivePlayers()) {
+                        player.rollDice();
+                    }
+
+                    // Hide dice and broadcast update
                     game.setShowAllDice(false);
                     broadcastGameUpdate(gameId);
                 }
