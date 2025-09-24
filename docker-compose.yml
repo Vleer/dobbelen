@@ -7,17 +7,12 @@ services:
       dockerfile: Dockerfile
     container_name: dobbelen-backend
     ports:
-      - "8080:8080"
+      - "0.0.0.0:8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_ADDRESS=0.0.0.0
     networks:
       - dobbelen-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   frontend:
     build:
@@ -32,7 +27,7 @@ services:
     networks:
       - dobbelen-network
     environment:
-      - REACT_APP_BACKEND_URL=http://localhost:8080
+      - REACT_APP_BACKEND_URL=http://host.docker.internal:8080
 
 networks:
   dobbelen-network:
