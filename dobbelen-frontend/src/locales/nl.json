@@ -1,12 +1,12 @@
 {
-  "game.title": "🎲 Dobbelen",
+  "game.title": "🎲 Dobbelen 🎲",
   "game.subtitle": "Het klassieke bluffspel",
   
-  "lobby.createGame": "🎮 Nieuw Spel Maken",
+  "lobby.createGame": "Nieuw Spel",
   "lobby.joinGame": "Deelnemen",
   "lobby.gameId": "Spel ID",
   "lobby.enterGameId": "Voer 3-karakter ID in",
-  "lobby.username": "Jouw Gebruikersnaam",
+  "lobby.username": "Naam",
   "lobby.enterUsername": "Voer je gebruikersnaam in",
   "lobby.or": "OF",
   "lobby.creating": "Aanmaken...",

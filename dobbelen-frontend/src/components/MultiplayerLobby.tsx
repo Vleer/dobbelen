@@ -216,14 +216,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800">
-      <div className="bg-white p-8 rounded-3xl shadow-lg max-w-lg w-full">
-        <h1 className="text-4xl font-bold text-center mb-8 text-green-800">
+    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4">
+      <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full">
+        <h1 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800">
           {t('game.title')}
         </h1>
 
         {!game ? (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Player Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -234,12 +234,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   type="text"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-lg"
+                  className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
                   placeholder={t('lobby.enterUsername')}
                 />
                 <button
                   onClick={() => setPlayerName(getRandomDutchName())}
-                  className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                  className="px-3 md:px-4 py-2 md:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                 >
                   🎲
                 </button>
@@ -248,38 +248,35 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
 
             {/* Main Action Buttons */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <button
                 onClick={createGame}
                 disabled={isCreating || !playerName.trim()}
-                className="w-full py-4 px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-xl font-bold"
+                className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-lg md:text-xl font-bold"
               >
                 {isCreating ? t('lobby.creating') : t('lobby.createGame')}
               </button>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-4">
                 <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-gray-500 font-medium">{t('lobby.or')}</span>
+                <span className="text-gray-500 font-medium text-sm md:text-base">{t('lobby.or')}</span>
                 <div className="flex-1 h-px bg-gray-300"></div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('lobby.joinGame')}
-                </label>
                 <div className="flex space-x-2">
                       <input
                         type="text"
                         value={gameId}
                         onChange={(e) => setGameId(e.target.value.toLowerCase())}
-                        className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-mono text-center"
+                        className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
                         placeholder={t('lobby.gameId')}
                         maxLength={3}
                       />
                   <button
                     onClick={joinGame}
                     disabled={isJoining || !gameId.trim() || !playerName.trim()}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold"
+                    className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm md:text-base"
                   >
                     {isJoining ? t('lobby.joining') : t('lobby.joinGame')}
                   </button>
@@ -288,42 +285,42 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-green-800 mb-2">
-                {isHost ? '🎮 ' + t('lobby.createGame') + '!' : '✅ ' + t('lobby.joinGame') + ''}
+              <h2 className="text-lg md:text-2xl font-bold text-green-800 mb-2">
+                {isHost ? t('lobby.createGame') : '✅ ' + t('lobby.joinGame') + ''}
               </h2>
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">{t('lobby.gameId')}</p>
-                <p className="text-2xl font-mono font-bold text-green-600">{gameId}</p>
+              <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
+                <p className="text-xs md:text-sm text-gray-600 mb-1">{t('lobby.gameId')}</p>
+                <p className="text-xl md:text-2xl font-mono font-bold text-green-600">{gameId}</p>
               </div>
             </div>
 
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="font-bold mb-3 text-lg">{t('lobby.players')} ({game.players.length})</h3>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
+              <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">{t('lobby.players')} ({game.players.length})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {game.players.map((player, index) => (
                   <div key={player.id} className="flex items-center bg-white p-2 rounded">
-                    <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm mr-2 font-bold">
+                    <span className="w-5 h-5 md:w-6 md:h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold">
                       {index + 1}
                     </span>
-                    <span className="font-medium">{player.name}</span>
+                    <span className="font-medium text-sm md:text-base">{player.name}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {isHost && (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 <button
                   onClick={copyGameLink}
-                  className="w-full py-3 px-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-bold"
+                  className="w-full py-2 md:py-3 px-3 md:px-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-bold text-sm md:text-base"
                 >
                   📋 {t('lobby.copy')} {t('lobby.shareLink')}
                 </button>
                 <button
                   onClick={addAIPlayer}
-                  className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold"
+                  className="w-full py-2 md:py-3 px-3 md:px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-sm md:text-base"
                   disabled={game.players.length >= 6}
                 >
                   🤖 {t('lobby.addAiPlayer')} ({game.players.length}/6)
@@ -343,7 +340,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       }
                     }
                   }}
-                  className="w-full py-4 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xl"
+                  className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg md:text-xl"
                 >
                       🚀 {t('lobby.startGame')}
                 </button>
@@ -357,7 +354,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         )}
 
         {error && (
-          <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="mt-3 md:mt-4 p-3 md:p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm md:text-base">
             ❌ {error}
           </div>
         )}
