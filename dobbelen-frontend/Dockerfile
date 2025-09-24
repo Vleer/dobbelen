@@ -4,16 +4,19 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Set Node.js memory limits for Raspberry Pi
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies needed for build)
-RUN npm ci --legacy-peer-deps --no-audit --no-fund
+# Install all dependencies with reduced memory usage for Raspberry Pi
+RUN npm ci --legacy-peer-deps --no-audit --no-fund --maxsockets 1 --prefer-offline
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with reduced memory
 RUN npm run build
 
 # Production stage - using Alpine for smaller size and ARM64 support
