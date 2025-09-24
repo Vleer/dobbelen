@@ -1,11 +1,14 @@
 import React from 'react';
 import { Game } from '../types/game';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GameResultDisplayProps {
   game: Game;
 }
 
 const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game }) => {
+  const { t } = useLanguage();
+  
   console.log('GameResultDisplay render:', {
     showAllDice: game.showAllDice,
     lastActualCount: game.lastActualCount,
@@ -20,13 +23,13 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game }) => {
   }
 
   const getResultMessage = () => {
-    if (game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+    if (game.lastActualCount !== undefined && game.lastBidQuantity !== undefined && game.lastBidFaceValue !== undefined) {
       // Use the stored face value from the last doubt/spot-on
       const faceValue = game.lastBidFaceValue;
       if (game.lastActualCount >= game.lastBidQuantity) {
-        return `There were ${game.lastActualCount} ${faceValue}s (Bid was correct!)`;
+        return t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue }) + ' ' + t('game.result.bidWasCorrect');
       } else {
-        return `There were only ${game.lastActualCount} ${faceValue}s (Bid was wrong!)`;
+        return t('game.result.thereWereOnly', { actualCount: game.lastActualCount, faceValue }) + ' ' + t('game.result.bidWasWrong');
       }
     }
     return '';
@@ -35,7 +38,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game }) => {
   const getWinnerMessage = () => {
     if (game.winner) {
       const winner = game.players.find(p => p.id === game.winner);
-      return winner ? `${winner.name} wins the round!` : 'Round ended!';
+      return winner ? t('game.result.winsRound', { playerName: winner.name }) : t('game.result.roundEnded');
     }
     return '';
   };
@@ -58,7 +61,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game }) => {
         {/* Eliminated Player */}
         {game.lastEliminatedPlayerId && (
           <div className="text-xl font-bold text-red-300">
-            {game.players.find(p => p.id === game.lastEliminatedPlayerId)?.name} is eliminated!
+            {t('game.result.isEliminated', { playerName: game.players.find(p => p.id === game.lastEliminatedPlayerId)?.name || 'Unknown Player' })}
           </div>
         )}
       </div>

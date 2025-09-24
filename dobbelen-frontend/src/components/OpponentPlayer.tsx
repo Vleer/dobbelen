@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player } from '../types/game';
+import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 
 interface OpponentPlayerProps {
@@ -13,6 +14,7 @@ interface OpponentPlayerProps {
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid, previousRoundPlayer }) => {
+  const { t } = useLanguage();
   // Debug logging
   console.log(`OpponentPlayer ${player.name}:`, {
     showDice,
@@ -65,7 +67,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
             {showDice && previousRoundPlayer && previousRoundPlayer.dice && previousRoundPlayer.dice.length > 0 ? (
               <div className="flex flex-col items-center space-y-1">
                 <DiceHand diceValues={previousRoundPlayer.dice} />
-                <div className="text-xs text-yellow-300 font-bold">REVEALED</div>
+                <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div>
               </div>
             ) : (
               <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
@@ -89,14 +91,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
           {/* Previous Bid Display */}
           {previousBid && previousBid.playerId === player.id && (
               <div className="text-center text-xs text-amber-200 font-bold mb-1">
-              {previousBid.quantity} of {previousBid.faceValue}s
+              {t('game.previousBid', { quantity: previousBid.quantity, faceValue: previousBid.faceValue })}
             </div>
           )}
 
           {/* Eliminated State */}
           {player.eliminated && (
             <div className="text-center text-red-300 font-bold text-xs">
-              OUT
+              {t('game.out')}
             </div>
           )}
         </div>

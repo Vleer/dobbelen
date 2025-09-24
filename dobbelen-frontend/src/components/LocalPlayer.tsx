@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player } from '../types/game';
+import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 
 interface LocalPlayerProps {
@@ -15,6 +16,7 @@ interface LocalPlayerProps {
 }
 
 const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer }) => {
+  const { t } = useLanguage();
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
 
@@ -53,14 +55,14 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         {/* Win Tokens */}
         {player.winTokens > 0 && (
           <div className="text-center text-yellow-300 font-bold text-sm mb-2">
-            🏆 {player.winTokens} wins
+            {t('game.winTokens', { count: player.winTokens })}
           </div>
         )}
 
         {/* Previous Bid Display */}
         {previousBid && previousBid.playerId === player.id && (
           <div className="text-center text-amber-200 font-bold text-sm mb-2">
-            Previous Bid: {previousBid.quantity} of {previousBid.faceValue}s
+            {t('game.previousBid', { quantity: previousBid.quantity, faceValue: previousBid.faceValue })}
           </div>
         )}
 
@@ -68,7 +70,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         {/* Eliminated State */}
         {player.eliminated && (
           <div className="text-center text-red-300 font-bold text-xl bg-red-900 rounded-lg p-3">
-            ELIMINATED
+            {t('game.eliminated')}
           </div>
         )}
       </div>

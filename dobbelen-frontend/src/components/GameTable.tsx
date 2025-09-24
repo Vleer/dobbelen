@@ -3,6 +3,7 @@ import { Game, Player, CreateGameRequest } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
 import { webSocketService } from '../services/websocketService';
+import { useLanguage } from '../contexts/LanguageContext';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
@@ -23,6 +24,7 @@ const GameTable: React.FC<GameTableProps> = ({
   playerId: initialPlayerId, 
   onBack
 }) => {
+  const { t } = useLanguage();
   const [game, setGame] = useState<Game | null>(initialGame || null);
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -251,19 +253,19 @@ const GameTable: React.FC<GameTableProps> = ({
         <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
           <div className="text-6xl mb-4">🎲👑</div>
           <h1 className="text-5xl font-bold text-green-800 mb-4">
-            Dobbelkoning!
+            {t('game.dobbelkoning')}
           </h1>
           <h2 className="text-3xl font-bold text-green-700 mb-6">
-            {winner?.name} has won the game!
+            {t('game.result.winsRound', { playerName: winner?.name || 'Unknown Player' })}
           </h2>
           <div className="text-xl text-green-600 mb-8">
-            {winner?.name} collected 7 win tokens and is the ultimate Liar's Dice champion!
+            {winner?.name} {t('game.result.collected7Tokens')} {t('game.title')} {t('game.result.champion')}!
           </div>
           <button
             onClick={() => window.location.reload()}
             className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg"
           >
-            Play Again
+            {t('common.playAgain')}
           </button>
         </div>
       </div>
@@ -357,10 +359,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Game Info */}
       <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded">
-        <div>Game ID: {game.id}</div>
-        <div>Round: {game.roundNumber}</div>
-        <div>State: {game.state}</div>
-        <div>Mode: Multiplayer</div>
+        <div>{t('lobby.gameId')}: {game.id}</div>
+        <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
+        <div>{t('common.state')}: {game.state}</div>
+        <div>{t('game.modeMultiplayer')}</div>
       </div>
 
       {/* Back Button */}

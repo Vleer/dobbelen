@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bid } from '../types/game';
+import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 
 interface BidSelectorProps {
@@ -11,6 +12,7 @@ interface BidSelectorProps {
 }
 
 const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDoubt, onSpotOn, disabled }) => {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem('bidSelectorExpanded');
     return saved ? JSON.parse(saved) : false;
@@ -158,7 +160,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
     >
       {/* Header with drag handle and expand/collapse */}
       <div className="flex justify-between items-center mb-4 drag-handle">
-        <h3 className="text-lg font-bold text-white">Make Your Bid</h3>
+        <h3 className="text-lg font-bold text-white">{t('game.makeYourBid')}</h3>
         <div className="flex space-x-2">
           <button
             onClick={toggleExpanded}
@@ -208,14 +210,14 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
             disabled={disabled}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
           >
-            Doubt
+            {t('game.doubt')}
           </button>
           <button
             onClick={onSpotOn}
             disabled={disabled}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
           >
-            Spot On
+            {t('game.spotOn')}
           </button>
         </div>
       )}

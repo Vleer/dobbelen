@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Game } from '../types/game';
 import { gameApi } from '../api/gameApi';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
@@ -16,6 +17,7 @@ const DUTCH_NAMES = [
 ];
 
 const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack }) => {
+  const { t } = useLanguage();
   const [gameId, setGameId] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -57,7 +59,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       window.history.pushState({}, '', newUrl);
     } catch (err: any) {
       console.error('Error auto-joining game:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to join game');
+      setError(err.response?.data?.message || err.message || t('lobby.failedToJoinGame'));
     } finally {
       setIsJoining(false);
     }
@@ -112,7 +114,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   const createGame = async () => {
     if (!playerName.trim()) {
-      setError('Please enter your name');
+      setError(t('lobby.pleaseEnterUsername'));
       return;
     }
 
@@ -150,7 +152,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       window.history.pushState({}, '', newUrl);
     } catch (err: any) {
       console.error('Error creating game:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to create game');
+      setError(err.response?.data?.message || err.message || t('lobby.failedToCreateGame'));
     } finally {
       setIsCreating(false);
     }
@@ -158,7 +160,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   const joinGame = async () => {
     if (!gameId.trim() || !playerName.trim()) {
-      setError('Please enter both game ID and your name');
+      setError(t('lobby.pleaseEnterGameId') + ' ' + t('lobby.pleaseEnterUsername'));
       return;
     }
 
@@ -189,7 +191,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     } catch (err: any) {
       console.error('Error joining game:', err);
       console.error('Error details:', err.response?.data);
-      setError(err.response?.data?.message || err.message || 'Failed to join game');
+      setError(err.response?.data?.message || err.message || t('lobby.failedToJoinGame'));
     } finally {
       setIsJoining(false);
     }
@@ -205,7 +207,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       console.log('Added AI player:', aiName);
     } catch (err: any) {
       console.error('Error adding AI player:', err);
-      setError('Failed to add AI player');
+      setError(t('errors.failedToAddPlayer'));
     }
   };
 
@@ -218,7 +220,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     <div className="flex items-center justify-center min-h-screen bg-green-800">
       <div className="bg-white p-8 rounded-3xl shadow-lg max-w-lg w-full">
         <h1 className="text-4xl font-bold text-center mb-8 text-green-800">
-          🎲 Liar's Dice
+          {t('game.title')}
         </h1>
 
         {!game ? (
@@ -226,7 +228,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             {/* Player Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Name
+                {t('lobby.username')}
               </label>
               <div className="flex space-x-2">
                 <input
@@ -234,7 +236,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-lg"
-                  placeholder="Enter your name"
+                  placeholder={t('lobby.enterUsername')}
                 />
                 <button
                   onClick={() => setPlayerName(getRandomDutchName())}
@@ -248,7 +250,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             {/* AI Players */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                AI Players
+                {t('lobby.players')} (AI)
               </label>
               <div className="flex items-center justify-center space-x-4">
                 <button
@@ -278,18 +280,18 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 disabled={isCreating || !playerName.trim()}
                 className="w-full py-4 px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-xl font-bold"
               >
-                {isCreating ? 'Creating...' : '🎮 Create New Game'}
+                {isCreating ? t('lobby.creating') : t('lobby.createGame')}
               </button>
 
               <div className="flex items-center space-x-4">
                 <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-gray-500 font-medium">or</span>
+                <span className="text-gray-500 font-medium">{t('lobby.or')}</span>
                 <div className="flex-1 h-px bg-gray-300"></div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Join Existing Game
+                  {t('lobby.joinGame')}
                 </label>
                 <div className="flex space-x-2">
                   <input
@@ -297,7 +299,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     value={gameId}
                     onChange={(e) => setGameId(e.target.value.toUpperCase())}
                     className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-mono text-center"
-                    placeholder="GAME ID"
+                    placeholder={t('lobby.gameId')}
                     maxLength={6}
                   />
                   <button
@@ -305,7 +307,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     disabled={isJoining || !gameId.trim() || !playerName.trim()}
                     className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold"
                   >
-                    {isJoining ? 'Joining...' : 'Join'}
+                    {isJoining ? t('lobby.joining') : t('lobby.joinGame')}
                   </button>
                 </div>
               </div>
@@ -315,16 +317,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-green-800 mb-2">
-                {isHost ? '🎮 Game Created!' : '✅ Joined Game!'}
+                {isHost ? '🎮 ' + t('lobby.createGame') + '!' : '✅ ' + t('lobby.joinGame') + '!'}
               </h2>
               <div className="bg-gray-100 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Game ID</p>
+                <p className="text-sm text-gray-600 mb-1">{t('lobby.gameId')}</p>
                 <p className="text-2xl font-mono font-bold text-green-600">{gameId}</p>
               </div>
             </div>
 
             <div className="bg-gray-100 p-4 rounded-lg">
-              <h3 className="font-bold mb-3 text-lg">Players ({game.players.length}/{game.maxPlayers})</h3>
+              <h3 className="font-bold mb-3 text-lg">{t('lobby.players')} ({game.players.length}/{game.maxPlayers})</h3>
               <div className="grid grid-cols-2 gap-2">
                 {game.players.map((player, index) => (
                   <div key={player.id} className="flex items-center bg-white p-2 rounded">
@@ -343,14 +345,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   onClick={copyGameLink}
                   className="w-full py-3 px-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-bold"
                 >
-                  📋 Copy Game Link
+                  📋 {t('lobby.copy')} {t('lobby.shareLink')}
                 </button>
                 <button
                   onClick={addAIPlayer}
                   className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold"
                   disabled={game.players.length >= game.maxPlayers}
                 >
-                  🤖 Add AI Player ({game.players.length}/{game.maxPlayers})
+                  🤖 {t('lobby.addAiPlayer')} ({game.players.length}/{game.maxPlayers})
                 </button>
                 <button
                   onClick={async () => {
@@ -363,19 +365,19 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                         onGameStart(startedGame, player.id, playerName);
                       } catch (err: any) {
                         console.error('Error starting game:', err);
-                        setError(err.response?.data?.message || err.message || 'Failed to start game');
+                        setError(err.response?.data?.message || err.message || t('errors.failedToStart'));
                       }
                     }
                   }}
                   className="w-full py-4 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xl"
                 >
-                  🚀 Start Game ({game.players.length} players)
+                  🚀 {t('lobby.startGame')} ({game.players.length} {t('lobby.players')})
                 </button>
               </div>
             )}
 
             <div className="text-center text-gray-600">
-              {game.isWaitingForPlayers ? '⏳ Waiting for more players...' : '🎯 Game starting...'}
+              {game.isWaitingForPlayers ? '⏳ ' + t('lobby.waitingForHost') : '🎯 ' + t('lobby.startGame') + '...'}
             </div>
           </div>
         )}
