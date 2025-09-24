@@ -2,6 +2,7 @@ import React from 'react';
 import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
+import DiceHandSVG from './DiceHandSVG';
 
 interface LocalPlayerProps {
   player: Player;
@@ -13,13 +14,57 @@ interface LocalPlayerProps {
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
   showDice?: boolean; // Show dice when revealed at end of round
   previousRoundPlayer?: Player; // Player from previous round for dice display
+  isMobile?: boolean; // Mobile layout flag
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false }) => {
   const { t } = useLanguage();
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
 
+
+  if (isMobile) {
+    return (
+      <div className="w-full bg-green-800 p-3 shadow-2xl border-t-4 border-green-600">
+        {/* Mobile Layout - Horizontal */}
+        <div className="flex items-center justify-between">
+          {/* Left side - Player info */}
+          <div className="flex items-center space-x-3">
+            <div className="text-center">
+              <div className="font-bold text-lg text-white">{player.name}</div>
+              {isMyTurn && <span className="text-green-200 text-sm">🪙</span>}
+            </div>
+            
+            {/* Dealer Button */}
+            {isDealer && (
+              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-400">
+                <span className="text-black font-bold text-xs">D</span>
+              </div>
+            )}
+          </div>
+
+          {/* Center - Dice (horizontal) */}
+          <div className="flex items-center space-x-1">
+            <DiceHandSVG diceValues={diceValues} size="md" />
+          </div>
+
+          {/* Right side - Status */}
+          <div className="text-right">
+            {player.winTokens > 0 && (
+              <div className="text-yellow-300 font-bold text-sm">
+                🏆 {player.winTokens}
+              </div>
+            )}
+            {player.eliminated && (
+              <div className="text-red-300 font-bold text-sm">
+                {t('game.eliminated')}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
@@ -42,7 +87,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
         {/* Dice Row - Always show dice for local player */}
         <div className="flex justify-center mb-4">
-          <DiceHand diceValues={diceValues} />
+          <DiceHandSVG diceValues={diceValues} size="lg" />
         </div>
 
         {/* Cup Placeholder */}
@@ -65,7 +110,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             {t('game.previousBid', { quantity: previousBid.quantity, faceValue: previousBid.faceValue })}
           </div>
         )}
-
 
         {/* Eliminated State */}
         {player.eliminated && (

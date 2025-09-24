@@ -2,6 +2,7 @@ import React from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
+import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
   currentBid: Bid | null;
@@ -41,20 +42,19 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
 
   return (
-    <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-amber-900 border-2 border-amber-700 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96">
-      <div className="flex items-center justify-center space-x-6">
-        <div className="text-xl font-bold text-white">
+    <div className="absolute top-12 md:top-16 left-1/2 transform -translate-x-1/2 bg-amber-900 border-2 border-amber-700 rounded-xl px-3 py-2 md:px-6 md:py-4 shadow-lg z-40 min-w-80 md:min-w-96">
+      <div className="flex items-center justify-center space-x-3 md:space-x-6">
+        <div className="text-lg md:text-xl font-bold text-white">
           {bidderName} {t('game.bids')}
         </div>
-        <div className="text-2xl font-bold text-amber-200">
+        <div className="text-xl md:text-2xl font-bold text-amber-200">
           {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
         </div>
         
         {/* Dice Visualization */}
-        <div className="flex items-center space-x-2">
-          <DiceHand diceValues={diceValues} size="md" />
+        <div className="flex items-center space-x-1 md:space-x-2">
+          <DiceHandSVG diceValues={diceValues} size="sm" />
         </div>
- 
       </div>
     </div>
   );

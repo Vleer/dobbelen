@@ -31,7 +31,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
-  const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(false);
+  const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -303,48 +303,125 @@ const GameTable: React.FC<GameTableProps> = ({
         style={{ backgroundImage: "url(resources/bg.webp)" }}
       />
       
-      {/* Local Player - Bottom Center */}
-      {localPlayer && (
-        <LocalPlayer 
-          player={localPlayer} 
-          isMyTurn={isMyTurn()}
-          isDealer={game.dealerId === localPlayer.id}
-          onAction={handleAction}
-          disabled={isLoading || bettingDisabled}
-          currentBid={game.currentBid}
-          previousBid={game.previousBid}
-          showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
-          previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
-        />
-      )}
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        {/* Opponent Players - Top section with more space */}
+        <div className="absolute top-20 left-0 right-0 px-2 py-2 z-10">
+          <div className="flex flex-wrap justify-center gap-2">
+            {opponents.map((opponent, index) => {
+              const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
+              return (
+                <OpponentPlayer
+                  key={opponent.id}
+                  player={opponent}
+                  position={index}
+                  isMyTurn={game.currentPlayerId === opponent.id}
+                  isDealer={game.dealerId === opponent.id}
+                  showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+                  previousBid={game.previousBid}
+                  previousRoundPlayer={previousRoundPlayer}
+                  isMobile={true}
+                />
+              );
+            })}
+          </div>
+        </div>
 
-      {/* Opponents */}
-      {opponents.map((opponent, index) => {
-        const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
-        console.log(`GameTable - Opponent ${opponent.name}:`, {
-          showAllDice: game.showAllDice,
-          state: game.state,
-          winner: game.winner,
-          previousRoundPlayer: previousRoundPlayer ? {
-            id: previousRoundPlayer.id,
-            name: previousRoundPlayer.name,
-            dice: previousRoundPlayer.dice
-          } : null,
-          previousRoundPlayers: game.previousRoundPlayers?.map(p => ({ id: p.id, name: p.name, dice: p.dice }))
-        });
-        return (
-          <OpponentPlayer
-            key={opponent.id}
-            player={opponent}
-            position={index}
-            isMyTurn={game.currentPlayerId === opponent.id}
-            isDealer={game.dealerId === opponent.id}
-            showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+        {/* Bid Selector - Center section with more space from orange bar */}
+        <div className="absolute top-40 left-1/2 transform -translate-x-1/2 z-20 w-full px-4">
+          {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
+            <BidSelector
+              currentBid={game.currentBid}
+              onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
+              onDoubt={() => handleAction('doubt')}
+              onSpotOn={() => handleAction('spotOn')}
+              disabled={isLoading || bettingDisabled}
+              isMobile={true}
+            />
+          ) : (
+            <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
+              <div className="text-center text-white text-lg font-bold">
+                {localPlayer && isMyTurn() ? t('game.makeYourBid') : t('game.waitingForTurn')}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Local Player - Just above footer, not in footer */}
+        {localPlayer && (
+          <div className="absolute bottom-20 left-0 right-0 z-10">
+            <LocalPlayer 
+              player={localPlayer} 
+              isMyTurn={isMyTurn()}
+              isDealer={game.dealerId === localPlayer.id}
+              onAction={handleAction}
+              disabled={isLoading || bettingDisabled}
+              currentBid={game.currentBid}
+              previousBid={game.previousBid}
+              showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+              previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
+              isMobile={true}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden md:block">
+        {/* Local Player - Bottom Center */}
+        {localPlayer && (
+          <LocalPlayer 
+            player={localPlayer} 
+            isMyTurn={isMyTurn()}
+            isDealer={game.dealerId === localPlayer.id}
+            onAction={handleAction}
+            disabled={isLoading || bettingDisabled}
+            currentBid={game.currentBid}
             previousBid={game.previousBid}
-            previousRoundPlayer={previousRoundPlayer}
+            showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+            previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
           />
-        );
-      })}
+        )}
+
+        {/* Opponents */}
+        {opponents.map((opponent, index) => {
+          const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
+          console.log(`GameTable - Opponent ${opponent.name}:`, {
+            showAllDice: game.showAllDice,
+            state: game.state,
+            winner: game.winner,
+            previousRoundPlayer: previousRoundPlayer ? {
+              id: previousRoundPlayer.id,
+              name: previousRoundPlayer.name,
+              dice: previousRoundPlayer.dice
+            } : null,
+            previousRoundPlayers: game.previousRoundPlayers?.map(p => ({ id: p.id, name: p.name, dice: p.dice }))
+          });
+          return (
+            <OpponentPlayer
+              key={opponent.id}
+              player={opponent}
+              position={index}
+              isMyTurn={game.currentPlayerId === opponent.id}
+              isDealer={game.dealerId === opponent.id}
+              showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+              previousBid={game.previousBid}
+              previousRoundPlayer={previousRoundPlayer}
+            />
+          );
+        })}
+
+        {/* Bid Selector - Draggable on desktop */}
+        {localPlayer && isMyTurn() && !localPlayer.eliminated && (
+          <BidSelector
+            currentBid={game.currentBid}
+            onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
+            onDoubt={() => handleAction('doubt')}
+            onSpotOn={() => handleAction('spotOn')}
+            disabled={isLoading || bettingDisabled}
+          />
+        )}
+      </div>
 
       {/* Center Bid Display */}
       <BidDisplay 
@@ -358,17 +435,6 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Game Result Display */}
       <GameResultDisplay game={game} />
 
-      {/* Bid Selector - Draggable */}
-      {localPlayer && isMyTurn() && !localPlayer.eliminated && (
-        <BidSelector
-          currentBid={game.currentBid}
-          onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
-          onDoubt={() => handleAction('doubt')}
-          onSpotOn={() => handleAction('spotOn')}
-          disabled={isLoading || bettingDisabled}
-        />
-      )}
-
 
       {/* Error Display */}
       {error && (
@@ -377,14 +443,14 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Top Header Bar */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-50">
+      {/* Top Header Bar - Mobile optimized */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4">
         {/* Left side - Back Button */}
         <div>
           {onBack && (
             <button
               onClick={onBack}
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-medium shadow-lg"
+              className="bg-gray-600 text-white px-2 py-1 md:px-4 md:py-2 rounded-lg hover:bg-gray-700 font-medium shadow-lg text-sm md:text-base"
             >
               ← Back
             </button>
@@ -392,20 +458,21 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* Right side - Game Info and Language Selector */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           {/* Game Info */}
           <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
-            <div className="flex items-center justify-between p-2">
+            <div className="flex items-center justify-between p-1 md:p-2">
               <button
                 onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
-                className="text-white hover:text-gray-300 mr-2"
+                className="text-white hover:text-gray-300 mr-1 md:mr-2 text-xs md:text-sm"
               >
                 {isGameInfoMinimized ? '▶' : '▼'}
               </button>
-              <span className="text-sm font-bold">Game Info</span>
+              <span className="text-xs md:text-sm font-bold">Game Info</span>
             </div>
             {!isGameInfoMinimized && (
-              <div className="px-2 pb-2">
+              <div className="px-1 pb-1 md:px-2 md:pb-2 text-xs md:text-sm">
+                <div>{t('lobby.gameId')}: {game.id}</div>
                 <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
                 <div>{t('common.state')}: {game.state}</div>
               </div>
