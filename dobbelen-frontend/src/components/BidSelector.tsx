@@ -5,10 +5,12 @@ import DiceHand from './DiceHand';
 interface BidSelectorProps {
   currentBid: Bid | null;
   onBidSelect: (quantity: number, faceValue: number) => void;
+  onDoubt?: () => void;
+  onSpotOn?: () => void;
   disabled: boolean;
 }
 
-const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, disabled }) => {
+const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDoubt, onSpotOn, disabled }) => {
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem('bidSelectorExpanded');
     return saved ? JSON.parse(saved) : false;
@@ -144,7 +146,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, disa
   return (
     <div
       ref={containerRef}
-      className="bg-green-800 p-4 rounded-lg shadow-lg border-4 border-yellow-400 max-w-md select-none"
+      className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-yellow-400 max-w-md select-none"
       style={{
         position: 'fixed',
         left: position.x,
@@ -198,15 +200,26 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, disa
         </div>
       </div>
       
-      {/* Instructions at the bottom */}
-      <div className="mt-4 text-center">
-        <p className="text-xs text-green-300 mb-2">
-          Click a number to bid that many dice of that face value
-        </p>
-        <p className="text-xs text-yellow-300">
-          You can increase quantity or face value, or go back to lower face values with higher quantities
-        </p>
-      </div>
+      {/* Action Buttons */}
+      {currentBid && (
+        <div className="mt-4 flex justify-center space-x-4">
+          <button
+            onClick={onDoubt}
+            disabled={disabled}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+          >
+            Doubt
+          </button>
+          <button
+            onClick={onSpotOn}
+            disabled={disabled}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+          >
+            Spot On
+          </button>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -1,5 +1,6 @@
 package com.example.backend.controller;
 
+import com.example.backend.dto.GameResponse;
 import com.example.backend.dto.WebSocketMessage;
 import com.example.backend.model.Game;
 import com.example.backend.service.GameService;

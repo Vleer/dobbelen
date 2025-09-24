@@ -26,6 +26,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [bettingDisabled, setBettingDisabled] = useState(false);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -130,6 +131,17 @@ const GameTable: React.FC<GameTableProps> = ({
     try {
       // Use WebSocket for all games (all games are multiplayer)
       webSocketService.sendAction(action.toUpperCase(), data, localPlayerId);
+      
+      // If doubt or spot-on, disable betting for 5 seconds
+      if (action === 'doubt' || action === 'spotOn') {
+        setBettingDisabled(true);
+        
+        // Re-enable betting after 5 seconds
+        setTimeout(() => {
+          setBettingDisabled(false);
+        }, 5000);
+      }
+      
       // The game state will be updated via WebSocket subscription
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || `Failed to ${action}`;
@@ -167,7 +179,8 @@ const GameTable: React.FC<GameTableProps> = ({
       currentPlayerId: game?.currentPlayerId,
       isAITurn: isAITurn(),
       isLoading,
-      gameWinner: game?.gameWinner
+      gameWinner: game?.gameWinner,
+      showAllDice: game?.showAllDice
     });
     
     if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS') {
@@ -273,7 +286,7 @@ const GameTable: React.FC<GameTableProps> = ({
           isMyTurn={isMyTurn()}
           isDealer={game.dealerId === localPlayer.id}
           onAction={handleAction}
-          disabled={isLoading}
+          disabled={isLoading || bettingDisabled}
           currentBid={game.currentBid}
           previousBid={game.previousBid}
         />
@@ -287,7 +300,7 @@ const GameTable: React.FC<GameTableProps> = ({
           position={index}
           isMyTurn={game.currentPlayerId === opponent.id}
           isDealer={game.dealerId === opponent.id}
-          showDice={game.state === 'ROUND_ENDED' || game.winner !== null}
+          showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
           previousBid={game.previousBid}
         />
       ))}
@@ -306,9 +319,12 @@ const GameTable: React.FC<GameTableProps> = ({
         <BidSelector
           currentBid={game.currentBid}
           onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
-          disabled={isLoading}
+          onDoubt={() => handleAction('doubt')}
+          onSpotOn={() => handleAction('spotOn')}
+          disabled={isLoading || bettingDisabled}
         />
       )}
+
 
       {/* Error Display */}
       {error && (

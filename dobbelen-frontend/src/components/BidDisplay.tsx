@@ -38,7 +38,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
 
   return (
-    <div className="bg-red-800 border-4 border-red-600 rounded-2xl p-6 shadow-2xl">
+    <div className="bg-red-800 border-4 border-red-600 rounded-3xl p-6 shadow-2xl">
       <div className="text-center">
         <div className="text-xl font-bold text-white mb-3">
           {bidderName} bids:

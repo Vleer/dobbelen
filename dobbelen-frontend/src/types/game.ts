@@ -29,6 +29,7 @@ export interface Game {
   isMultiplayer: boolean;
   maxPlayers: number;
   isWaitingForPlayers: boolean;
+  showAllDice: boolean;
 }
 
 export interface CreateGameRequest {
@@ -75,4 +76,5 @@ export interface GameResponse {
   isMultiplayer: boolean;
   maxPlayers: number;
   isWaitingForPlayers: boolean;
+  showAllDice: boolean;
 }

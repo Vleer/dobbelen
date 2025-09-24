@@ -126,6 +126,10 @@ public class GameService {
             eliminatedPlayerId = currentBid.getPlayerId();
         }
 
+        // Show all dice for 5 seconds
+        game.setShowAllDice(true);
+        broadcastGameUpdate(gameId); // Broadcast dice reveal
+
         // Eliminate the player
         game.getEliminatedPlayers().add(eliminatedPlayerId);
         game.getPlayers().stream()
@@ -175,6 +179,9 @@ public class GameService {
             }
         }
 
+        // Schedule to hide dice after 5 seconds
+        scheduleHideDice(gameId);
+
         return new GameResult(game, eliminatedPlayerId, actualCount, currentBid.getQuantity());
     }
 
@@ -190,35 +197,26 @@ public class GameService {
         int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), true);
         
         if (actualCount == currentBid.getQuantity()) {
-            // Spot on is correct - all other players are eliminated
-            game.setWinner(spotOnPlayerId);
+            // Show all dice for 5 seconds
+            game.setShowAllDice(true);
+            broadcastGameUpdate(gameId); // Broadcast dice reveal
             
-            // Award win token to the spot on player
-            Player spotOnPlayer = game.getPlayers().stream()
-                    .filter(p -> p.getId().equals(spotOnPlayerId))
-                    .findFirst()
-                    .orElse(null);
-            if (spotOnPlayer != null) {
-                spotOnPlayer.addWinToken();
-
-                // Check if this player has won the entire game
-                if (spotOnPlayer.getWinTokens() >= 7) {
-                    game.setGameWinner(spotOnPlayer.getId());
-                    game.setState(GameState.GAME_ENDED);
-                } else {
-                    // Start new round automatically
-                    startNewRound(gameId);
-                }
-            }
-
-            // Eliminate all other players
+            // Spot on is correct - round resets with same players
+            // Reroll dice for all active players
             for (Player player : game.getActivePlayers()) {
-                if (!player.getId().equals(spotOnPlayerId)) {
-                    game.getEliminatedPlayers().add(player.getId());
-                    player.eliminate();
-                }
+                player.rollDice();
             }
+
+            // Reset the current bid
+            game.setCurrentBid(null);
+
+            // Move to next player
+            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
         } else {
+            // Show all dice for 5 seconds
+            game.setShowAllDice(true);
+            broadcastGameUpdate(gameId); // Broadcast dice reveal
+
             // Spot on is wrong - spot on player is eliminated
             game.getEliminatedPlayers().add(spotOnPlayerId);
             game.getPlayers().stream()
@@ -264,6 +262,9 @@ public class GameService {
                 }
             }
         }
+
+        // Schedule to hide dice after 5 seconds
+        scheduleHideDice(gameId);
 
         return new GameResult(game, spotOnPlayerId, actualCount, currentBid.getQuantity());
     }
@@ -462,5 +463,19 @@ public class GameService {
         GameResult result = processSpotOn(gameId, playerId);
         // WebSocket controller will handle broadcasting
         return result;
+    }
+
+    private void scheduleHideDice(String gameId) {
+        // Use a simple timer to hide dice after 5 seconds
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                Game game = games.get(gameId);
+                if (game != null) {
+                    game.setShowAllDice(false);
+                    broadcastGameUpdate(gameId);
+                }
+            }
+        }, 5000); // 5 seconds
     }
 }

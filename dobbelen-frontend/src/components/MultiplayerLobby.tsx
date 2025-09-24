@@ -216,7 +216,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-green-800">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-lg w-full">
+      <div className="bg-white p-8 rounded-3xl shadow-lg max-w-lg w-full">
         <h1 className="text-4xl font-bold text-center mb-8 text-green-800">
           🎲 Liar's Dice
         </h1>
@@ -276,7 +276,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               <button
                 onClick={createGame}
                 disabled={isCreating || !playerName.trim()}
-                className="w-full py-4 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xl font-bold"
+                className="w-full py-4 px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-xl font-bold"
               >
                 {isCreating ? 'Creating...' : '🎮 Create New Game'}
               </button>
@@ -303,7 +303,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   <button
                     onClick={joinGame}
                     disabled={isJoining || !gameId.trim() || !playerName.trim()}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold"
+                    className="px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold"
                   >
                     {isJoining ? 'Joining...' : 'Join'}
                   </button>

@@ -21,6 +21,7 @@ public class GameResponse {
     private boolean isMultiplayer;
     private int maxPlayers;
     private boolean isWaitingForPlayers;
+    private boolean showAllDice;
 
     public GameResponse() {}
 
@@ -41,6 +42,7 @@ public class GameResponse {
         this.isMultiplayer = game.isMultiplayer();
         this.maxPlayers = game.getMaxPlayers();
         this.isWaitingForPlayers = game.isWaitingForPlayers();
+        this.showAllDice = game.isShowAllDice();
     }
 
     // Getters and Setters
@@ -114,6 +116,14 @@ public class GameResponse {
 
     public void setWaitingForPlayers(boolean waitingForPlayers) {
         this.isWaitingForPlayers = waitingForPlayers;
+    }
+
+    public boolean isShowAllDice() {
+        return showAllDice;
+    }
+
+    public void setShowAllDice(boolean showAllDice) {
+        this.showAllDice = showAllDice;
     }
 
     public static class PlayerInfo {

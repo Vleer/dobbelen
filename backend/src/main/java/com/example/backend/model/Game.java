@@ -2,7 +2,6 @@ package com.example.backend.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.Random;
 
 public class Game {
@@ -20,6 +19,7 @@ public class Game {
     private boolean isMultiplayer;
     private int maxPlayers;
     private boolean isWaitingForPlayers;
+    private boolean showAllDice;
 
     public Game() {
         this.id = generateShortGameId();
@@ -32,6 +32,7 @@ public class Game {
         this.isMultiplayer = false;
         this.maxPlayers = 6;
         this.isWaitingForPlayers = true;
+        this.showAllDice = false;
     }
 
     private String generateShortGameId() {
@@ -156,6 +157,14 @@ public class Game {
 
     public void setWaitingForPlayers(boolean waitingForPlayers) {
         this.isWaitingForPlayers = waitingForPlayers;
+    }
+
+    public boolean isShowAllDice() {
+        return showAllDice;
+    }
+
+    public void setShowAllDice(boolean showAllDice) {
+        this.showAllDice = showAllDice;
     }
 
     public boolean canJoin() {

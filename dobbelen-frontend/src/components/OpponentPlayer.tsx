@@ -1,5 +1,6 @@
 import React from 'react';
 import { Player } from '../types/game';
+import DiceHand from './DiceHand';
 
 interface OpponentPlayerProps {
   player: Player;
@@ -11,6 +12,13 @@ interface OpponentPlayerProps {
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid }) => {
+  // Debug logging
+  console.log(`OpponentPlayer ${player.name}:`, {
+    showDice,
+    hasDice: player.dice && player.dice.length > 0,
+    diceValues: player.dice
+  });
+
   const getPositionClasses = () => {
     switch (position) {
       case 0: // Left opponent
@@ -26,20 +34,20 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
   return (
     <div className={getPositionClasses()}>
-      {/* Player Container */}
-      <div className={`bg-white p-3 rounded-lg shadow-lg border-2 ${isMyTurn ? 'border-yellow-400' : 'border-gray-300'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''}`}>
+          {/* Player Container - Big Circle with Dark Red Background */}
+          <div className={`w-32 h-32 bg-red-900 rounded-full shadow-lg border-4 ${isMyTurn ? 'border-yellow-400' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center`}>
         {/* Content with counter-rotation for text readability */}
         <div className={position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''}>
           {/* Username */}
           <div className="text-center mb-2">
-            <span className="font-bold text-sm">{player.name}</span>
-            {isMyTurn && <span className="ml-1 text-yellow-600 text-xs">🪙</span>}
+            <span className="font-bold text-sm text-white">{player.name}</span>
+            {isMyTurn && <span className="ml-1 text-yellow-300 text-sm">🪙</span>}
           </div>
 
           {/* Dealer Button */}
           {isDealer && (
             <div className="text-center mb-2">
-              <div className="inline-flex items-center justify-center w-6 h-6 bg-white border-2 border-black rounded-full">
+              <div className="inline-flex items-center justify-center w-5 h-5 bg-white border border-black rounded-full">
                 <span className="text-black text-xs font-bold">D</span>
               </div>
             </div>
@@ -48,42 +56,39 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
           {/* Cup - Always closed for opponents, or dice if revealed */}
           <div className="flex justify-center mb-1">
             {showDice && player.dice && player.dice.length > 0 ? (
-              <div className="flex space-x-1">
-                {player.dice.map((value, index) => (
-                  <div key={index} className="w-4 h-4 bg-white border border-black rounded text-xs flex items-center justify-center">
-                    {value}
-                  </div>
-                ))}
+              <div className="flex flex-col items-center space-y-1">
+                <DiceHand diceValues={player.dice} />
+                <div className="text-xs text-yellow-300 font-bold">REVEALED</div>
               </div>
             ) : (
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
+              <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
                 <span className="text-white text-xs">C</span>
               </div>
             )}
           </div>
 
-          {/* Dice Count (hidden for opponents) */}
-          <div className="text-center text-xs text-gray-500">
+          {/* Dice Count */}
+          <div className="text-center text-xs text-gray-300 mb-1">
             {player.diceCount} dice
           </div>
 
           {/* Win Tokens */}
           {player.winTokens > 0 && (
-            <div className="text-center text-xs text-yellow-600 font-bold">
-              🏆 {player.winTokens} wins
+            <div className="text-center text-xs text-yellow-400 font-bold mb-1">
+              🏆 {player.winTokens}
             </div>
           )}
 
           {/* Previous Bid Display */}
           {previousBid && previousBid.playerId === player.id && (
-            <div className="text-center text-xs text-blue-600 font-bold mt-1">
-              Bid: {previousBid.quantity} of {previousBid.faceValue}s
+            <div className="text-center text-xs text-blue-300 font-bold mb-1">
+              {previousBid.quantity} of {previousBid.faceValue}s
             </div>
           )}
 
           {/* Eliminated State */}
           {player.eliminated && (
-            <div className="text-center text-red-600 font-bold text-xs">
+            <div className="text-center text-red-300 font-bold text-xs">
               OUT
             </div>
           )}
