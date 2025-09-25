@@ -11,11 +11,15 @@ interface MultiplayerLobbyProps {
 
 // Dutch names for random selection
 const DUTCH_NAMES = [
-  'Henk', 'Jan', 'Piet', 'Klaas', 'Willem', 'Dirk', 'Frits', 'Gerard', 'Hendrik', 'Kees',
-  'Maarten', 'Niels', 'Otto', 'Paul', 'Rik', 'Sander', 'Tom', 'Vincent', 'Wouter', 'Yuri',
-  'Anna', 'Bianca', 'Carla', 'Diana', 'Eva', 'Fleur', 'Gina', 'Hanna', 'Iris', 'Julia',
-  'Kim', 'Lisa', 'Marijke', 'Nina', 'Olga', 'Petra', 'Rosa', 'Sanne', 'Tessa', 'Ursula'
+  // Male
+  'Geert', 'Hendrik', 'Berend', 'Arend', 'Harm', 'Jurjen', 'Lammert', 'Reinder', 'Sjoerd', 'Tonnis',
+  'Egbert', 'Meindert', 'Evert', 'Wobbe', 'Klaas', 'Roelof', 'Hilko', 'Jacob', 'Tjarko', 'Willem',
+
+  // Female
+  'Aaltje', 'Trijntje', 'Antje', 'Jantje', 'Geesje', 'Hilje', 'Roelfje', 'Neeltje', 'Sietske', 'Baukje',
+  'Tineke', 'Marijke', 'Anje', 'Wietske', 'Hiltje', 'Zwaantje', 'Dieuwke', 'Liesbeth', 'Fennechien', 'Janke'
 ];
+
 
 const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack }) => {
   const { t } = useLanguage();
@@ -84,21 +88,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     setIsInitialized(true);
   }, [isInitialized]);
 
-  // Auto-select text in the player name input when it gets focused
-  useEffect(() => {
-    if (isInitialized && playerName) {
-      // Small delay to ensure the input is focused and rendered
-      const timer = setTimeout(() => {
-        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-        if (input) {
-          input.select();
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialized, playerName]);
-
   // Poll for game updates when in a game - only fetch, don't join
   useEffect(() => {
     if (!game || !gameId || !isInitialized) return;
@@ -111,7 +100,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         
         // Register AI players when game is updated
         updatedGame.players.forEach(player => {
-          if (player.name.startsWith('AI ')) {
+          if (player.name.startsWith('AI Player')) {
             aiService.registerAIPlayer(player.id, player.name);
             console.log('Registered AI player:', player.name, player.id);
           }
@@ -215,16 +204,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     if (!game || !isHost) return;
     
     try {
-      // Get all existing AI player names to avoid duplicates
-      const existingAINames = game.players
-        .filter(p => p.name.startsWith('AI '))
-        .map(p => p.name.replace('AI ', ''));
-      
-      let aiName;
-      do {
-        aiName = `AI ${getRandomDutchName()}`;
-      } while (existingAINames.includes(aiName.replace('AI ', '')));
-      
+      const aiName = `AI Player ${game.players.filter(p => p.name.startsWith('AI Player')).length + 1}`;
       const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
       setGame(updatedGame);
       console.log('Added AI player:', aiName);
@@ -240,7 +220,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4 select-none">
+    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4">
       <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full">
         <h1 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800">
           {t('game.title')}

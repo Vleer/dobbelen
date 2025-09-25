@@ -7,11 +7,27 @@ interface GameSetupProps {
   error: string;
 }
 
+// Dutch names for random selection
+const DUTCH_NAMES = [
+  // Male
+  'Geert', 'Hendrik', 'Berend', 'Arend', 'Harm', 'Jurjen', 'Lammert', 'Reinder', 'Sjoerd', 'Tonnis',
+  'Egbert', 'Meindert', 'Evert', 'Wobbe', 'Klaas', 'Roelof', 'Hilko', 'Jacob', 'Tjarko', 'Willem',
+
+  // Female
+  'Aaltje', 'Trijntje', 'Antje', 'Jantje', 'Geesje', 'Hilje', 'Roelfje', 'Neeltje', 'Sietske', 'Baukje',
+  'Tineke', 'Marijke', 'Anje', 'Wietske', 'Hiltje', 'Zwaantje', 'Dieuwke', 'Liesbeth', 'Fennechien', 'Janke'
+];
+
 const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLoading, error }) => {
   const [username, setUsername] = useState('');
-  const [playerNames, setPlayerNames] = useState<string[]>(['AI Player 1', 'AI Player 2']);
+  const [playerNames, setPlayerNames] = useState<string[]>(['AI Henk', 'AI Jan']);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [aiCount, setAiCount] = useState(2);
+
+  // Get a random Dutch name
+  const getRandomDutchName = () => {
+    return DUTCH_NAMES[Math.floor(Math.random() * DUTCH_NAMES.length)];
+  };
 
   const addPlayer = () => {
     if (newPlayerName.trim() && playerNames.length < 8) {
@@ -30,8 +46,15 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
     if (count >= 1 && count <= 6) {
       setAiCount(count);
       const newPlayerNames = [];
-      for (let i = 1; i <= count; i++) {
-        newPlayerNames.push(`AI Player ${i}`);
+      const usedNames = new Set<string>();
+      
+      for (let i = 0; i < count; i++) {
+        let name;
+        do {
+          name = getRandomDutchName();
+        } while (usedNames.has(name));
+        usedNames.add(name);
+        newPlayerNames.push(`AI ${name}`);
       }
       setPlayerNames(newPlayerNames);
     }

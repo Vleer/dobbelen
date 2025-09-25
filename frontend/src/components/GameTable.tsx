@@ -42,7 +42,7 @@ const GameTable: React.FC<GameTableProps> = ({
       
       // Register AI players when game is loaded
       game.players.forEach(player => {
-        if (player.name.startsWith('AI Player')) {
+        if (player.name.startsWith('AI ')) {
           aiService.registerAIPlayer(player.id, player.name);
           console.log('Registered AI player:', player.name, player.id);
         }
@@ -54,7 +54,7 @@ const GameTable: React.FC<GameTableProps> = ({
           
           // Register any new AI players
           updatedGame.players.forEach(player => {
-            if (player.name.startsWith('AI Player')) {
+            if (player.name.startsWith('AI ')) {
               aiService.registerAIPlayer(player.id, player.name);
             }
           });
@@ -122,7 +122,7 @@ const GameTable: React.FC<GameTableProps> = ({
       
       // Register AI players
       gameResponse.players.forEach(player => {
-        if (player.name.startsWith('AI Player') || player.id !== humanPlayer.id) {
+        if (player.name.startsWith('AI ') || player.id !== humanPlayer.id) {
           aiService.registerAIPlayer(player.id, player.name);
         }
       });
