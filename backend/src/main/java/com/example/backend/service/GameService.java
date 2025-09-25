@@ -52,6 +52,8 @@ public class GameService {
 
     public void startNewRound(String gameId) {
         Game game = getGame(gameId);
+        System.out.println("🔄 NEW_ROUND: startNewRound called for game " + gameId + " at " + System.currentTimeMillis()
+                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
         
         // Check if game is already completed
         if (game.hasGameWinner()) {
@@ -148,9 +150,13 @@ public class GameService {
         game.setLastBidFaceValue(currentBid.getFaceValue());
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
 
-        // Show all dice for 5 seconds
+        // Show all dice for 15 seconds
+        System.out
+                .println("🎲 DOUBT: Setting showAllDice=true for game " + gameId + " at " + System.currentTimeMillis());
         game.setShowAllDice(true);
+        game.setCanContinue(false); // Disable continue button initially
         broadcastGameUpdate(gameId); // Broadcast dice reveal
+        System.out.println("🎲 DOUBT: Broadcasted game update with showAllDice=true for game " + gameId);
 
         // Eliminate the player
         game.getEliminatedPlayers().add(eliminatedPlayerId);
@@ -159,8 +165,8 @@ public class GameService {
                 .findFirst()
                 .ifPresent(Player::eliminate);
 
-        // Schedule dice reroll after 5 seconds
-        scheduleDiceReroll(gameId);
+        // Schedule to enable continue button after 15 seconds
+        scheduleEnableContinue(gameId);
 
         // Reset the current bid after elimination
         game.setCurrentBid(null);
@@ -191,16 +197,20 @@ public class GameService {
                     game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
                     System.out.println("Dealer button passed to: " + roundWinner.getName());
 
-                    // Start new round automatically
+                    // Start new round automatically after a delay to allow result window to show
                     System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
                             + roundWinner.getWinTokens() + " tokens");
-                    startNewRound(gameId);
+                    new java.util.Timer().schedule(new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            startNewRound(gameId);
+                        }
+                    }, 15000); // Start new round after 15 seconds
                 }
             }
         }
 
-        // Schedule to hide dice after 5 seconds
-        scheduleHideDice(gameId);
+        // Dice will be hidden when continue is pressed, not automatically
 
         return new GameResult(game, eliminatedPlayerId, actualCount, currentBid.getQuantity());
     }
@@ -239,9 +249,13 @@ public class GameService {
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
 
-            // Show all dice for 5 seconds
+            // Show all dice for 15 seconds
+            System.out.println("🎲 SPOT_ON_CORRECT: Setting showAllDice=true for game " + gameId + " at "
+                    + System.currentTimeMillis());
             game.setShowAllDice(true);
+            game.setCanContinue(false); // Disable continue button initially
             broadcastGameUpdate(gameId); // Broadcast dice reveal
+            System.out.println("🎲 SPOT_ON_CORRECT: Broadcasted game update with showAllDice=true for game " + gameId);
             
             // Spot on is correct - round resets with same players
             // Reset the current bid
@@ -250,8 +264,8 @@ public class GameService {
             // Move to next player
             game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
 
-            // Schedule dice reroll after 5 seconds
-            scheduleDiceReroll(gameId);
+            // Schedule to enable continue button after 15 seconds
+            scheduleEnableContinue(gameId);
         } else {
             // Store previous round players before rerolling (deep copy)
             List<Player> previousPlayers = new ArrayList<>();
@@ -271,9 +285,13 @@ public class GameService {
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(spotOnPlayerId);
 
-            // Show all dice for 5 seconds
+            // Show all dice for 15 seconds
+            System.out.println("🎲 SPOT_ON_WRONG: Setting showAllDice=true for game " + gameId + " at "
+                    + System.currentTimeMillis());
             game.setShowAllDice(true);
+            game.setCanContinue(false); // Disable continue button initially
             broadcastGameUpdate(gameId); // Broadcast dice reveal
+            System.out.println("🎲 SPOT_ON_WRONG: Broadcasted game update with showAllDice=true for game " + gameId);
 
             // Spot on is wrong - spot on player is eliminated
             game.getEliminatedPlayers().add(spotOnPlayerId);
@@ -282,8 +300,8 @@ public class GameService {
                     .findFirst()
                     .ifPresent(Player::eliminate);
 
-            // Schedule dice reroll after 5 seconds
-            scheduleDiceReroll(gameId);
+            // Schedule to enable continue button after 15 seconds
+            scheduleEnableContinue(gameId);
 
             // Reset the current bid after elimination
             game.setCurrentBid(null);
@@ -312,15 +330,19 @@ public class GameService {
                         game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
                         System.out.println("Dealer button passed to: " + roundWinner.getName());
 
-                        // Start new round automatically
-                        startNewRound(gameId);
+                        // Start new round automatically after a delay to allow result window to show
+                        new java.util.Timer().schedule(new java.util.TimerTask() {
+                            @Override
+                            public void run() {
+                                startNewRound(gameId);
+                            }
+                        }, 15000); // Start new round after 15 seconds
                     }
                 }
             }
         }
 
-        // Schedule to hide dice after 5 seconds
-        scheduleHideDice(gameId);
+        // Dice will be hidden when continue is pressed, not automatically
 
         return new GameResult(game, spotOnPlayerId, actualCount, currentBid.getQuantity());
     }
@@ -521,37 +543,63 @@ public class GameService {
         return result;
     }
 
-    private void scheduleHideDice(String gameId) {
-        // Use a simple timer to hide dice after 5 seconds
+    private void scheduleEnableContinue(String gameId) {
+        // Enable continue button after 5 seconds
+        System.out.println("⏰ SCHEDULE: Scheduling enableContinue for game " + gameId + " in 5 seconds at "
+                + System.currentTimeMillis());
         new java.util.Timer().schedule(new java.util.TimerTask() {
             @Override
             public void run() {
                 Game game = games.get(gameId);
-                if (game != null) {
-                    game.setShowAllDice(false);
+                System.out.println(
+                        "⏰ TIMER: EnableContinue timer fired for game " + gameId + " at " + System.currentTimeMillis()
+                                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
+                if (game != null && game.isShowAllDice()) {
+                    game.setCanContinue(true);
                     broadcastGameUpdate(gameId);
+                    System.out.println("⏰ TIMER: Set canContinue=true and broadcasted for game " + gameId);
                 }
             }
         }, 5000); // 5 seconds
+
+        // Auto-continue after 15 seconds
+        System.out.println("⏰ SCHEDULE: Scheduling auto-continue for game " + gameId + " in 15 seconds at "
+                + System.currentTimeMillis());
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                Game game = games.get(gameId);
+                System.out.println(
+                        "⏰ TIMER: Auto-continue timer fired for game " + gameId + " at " + System.currentTimeMillis()
+                                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
+                if (game != null && game.isShowAllDice()) {
+                    System.out.println("⏰ TIMER: Auto-continuing game " + gameId);
+                    continueGame(gameId);
+                }
+            }
+        }, 15000); // 15 seconds
     }
 
-    private void scheduleDiceReroll(String gameId) {
-        // Use a simple timer to reroll dice after 5 seconds
-        new java.util.Timer().schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                Game game = games.get(gameId);
-                if (game != null) {
-                    // Reroll dice for all remaining active players
-                    for (Player player : game.getActivePlayers()) {
-                        player.rollDice();
-                    }
-
-                    // Hide dice and broadcast update
-                    game.setShowAllDice(false);
-                    broadcastGameUpdate(gameId);
-                }
+    public void continueGame(String gameId) {
+        Game game = games.get(gameId);
+        System.out.println("🔄 CONTINUE: continueGame called for game " + gameId + " at " + System.currentTimeMillis()
+                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null") + ", canContinue="
+                + (game != null ? game.isCanContinue() : "null"));
+        if (game != null && game.isShowAllDice() && game.isCanContinue()) {
+            // Reroll dice for all remaining active players
+            for (Player player : game.getActivePlayers()) {
+                player.rollDice();
             }
-        }, 5000); // 5 seconds
+
+            // Hide dice and reset continue state
+            System.out.println(
+                    "🔄 CONTINUE: Setting showAllDice=false for game " + gameId + " at " + System.currentTimeMillis());
+            game.setShowAllDice(false);
+            game.setCanContinue(false);
+            broadcastGameUpdate(gameId);
+            System.out.println("🔄 CONTINUE: Broadcasted game update with showAllDice=false for game " + gameId);
+        } else {
+            System.out.println("🔄 CONTINUE: Cannot continue game " + gameId + " - conditions not met");
+        }
     }
 }

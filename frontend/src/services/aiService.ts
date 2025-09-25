@@ -124,7 +124,7 @@ export class AIService {
 
   // Simulate AI thinking delay
   async simulateThinking(): Promise<void> {
-    const delay = Math.random() * 2000 + 1000; // 1-3 seconds
+    const delay = Math.random() * 1000 + 2000; // 1-3 seconds
     return new Promise(resolve => setTimeout(resolve, delay));
   }
 }

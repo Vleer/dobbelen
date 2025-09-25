@@ -27,6 +27,7 @@ public class GameResponse {
     private Integer lastBidQuantity;
     private Integer lastBidFaceValue;
     private String lastEliminatedPlayerId;
+    private boolean canContinue;
 
     public GameResponse() {}
 
@@ -55,6 +56,7 @@ public class GameResponse {
         this.lastBidQuantity = game.getLastBidQuantity();
         this.lastBidFaceValue = game.getLastBidFaceValue();
         this.lastEliminatedPlayerId = game.getLastEliminatedPlayerId();
+        this.canContinue = game.isCanContinue();
     }
 
     // Getters and Setters
@@ -176,6 +178,14 @@ public class GameResponse {
 
     public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
         this.lastEliminatedPlayerId = lastEliminatedPlayerId;
+    }
+
+    public boolean isCanContinue() {
+        return canContinue;
+    }
+
+    public void setCanContinue(boolean canContinue) {
+        this.canContinue = canContinue;
     }
 
     public static class PlayerInfo {

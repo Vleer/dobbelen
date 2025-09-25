@@ -20,6 +20,7 @@ public class Game {
     private int maxPlayers;
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
+    private boolean canContinue;
     private List<Player> previousRoundPlayers; // Store players' dice from previous round
     private Integer lastActualCount; // Store actual count from last doubt/spot-on
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
@@ -38,6 +39,7 @@ public class Game {
         this.maxPlayers = 6;
         this.isWaitingForPlayers = true;
         this.showAllDice = false;
+        this.canContinue = false;
         this.previousRoundPlayers = new ArrayList<>();
         this.lastActualCount = null;
         this.lastBidQuantity = null;
@@ -175,6 +177,14 @@ public class Game {
 
     public void setShowAllDice(boolean showAllDice) {
         this.showAllDice = showAllDice;
+    }
+
+    public boolean isCanContinue() {
+        return canContinue;
+    }
+
+    public void setCanContinue(boolean canContinue) {
+        this.canContinue = canContinue;
     }
 
     public boolean canJoin() {

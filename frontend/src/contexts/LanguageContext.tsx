@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Language = 'en' | 'nl';
+export type Language = 'en' | 'nl' | 'fr' | 'de';
 
 export interface LanguageConfig {
   code: Language;
@@ -21,6 +21,18 @@ export const LANGUAGES: LanguageConfig[] = [
     name: 'Dutch',
     flag: '🇳🇱',
     nativeName: 'Nederlands'
+  },
+  {
+    code: 'fr',
+    name: 'French',
+    flag: '🇫🇷',
+    nativeName: 'Français'
+  },
+  {
+    code: 'de',
+    name: 'German',
+    flag: '🇩🇪',
+    nativeName: 'Deutsch'
   }
 ];
 
@@ -63,6 +75,30 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
                          timezone.includes('Brussels') ||
                          // Check if any of the browser's languages include Dutch
                          allLanguages.some(lang => lang.includes('nl'));
+
+    const isFrenchRegion = fullLocale.includes('fr') || 
+                          fullLocale.includes('france') ||
+                          fullLocale.includes('french') ||
+                          // Check timezone for France and French territories
+                          timezone.includes('Paris') ||
+                          timezone.includes('France') ||
+                          // Check if any of the browser's languages include French
+                          allLanguages.some(lang => lang.includes('fr'));
+
+    const isGermanRegion = fullLocale.includes('de') || 
+                          fullLocale.includes('germany') ||
+                          fullLocale.includes('deutsch') ||
+                          fullLocale.includes('at') ||  // Austria
+                          fullLocale.includes('ch') ||  // Switzerland
+                          // Check timezone for German-speaking regions
+                          timezone.includes('Berlin') ||
+                          timezone.includes('Vienna') ||
+                          timezone.includes('Zurich') ||
+                          timezone.includes('Germany') ||
+                          timezone.includes('Austria') ||
+                          timezone.includes('Switzerland') ||
+                          // Check if any of the browser's languages include German
+                          allLanguages.some(lang => lang.includes('de'));
     
     // Debug logging
     console.log('Language detection:', {
@@ -71,13 +107,27 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       fullLocale: fullLocale,
       timezone: timezone,
       allLanguages: allLanguages,
-      isDutchRegion: isDutchRegion
+      isDutchRegion: isDutchRegion,
+      isFrenchRegion: isFrenchRegion,
+      isGermanRegion: isGermanRegion
     });
     
     // If user is in Dutch region, default to Dutch
     if (isDutchRegion) {
       console.log('Setting Dutch as default language for Dutch region');
       return 'nl';
+    }
+    
+    // If user is in French region, default to French
+    if (isFrenchRegion) {
+      console.log('Setting French as default language for French region');
+      return 'fr';
+    }
+    
+    // If user is in German region, default to German
+    if (isGermanRegion) {
+      console.log('Setting German as default language for German region');
+      return 'de';
     }
     
     // Otherwise check if browser language is supported

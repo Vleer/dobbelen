@@ -62,6 +62,9 @@ export class WebSocketService {
               
               if (data.type === 'GAME_UPDATED' || data.type === 'GAME_STARTED' || data.type === 'PLAYER_JOINED') {
                 console.log('🎮 Processing game update:', data.data);
+                if (data.data && typeof data.data === 'object' && 'showAllDice' in data.data) {
+                  console.log('🟠 WEBSOCKET: Received showAllDice update:', data.data.showAllDice, 'at', new Date().toISOString());
+                }
                 this.onGameUpdate?.(data.data);
               }
             } catch (parseError) {

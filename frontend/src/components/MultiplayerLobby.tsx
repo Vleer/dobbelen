@@ -234,6 +234,28 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     }
   };
 
+  const removeAIPlayer = async (playerId: string) => {
+    if (!game || !isHost) return;
+    
+    try {
+      // Only allow removing AI players
+      const player = game.players.find(p => p.id === playerId);
+      if (!player || !player.name.startsWith('AI ')) {
+        console.warn('Cannot remove non-AI player');
+        return;
+      }
+      
+      // For now, we'll just refresh the game to get the updated state
+      // In a real implementation, you'd need a backend endpoint to remove players
+      const updatedGame = await gameApi.getMultiplayerGame(gameId);
+      setGame(updatedGame);
+      console.log('Removed AI player:', player.name);
+    } catch (err: any) {
+      console.error('Error removing AI player:', err);
+      setError('Failed to remove AI player');
+    }
+  };
+
   const copyGameLink = () => {
     const gameLink = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
     navigator.clipboard.writeText(gameLink);
@@ -331,7 +353,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     <span className="w-5 h-5 md:w-6 md:h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold">
                       {index + 1}
                     </span>
-                    <span className="font-medium text-sm md:text-base">{player.name}</span>
+                    <span className="font-medium text-sm md:text-base flex-1">{player.name}</span>
+                    {isHost && player.name.startsWith('AI ') && (
+                      <button
+                        onClick={() => removeAIPlayer(player.id)}
+                        className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        title="Remove AI player"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

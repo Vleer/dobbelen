@@ -30,6 +30,7 @@ export interface Game {
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;
+  canContinue: boolean;
   previousRoundPlayers: Player[];
   lastActualCount?: number;
   lastBidQuantity?: number;
@@ -82,6 +83,7 @@ export interface GameResponse {
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;
+  canContinue: boolean;
   previousRoundPlayers: Player[];
   lastActualCount?: number;
   lastBidQuantity?: number;

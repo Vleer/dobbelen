@@ -12,6 +12,7 @@ import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import DiceHandSVG from './DiceHandSVG';
+import DiceAnalysisChart from './DiceAnalysisChart';
 
 interface GameTableProps {
   game?: Game | null;
@@ -33,6 +34,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
+  const [showMobileAnalysis, setShowMobileAnalysis] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -87,6 +90,11 @@ const GameTable: React.FC<GameTableProps> = ({
           console.log('Polling game updates for game:', game.id);
           const updatedGame = await gameApi.getMultiplayerGame(game.id);
           console.log('Polled game state:', updatedGame.state, 'currentPlayerId:', updatedGame.currentPlayerId, 'myPlayerId:', localPlayerId);
+          
+          // Check if showAllDice state changed
+          if (game.showAllDice !== updatedGame.showAllDice) {
+            console.log('🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:', game.showAllDice, 'New:', updatedGame.showAllDice, 'at', new Date().toISOString());
+          }
           
           // Check if the current player has changed
           if (game.currentPlayerId !== updatedGame.currentPlayerId) {
@@ -156,14 +164,14 @@ const GameTable: React.FC<GameTableProps> = ({
       const actionName = action === 'spotOn' ? 'SPOT_ON' : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
       
-      // If doubt or spot-on, disable betting for 5 seconds
+      // If doubt or spot-on, disable betting for 15 seconds
       if (action === 'doubt' || action === 'spotOn') {
         setBettingDisabled(true);
         
-        // Re-enable betting after 5 seconds
+        // Re-enable betting after 15 seconds
         setTimeout(() => {
           setBettingDisabled(false);
-        }, 5000);
+        }, 15000);
       }
       
       // The game state will be updated via WebSocket subscription
@@ -193,6 +201,65 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const isAITurn = (): boolean => {
     return game?.currentPlayerId ? aiService.isAIPlayer(game.currentPlayerId) : false;
+  };
+
+  // Load analysis preference from localStorage
+  useEffect(() => {
+    const savedPreference = localStorage.getItem('diceAnalysisPreference');
+    if (savedPreference === 'true') {
+      setShowMobileAnalysis(true);
+    }
+  }, []);
+
+  // Auto-show analysis when game result is displayed
+  useEffect(() => {
+    if (game?.showAllDice) {
+      setShowMobileAnalysis(true);
+      
+      // Set timer to hide analysis after 15 seconds
+      const timer = setTimeout(() => {
+        setShowMobileAnalysis(false);
+      }, 15000);
+      
+      // Cleanup timer on unmount or when game.showAllDice changes
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [game?.showAllDice]);
+
+  // Handle spacebar press to continue (mobile)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && game?.showAllDice && game.canContinue && !(localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)) {
+        e.preventDefault();
+        handleMobileContinue();
+      }
+    };
+
+    if (game?.showAllDice) {
+      document.addEventListener('keydown', handleKeyPress);
+      return () => {
+        document.removeEventListener('keydown', handleKeyPress);
+      };
+    }
+  }, [game?.showAllDice, game?.canContinue, localPlayerId]);
+
+  // Save analysis preference to localStorage
+  const toggleMobileAnalysis = () => {
+    const newShowAnalysis = !showMobileAnalysis;
+    setShowMobileAnalysis(newShowAnalysis);
+    localStorage.setItem('diceAnalysisPreference', newShowAnalysis.toString());
+  };
+
+  const handleMobileContinue = () => {
+    setIsContinuing(true);
+    webSocketService.sendAction('CONTINUE', {}, '');
+    
+    // Reset the continuing state after 1 second
+    setTimeout(() => {
+      setIsContinuing(false);
+    }, 1000);
   };
 
   // Handle AI turns
@@ -325,6 +392,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   previousBid={game.previousBid}
                   previousRoundPlayer={previousRoundPlayer}
                   isMobile={true}
+                  playerIndex={index + 1}
                 />
               );
             })}
@@ -369,10 +437,39 @@ const GameTable: React.FC<GameTableProps> = ({
               
               {/* Eliminated Player */}
               {game.lastEliminatedPlayerId && (
-                <div className="text-lg font-bold text-red-300">
+                <div className="text-lg font-bold text-red-300 mb-4">
                   {t('game.result.isEliminated', { playerName: game.players.find(p => p.id === game.lastEliminatedPlayerId)?.name || 'Unknown Player' })}
                 </div>
               )}
+
+              {/* Analysis Section */}
+              {showMobileAnalysis && (
+                <DiceAnalysisChart game={game} />
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col space-y-3 mt-4">
+                {/* Analysis Toggle Button */}
+                <button
+                  onClick={toggleMobileAnalysis}
+                  className="px-4 py-2 bg-amber-700 hover:bg-amber-600 text-amber-200 font-bold rounded-xl transition-colors duration-200 border-2 border-amber-600"
+                >
+                  {showMobileAnalysis ? t('game.analysis.hide') : t('game.analysis.show')}
+                </button>
+                
+                {/* Continue Button */}
+                <button
+                  onClick={handleMobileContinue}
+                  disabled={isContinuing || !game.canContinue || (localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)}
+                  className={`px-4 py-2 font-bold rounded-xl transition-all duration-200 border-2 ${
+                    isContinuing || !game.canContinue || (localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)
+                      ? 'bg-amber-800 text-amber-400 border-amber-600 cursor-not-allowed'
+                      : 'bg-amber-900 hover:bg-amber-800 text-amber-200 border-amber-700 hover:border-amber-600'
+                  }`}
+                >
+                  {isContinuing ? t('game.continuing') : `${t('game.continue')} (Space)`}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -457,6 +554,7 @@ const GameTable: React.FC<GameTableProps> = ({
               showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
               previousBid={game.previousBid}
               previousRoundPlayer={previousRoundPlayer}
+              playerIndex={index + 1}
             />
           );
         })}
@@ -487,7 +585,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Game Result Display - Desktop only */}
       <div className="hidden md:block">
-        <GameResultDisplay game={game} />
+        <GameResultDisplay game={game} currentPlayerId={localPlayerId} />
       </div>
 
 

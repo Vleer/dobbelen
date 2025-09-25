@@ -60,6 +60,12 @@
   "game.result.collected7Tokens": "collected 7 win tokens and is the ultimate",
   "game.result.champion": "champion",
   
+  "game.analysis.title": "Dice Analysis ({{totalDice}} total dice)",
+  "game.analysis.show": "Show Analysis",
+  "game.analysis.hide": "Hide Analysis",
+  "game.continue": "Continue",
+  "game.continuing": "Continuing...",
+  
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
   
   "errors.failedToAddPlayer": "Failed to add AI player",

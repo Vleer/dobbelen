@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 import DiceHandSVG from './DiceHandSVG';
 import DiceSVG from './DiceSVG';
+import { getPlayerColor } from '../utils/playerColors';
 
 interface OpponentPlayerProps {
   player: Player;
@@ -14,9 +15,10 @@ interface OpponentPlayerProps {
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
   previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
+  playerIndex?: number; // Index for color coding
 }
 
-const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid, previousRoundPlayer, isMobile = false }) => {
+const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid, previousRoundPlayer, isMobile = false, playerIndex = 0 }) => {
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -111,7 +113,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
   if (isMobile) {
     return (
-      <div className={`bg-red-900 rounded-lg shadow-lg border-2 select-none ${isMyTurn ? 'border-green-300' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} p-2 min-w-0 flex-shrink-0`}>
+      <div className={`${getPlayerColor(playerIndex, 'bg')} rounded-lg shadow-lg border-2 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(playerIndex, 'border')} ${player.eliminated ? 'opacity-50' : ''} p-2 min-w-0 flex-shrink-0`}>
         {/* Username with Dealer Button and Win Tokens */}
         <div className="text-center mb-1">
           <div className="flex items-center justify-center space-x-1">
@@ -164,7 +166,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
       <div 
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 bg-red-900 rounded-2xl shadow-lg border-4 select-none ${isMyTurn ? 'border-green-300' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center p-3`}
+        className={`w-40 h-48 ${getPlayerColor(playerIndex, 'bg')} rounded-2xl shadow-lg border-4 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(playerIndex, 'border')} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center p-3`}
       >
         {/* Content with counter-rotation for text readability */}
         <div className={`${position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''} w-full h-full flex flex-col items-center justify-center`}>

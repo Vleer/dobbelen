@@ -60,6 +60,12 @@
   "game.result.collected7Tokens": "heeft 7 win tokens verzameld en is de ultieme",
   "game.result.champion": "kampioen",
   
+  "game.analysis.title": "Dobbelsteen Analyse ({{totalDice}} totaal)",
+  "game.analysis.show": "Toon Analyse",
+  "game.analysis.hide": "Verberg Analyse",
+  "game.continue": "Doorgaan",
+  "game.continuing": "Doorgaan...",
+  
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
   
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",

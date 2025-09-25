@@ -3,6 +3,7 @@ import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 import DiceHandSVG from './DiceHandSVG';
+import { getPlayerColor } from '../utils/playerColors';
 
 interface LocalPlayerProps {
   player: Player;
@@ -159,7 +160,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   if (isMobile) {
     return (
-      <div className={`w-full bg-green-800 p-3 shadow-2xl border-t-4 select-none ${isMyTurn ? 'border-green-300' : 'border-green-600'}`}>
+      <div className={`w-full ${getPlayerColor(0, 'bg')} p-3 shadow-2xl border-t-4 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(0, 'border')}`}>
         {/* Mobile Layout - Horizontal */}
         <div className="flex items-center justify-between">
           {/* Left side - Player info */}
@@ -220,12 +221,12 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             resetInactivityTimer();
           }
         }}
-        className={`bg-green-800 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
+        className={`${getPlayerColor(0, 'bg')} p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
           isFlashing 
             ? 'border-yellow-400 animate-pulse' 
             : isMyTurn 
               ? 'border-green-300' 
-              : 'border-black'
+              : getPlayerColor(0, 'border')
         } ${player.eliminated ? 'opacity-50' : ''}`}
       >
         {/* Username with Dealer Button and Win Tokens */}
