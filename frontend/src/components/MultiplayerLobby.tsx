@@ -84,6 +84,21 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     setIsInitialized(true);
   }, [isInitialized]);
 
+  // Auto-select text in the player name input when it gets focused
+  useEffect(() => {
+    if (isInitialized && playerName) {
+      // Small delay to ensure the input is focused and rendered
+      const timer = setTimeout(() => {
+        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+        if (input) {
+          input.select();
+        }
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, playerName]);
+
   // Poll for game updates when in a game - only fetch, don't join
   useEffect(() => {
     if (!game || !gameId || !isInitialized) return;

@@ -2,12 +2,14 @@ import React from "react";
 
 interface DiceSVGProps {
   value: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
   const getSize = () => {
     switch (size) {
+      case 'xs':
+        return 24; // Extra small for opponent containers
       case 'sm':
         return 32; // Match w-8 h-8 (32px)
       case 'lg':

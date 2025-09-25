@@ -334,19 +334,14 @@ const GameTable: React.FC<GameTableProps> = ({
         {/* Mobile Bid Display - Below players with separator */}
         {game.currentBid && (
           <div className="px-4 py-2">
-            <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
-              <div className="flex items-center justify-center space-x-3">
-                <div className="text-lg font-bold text-white">
-                  {game.players.find(p => p.id === game.currentBid?.playerId)?.name || 'Unknown'} {t('game.bids')}
-                </div>
-                <div className="text-xl font-bold text-amber-200">
-                  {game.currentBid.quantity} {t(`game.${game.currentBid.faceValue === 1 ? 'ones' : game.currentBid.faceValue === 2 ? 'twos' : game.currentBid.faceValue === 3 ? 'threes' : game.currentBid.faceValue === 4 ? 'fours' : game.currentBid.faceValue === 5 ? 'fives' : 'sixes'}`)}
-                </div>
-                <div className="flex items-center space-x-1">
-                  <DiceHandSVG diceValues={Array(game.currentBid.quantity).fill(game.currentBid.faceValue)} size="sm" />
-                </div>
-              </div>
-            </div>
+            <BidDisplay 
+              currentBid={game.currentBid}
+              currentPlayerId={game.currentPlayerId}
+              players={game.players}
+              roundNumber={game.roundNumber}
+              winner={game.winner || undefined}
+              isMobile={true}
+            />
           </div>
         )}
 
@@ -486,6 +481,7 @@ const GameTable: React.FC<GameTableProps> = ({
           players={game.players}
           roundNumber={game.roundNumber}
           winner={game.winner || undefined}
+          isMobile={false}
         />
       </div>
 

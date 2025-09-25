@@ -3,6 +3,7 @@ import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceHand from './DiceHand';
 import DiceHandSVG from './DiceHandSVG';
+import DiceSVG from './DiceSVG';
 
 interface OpponentPlayerProps {
   player: Player;
@@ -101,13 +102,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
   return (
     <div className={getPositionClasses()}>
-          {/* Player Container - Big Circle with Dark Red Background */}
-          <div className={`w-32 h-32 bg-red-900 rounded-full shadow-lg border-4 ${isMyTurn ? 'border-green-300' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center`}>
+      {/* Player Container - Rounded Rectangle with Dark Red Background */}
+      <div className={`w-40 h-48 bg-red-900 rounded-2xl shadow-lg border-4 ${isMyTurn ? 'border-green-300' : 'border-black'} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center p-3`}>
         {/* Content with counter-rotation for text readability */}
-        <div className={position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''}>
+        <div className={`${position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''} w-full h-full flex flex-col items-center justify-center`}>
           {/* Username */}
           <div className="text-center mb-2">
-            <span className="font-bold text-sm text-white">{player.name}</span>
+            <span className="font-bold text-sm text-white break-words">{player.name}</span>
             {isMyTurn && <span className="ml-1 text-green-200 text-sm">🪙</span>}
           </div>
 
@@ -121,14 +122,20 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
           )}
 
           {/* Cup - Always closed for opponents, or dice if revealed */}
-          <div className="flex justify-center mb-1">
+          <div className="flex justify-center mb-2">
             {showDice && previousRoundPlayer && previousRoundPlayer.dice && previousRoundPlayer.dice.length > 0 ? (
-              <div className="flex flex-col items-center space-y-1">
-                <DiceHandSVG diceValues={previousRoundPlayer.dice} size="sm" />
+              <div className="flex flex-col items-center space-y-1 max-w-full">
+                <div className="flex justify-center max-h-8 overflow-hidden px-1 w-full">
+                  <div className="flex flex-nowrap gap-0.5 justify-center">
+                    {previousRoundPlayer.dice.map((value, index) => (
+                      <DiceSVG key={index} value={value} size="xs" />
+                    ))}
+                  </div>
+                </div>
                 <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div>
               </div>
             ) : (
-              <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
+              <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${player.eliminated ? 'bg-gray-400 border-gray-600' : 'bg-amber-600 border-amber-800'}`}>
                 <span className="text-white text-xs">C</span>
               </div>
             )}
@@ -148,7 +155,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
           {/* Previous Bid Display */}
           {previousBid && previousBid.playerId === player.id && (
-              <div className="text-center text-xs text-amber-200 font-bold mb-1">
+              <div className="text-center text-xs text-amber-200 font-bold mb-1 break-words">
               {t('game.previousBid', { quantity: previousBid.quantity, faceValue: previousBid.faceValue })}
             </div>
           )}

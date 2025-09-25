@@ -154,11 +154,11 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
         className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-sm w-full select-none relative z-10"
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-white">{t('game.makeYourBid')}</h3>
+        <div className="flex items-center mb-4 relative">
+          <h3 className="text-lg font-bold text-white flex-1 text-center">{t('game.makeYourBid')}</h3>
           <button
             onClick={toggleExpanded}
-            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-sm text-white"
+            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-sm text-white absolute right-0"
           >
             {isExpanded ? '−' : '+'}
           </button>
@@ -168,7 +168,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
           {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
           {displayQuantities.map(quantity => (
             <div key={quantity} className="flex items-center">
-              <div className="w-8"></div>
+              <div className="w-12"></div>
               {faceValues.map(faceValue => (
                 <button
                   key={`${quantity}-${faceValue}`}
@@ -185,9 +185,9 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
           
           {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
           <div className="flex items-center pt-2">
-            <div className="w-8"></div>
+            <div className="w-12"></div>
             {faceValues.map(faceValue => (
-              <div key={faceValue} className="w-8 h-8 flex justify-center items-center">
+              <div key={faceValue} className="w-12 h-12 flex justify-center items-center">
                 <DiceHandSVG diceValues={[faceValue]} size="sm" />
               </div>
             ))}
