@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
+import Flag from './Flags';
 
 const LanguageSelector: React.FC = () => {
   const { currentLanguage, setLanguage, availableLanguages } = useLanguage();
@@ -20,7 +21,7 @@ const LanguageSelector: React.FC = () => {
         className="flex items-center space-x-2 px-3 py-2 text-white hover:text-gray-300 transition-colors text-sm"
         aria-label="Select language"
       >
-        <span className="text-lg">{currentLangConfig?.flag}</span>
+        <div className="w-6 h-4"><Flag code={currentLangConfig!.code} /></div>
         <span className="text-white font-medium text-sm">{currentLangConfig?.code.toUpperCase()}</span>
         <svg
           className={`w-4 h-4 text-white transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -52,10 +53,9 @@ const LanguageSelector: React.FC = () => {
                     currentLanguage === language.code ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                   }`}
                 >
-                  <span className="text-2xl">{language.flag}</span>
+                  <div className="w-8 h-5"><Flag code={language.code} /></div>
                   <div className="flex flex-col">
                     <span className="font-medium">{language.nativeName}</span>
-                    <span className="text-sm text-gray-500">{language.name}</span>
                   </div>
                   {currentLanguage === language.code && (
                     <svg className="w-5 h-5 text-blue-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">

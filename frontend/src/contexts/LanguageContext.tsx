@@ -1,38 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Language = 'en' | 'nl' | 'fr' | 'de';
+export type Language = 'en' | 'nl' | 'fr' | 'de' | 'it';
 
 export interface LanguageConfig {
   code: Language;
-  name: string;
-  flag: string;
   nativeName: string;
 }
 
 export const LANGUAGES: LanguageConfig[] = [
   {
     code: 'en',
-    name: 'English',
-    flag: '🇬🇧',
     nativeName: 'English'
   },
   {
     code: 'nl',
-    name: 'Dutch',
-    flag: '🇳🇱',
     nativeName: 'Nederlands'
   },
   {
     code: 'fr',
-    name: 'French',
-    flag: '🇫🇷',
     nativeName: 'Français'
   },
   {
     code: 'de',
-    name: 'German',
-    flag: '🇩🇪',
     nativeName: 'Deutsch'
+  },
+  {
+    code: 'it',
+    nativeName: 'Italiano'
   }
 ];
 
@@ -99,7 +93,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
                           timezone.includes('Switzerland') ||
                           // Check if any of the browser's languages include German
                           allLanguages.some(lang => lang.includes('de'));
-    
+
+                          // Check for Italian region
+    const isItalianRegion = fullLocale.includes('it') ||
+                          fullLocale.includes('italy') ||
+                          timezone.includes('Rome') ||
+                          allLanguages.some(lang => lang.includes('it'));
     // Debug logging
     console.log('Language detection:', {
       saved: saved,
@@ -128,6 +127,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     if (isGermanRegion) {
       console.log('Setting German as default language for German region');
       return 'de';
+    }
+    
+
+
+    if (isItalianRegion) {
+      console.log('Setting Italian as default language for Italian region');
+      return 'it';
     }
     
     // Otherwise check if browser language is supported
