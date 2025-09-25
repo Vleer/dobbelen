@@ -118,7 +118,7 @@ curl http://localhost:8080/actuator/health
 ```
 
 ### Frontend not connecting to backend
-Verify the backend is running and check the nginx configuration in `dobbelen-frontend/nginx.conf`.
+Verify the backend is running and check the nginx configuration in `frontend/nginx.conf`.
 
 ## Development
 
@@ -130,7 +130,7 @@ cd backend
 ./gradlew bootRun
 
 # Frontend
-cd dobbelen-frontend
+cd frontend
 npm start
 ```
 
@@ -140,7 +140,7 @@ npm start
 docker build -t dobbelen-backend ./backend
 
 # Frontend
-docker build -t dobbelen-frontend ./dobbelen-frontend
+docker build -t frontend ./frontend
 ```
 
 ## Production Deployment

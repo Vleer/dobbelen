@@ -1,7 +1,7 @@
 services:
   frontend:
     build:
-      context: ./dobbelen-frontend
+      context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "48081:80"

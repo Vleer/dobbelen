@@ -71,7 +71,7 @@ The backend will start on `http://localhost:8080`
 
 ### Frontend (React)
 ```bash
-cd dobbelen-frontend
+cd frontend
 npm install
 npm start
 ```
@@ -103,7 +103,7 @@ dobbelen/
 │   │       ├── model/      # Data models
 │   │       └── config/     # Configuration
 │   └── src/main/resources/ # Application properties
-├── dobbelen-frontend/       # React frontend
+├── frontend/                # React frontend
 │   ├── src/
 │   │   ├── components/     # React components
 │   │   ├── services/       # API services

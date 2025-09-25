@@ -16,9 +16,9 @@ services:
 
   frontend:
     build:
-      context: ./dobbelen-frontend
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: dobbelen-frontend
+    container_name: frontend
     ports:
       - "3000:80"
     depends_on:

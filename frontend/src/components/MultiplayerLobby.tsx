@@ -234,8 +234,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   type="text"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
                   placeholder={t('lobby.enterUsername')}
+                  autoFocus
                 />
                 <button
                   onClick={() => setPlayerName(getRandomDutchName())}
@@ -269,6 +271,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                         type="text"
                         value={gameId}
                         onChange={(e) => setGameId(e.target.value.toLowerCase())}
+                        onFocus={(e) => e.target.select()}
                         className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
                         placeholder={t('lobby.gameId')}
                         maxLength={3}
