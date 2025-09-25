@@ -45,7 +45,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game }) => {
 
   return (
     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-      <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-8 shadow-2xl text-center min-w-96">
+      <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none">
         {/* Result Status */}
         <div className="text-2xl font-bold text-amber-200 mb-4">
           {getResultMessage()}

@@ -47,7 +47,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800">
+    <div className="flex items-center justify-center min-h-screen bg-green-800 select-none">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         <h1 className="text-3xl font-bold text-center mb-6 text-green-800">
           Liar's Dice - Endurance Round

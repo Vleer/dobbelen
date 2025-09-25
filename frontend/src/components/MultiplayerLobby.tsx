@@ -231,7 +231,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4 select-none">
       <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full">
         <h1 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800">
           {t('game.title')}

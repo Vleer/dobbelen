@@ -132,7 +132,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
         
         {/* Dice Visualization */}
         <div className="flex items-center space-x-2">
-          <DiceHandSVG diceValues={diceValues} size="md" />
+          <DiceHandSVG diceValues={diceValues} size="lg" />
         </div>
       </div>
     </div>

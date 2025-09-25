@@ -297,7 +297,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const opponents = getOpponents();
 
   return (
-    <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden">
+    <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden select-none">
       {/* Background */}
       <div
         className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
@@ -505,28 +505,28 @@ const GameTable: React.FC<GameTableProps> = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="bg-gray-600 text-white px-2 py-1 md:px-4 md:py-2 rounded-lg hover:bg-gray-700 font-medium shadow-lg text-sm md:text-base"
+              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
             >
               ← Back
             </button>
           )}
         </div>
 
-        {/* Right side - Game Info and Language Selector */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        {/* Right side - Game Info and Language Selector (hidden on mobile) */}
+        <div className="hidden md:flex items-center space-x-4">
           {/* Game Info */}
           <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
-            <div className="flex items-center justify-between p-1 md:p-2">
+            <div className="flex items-center justify-between p-2">
               <button
                 onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
-                className="text-white hover:text-gray-300 mr-1 md:mr-2 text-xs md:text-sm"
+                className="text-white hover:text-gray-300 mr-2 text-sm"
               >
                 {isGameInfoMinimized ? '▶' : '▼'}
               </button>
-              <span className="text-xs md:text-sm font-bold">Game Info</span>
+              <span className="text-sm font-bold">Game Info</span>
             </div>
             {!isGameInfoMinimized && (
-              <div className="px-1 pb-1 md:px-2 md:pb-2 text-xs md:text-sm">
+              <div className="px-2 pb-2 text-sm">
                 <div>{t('lobby.gameId')}: {game.id}</div>
                 <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
                 <div>{t('common.state')}: {game.state}</div>

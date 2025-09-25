@@ -21,6 +21,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState(() => {
     const saved = localStorage.getItem('bidSelectorPosition');
     return saved ? JSON.parse(saved) : { x: window.innerWidth - 400, y: 100 };
@@ -109,7 +110,8 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
 
   // Drag functionality
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.drag-handle')) {
+    if (e.button === 0) { // Left mouse button
+      setDragStart({ x: e.clientX, y: e.clientY });
       setIsDragging(true);
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
@@ -132,7 +134,19 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    if (isDragging) {
+      const dragDistance = Math.sqrt(
+        Math.pow(e.clientX - dragStart.x, 2) + Math.pow(e.clientY - dragStart.y, 2)
+      );
+      
+      // If dragged more than 5 pixels, it's a drag, not a click
+      if (dragDistance > 5) {
+        // This was a drag, prevent any click events
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
     setIsDragging(false);
   };
 
@@ -151,108 +165,25 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
     return (
       <div
         ref={containerRef}
-        className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-sm w-full select-none relative z-10"
+        className="bg-green-800 p-3 rounded-2xl shadow-lg border-4 border-black max-w-sm w-full select-none relative z-10"
+        onMouseDown={handleMouseDown}
+        style={{
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
       >
-        {/* Header */}
-        <div className="flex items-center mb-4 relative">
-          <h3 className="text-lg font-bold text-white flex-1 text-center">{t('game.makeYourBid')}</h3>
-          <button
-            onClick={toggleExpanded}
-            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-sm text-white absolute right-0"
-          >
-            {isExpanded ? '−' : '+'}
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
-          {displayQuantities.map(quantity => (
-            <div key={quantity} className="flex items-center">
-              <div className="w-12"></div>
-              {faceValues.map(faceValue => (
-                <button
-                  key={`${quantity}-${faceValue}`}
-                  onClick={() => handleBidClick(quantity, faceValue)}
-                  disabled={disabled || !isBidValid(quantity, faceValue)}
-                  className={getBidButtonClass(quantity, faceValue)}
-                  title={isBidValid(quantity, faceValue) ? `${quantity} of ${faceValue}s` : 'Invalid bid'}
-                >
-                  {quantity}
-                </button>
-              ))}
-            </div>
-          ))}
-          
-          {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-          <div className="flex items-center pt-2">
-            <div className="w-12"></div>
-            {faceValues.map(faceValue => (
-              <div key={faceValue} className="w-12 h-12 flex justify-center items-center">
-                <DiceHandSVG diceValues={[faceValue]} size="sm" />
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Action Buttons */}
-        {currentBid && (
-          <div className="mt-4 flex justify-center space-x-4">
-            <button
-              onClick={onDoubt}
-              disabled={disabled}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
-            >
-              {t('game.doubt')}
-            </button>
-            <button
-              onClick={onSpotOn}
-              disabled={disabled}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
-            >
-              {t('game.spotOn')}
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      ref={containerRef}
-      className="bg-green-800 p-4 rounded-3xl shadow-lg border-4 border-green-300 max-w-md select-none relative z-10"
-      style={{
-        position: 'fixed',
-        left: position.x,
-        top: position.y,
-        zIndex: 1000,
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      {/* Header with drag handle and expand/collapse */}
-      <div className="flex justify-between items-center mb-4 drag-handle">
-        <h3 className="text-lg font-bold text-white">{t('game.makeYourBid')}</h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={toggleExpanded}
-            className="px-2 py-1 bg-green-600 hover:bg-green-500 rounded text-sm text-white"
-          >
-            {isExpanded ? '−' : '+'}
-          </button>
-        </div>
-      </div>
-
-      
-      <div className="space-y-2">
+        <div className="space-y-1">
         {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
         {displayQuantities.map(quantity => (
-          <div key={quantity} className="flex items-center">
-            <div className="w-12"></div>
+          <div key={quantity} className="flex items-center justify-center gap-1">
             {faceValues.map(faceValue => (
               <button
                 key={`${quantity}-${faceValue}`}
-                onClick={() => handleBidClick(quantity, faceValue)}
+                onClick={(e) => {
+                  // Only handle click if it wasn't a drag
+                  if (!isDragging) {
+                    handleBidClick(quantity, faceValue);
+                  }
+                }}
                 disabled={disabled || !isBidValid(quantity, faceValue)}
                 className={getBidButtonClass(quantity, faceValue)}
                 title={isBidValid(quantity, faceValue) ? `${quantity} of ${faceValue}s` : 'Invalid bid'}
@@ -264,8 +195,91 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
         ))}
         
         {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-        <div className="flex items-center pt-2">
-          <div className="w-12"></div>
+        <div className="flex items-center justify-center gap-1 pt-1">
+          {faceValues.map(faceValue => (
+            <div key={faceValue} className="w-12 h-12 flex justify-center items-center">
+              <DiceHandSVG diceValues={[faceValue]} size="md" />
+            </div>
+          ))}
+        </div>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="mt-2 flex justify-center space-x-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDoubt?.();
+              }}
+              disabled={disabled}
+              className="px-4 py-2 bg-red-900 text-white rounded-2xl hover:bg-red-800 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-black transition-all duration-200"
+            >
+              {t('game.doubt')}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSpotOn?.();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={disabled}
+              className="px-4 py-2 bg-green-800 text-white rounded-2xl hover:bg-green-700 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-600 transition-all duration-200"
+            >
+              {t('game.spotOn')}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleExpanded();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="w-12 h-10 bg-green-800 hover:bg-green-700 rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-600 transition-all duration-200 flex items-center justify-center text-white"
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
+          </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="bg-green-800 p-3 rounded-2xl shadow-lg border-4 border-black max-w-sm select-none relative z-10"
+      style={{
+        position: 'fixed',
+        left: position.x,
+        top: position.y,
+        zIndex: 1000,
+        cursor: isDragging ? 'grabbing' : 'grab'
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      <div className="space-y-1">
+        {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
+        {displayQuantities.map(quantity => (
+          <div key={quantity} className="flex items-center justify-center gap-1">
+            {faceValues.map(faceValue => (
+              <button
+                key={`${quantity}-${faceValue}`}
+                onClick={(e) => {
+                  // Only handle click if it wasn't a drag
+                  if (!isDragging) {
+                    handleBidClick(quantity, faceValue);
+                  }
+                }}
+                disabled={disabled || !isBidValid(quantity, faceValue)}
+                className={getBidButtonClass(quantity, faceValue)}
+                title={isBidValid(quantity, faceValue) ? `${quantity} of ${faceValue}s` : 'Invalid bid'}
+              >
+                {quantity}
+              </button>
+            ))}
+          </div>
+        ))}
+        
+        {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
+        <div className="flex items-center justify-center gap-1 pt-1">
           {faceValues.map(faceValue => (
             <div key={faceValue} className="w-12 h-12 flex justify-center items-center">
               <DiceHandSVG diceValues={[faceValue]} size="lg" />
@@ -275,24 +289,37 @@ const BidSelector: React.FC<BidSelectorProps> = ({ currentBid, onBidSelect, onDo
       </div>
       
       {/* Action Buttons */}
-      {currentBid && (
-        <div className="mt-4 flex justify-center space-x-4">
+      <div className="mt-2 flex justify-center space-x-3">
           <button
-            onClick={onDoubt}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDoubt?.();
+            }}
             disabled={disabled}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+            className="px-4 py-2 bg-red-900 text-white rounded-2xl hover:bg-red-800 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-black transition-all duration-200"
           >
             {t('game.doubt')}
           </button>
           <button
-            onClick={onSpotOn}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSpotOn?.();
+            }}
             disabled={disabled}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+            className="px-4 py-2 bg-green-800 text-white rounded-2xl hover:bg-green-700 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-600 transition-all duration-200"
           >
             {t('game.spotOn')}
           </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleExpanded();
+            }}
+            className="w-12 h-10 bg-green-800 hover:bg-green-700 rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-600 transition-all duration-200 flex items-center justify-center text-white"
+          >
+            {isExpanded ? '−' : '+'}
+          </button>
         </div>
-      )}
 
     </div>
   );
