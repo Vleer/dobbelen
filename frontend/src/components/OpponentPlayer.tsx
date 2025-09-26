@@ -138,7 +138,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
           <div className="flex justify-center mb-1">
             <div className="flex flex-col items-center space-y-1">
               <DiceHandSVG diceValues={previousRoundPlayer.dice} size="sm" />
-              <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div>
+              {/* <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div> */}
             </div>
           </div>
         )}
@@ -191,16 +191,16 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
           {/* Dice - Only show when revealed */}
           {showDice && previousRoundPlayer && previousRoundPlayer.dice && previousRoundPlayer.dice.length > 0 && (
-            <div className="flex justify-center mb-2">
-              <div className="flex flex-col items-center space-y-1 max-w-full">
-                <div className="flex justify-center max-h-8 overflow-hidden px-1 w-full">
-                  <div className="flex flex-nowrap gap-0.5 justify-center">
+            <div className="flex justify-center mb-2 w-full">
+              <div className="flex flex-col items-center space-y-1 w-full">
+                <div className="flex justify-center w-full px-1 overflow-hidden">
+                  <div className="flex gap-0.5 flex-nowrap justify-center max-w-full">
                     {previousRoundPlayer.dice.map((value, index) => (
-                      <DiceSVG key={index} value={value} size="xs" />
+                      <DiceSVG key={index} value={value} size="sm" />
                     ))}
                   </div>
                 </div>
-                <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div>
+                {/* <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div> */}
               </div>
             </div>
           )}

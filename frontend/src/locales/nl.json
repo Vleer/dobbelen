@@ -44,9 +44,9 @@
   
   "game.dealer": "D",
   "game.dice": "dobbelstenen",
-  "game.revealed": "ONTHULD",
+  "game.revealed": "Onthuld",
   "game.out": "UIT",
-  "game.eliminated": "GESCHRAPT",
+  "game.eliminated": "UIT",
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
   "game.winTokens": "🏆 {{count}}",
   

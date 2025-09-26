@@ -117,7 +117,8 @@ public class GameService {
         }
 
         List<Player> activePlayers = game.getActivePlayers();
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), true);
+        // No wild cards - only count exact face value matches
+        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
         
         System.out.println("DOUBT: Player " + doubtingPlayerId + " doubted " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
@@ -224,7 +225,8 @@ public class GameService {
         }
 
         List<Player> activePlayers = game.getActivePlayers();
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), true);
+        // No wild cards - only count exact face value matches
+        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
         
         System.out.println("SPOT ON: Player " + spotOnPlayerId + " called spot on for " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +

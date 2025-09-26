@@ -6,6 +6,8 @@ interface DiceSVGProps {
 }
 
 const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
+  // Generate unique ID for this dice instance to avoid conflicts
+  const uniqueId = React.useMemo(() => Math.random().toString(36).substr(2, 9), []);
   const getSize = () => {
     switch (size) {
       case 'xs':
@@ -85,11 +87,11 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
     >
       {/* Dice background with gradient */}
       <defs>
-        <linearGradient id={`diceGradient-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={`diceGradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#f3f4f6" />
         </linearGradient>
-        <filter id={`shadow-${size}`}>
+        <filter id={`shadow-${uniqueId}`}>
           <feDropShadow dx="1" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.2"/>
         </filter>
       </defs>
@@ -102,10 +104,10 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
         height={sizePx - padding * 2}
         rx={sizePx * 0.12}
         ry={sizePx * 0.12}
-        fill={`url(#diceGradient-${size})`}
+        fill={`url(#diceGradient-${uniqueId})`}
         stroke="#d1d5db"
         strokeWidth="1"
-        filter={`url(#shadow-${size})`}
+        filter={`url(#shadow-${uniqueId})`}
       />
       
       {/* Inner shadow for depth */}
