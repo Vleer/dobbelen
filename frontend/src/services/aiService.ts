@@ -14,12 +14,27 @@ interface BidHistory {
   roundNumber: number;
 }
 
+// Enhanced opponent tracking data
+interface OpponentProfile {
+  playerId: string;
+  bidHistory: BidHistory[];
+  doubtHistory: { bid: any; success: boolean; round: number }[];
+  bluffTendency: number; // 0-1 scale
+  aggressiveness: number; // 0-1 scale  
+  conservativeness: number; // 0-1 scale
+  reliability: number; // 0-1 scale based on prediction accuracy
+  lastSeenDice?: number[]; // Dice from previous rounds if visible
+}
+
 class SmartAIPlayer {
   id: string;
   name: string;
   bidHistory: BidHistory[] = [];
-  doubtHistory: { success: boolean; targetBid: any }[] = [];
-  riskTolerance: number = 0.3; // Base risk tolerance (0 = very conservative, 1 = very aggressive)
+  doubtHistory: { success: boolean; targetBid: any; round: number }[] = [];
+  riskTolerance: number = 0.35; // Base risk tolerance (0 = very conservative, 1 = very aggressive)
+  opponentProfiles: Map<string, OpponentProfile> = new Map();
+  roundNumber: number = 1;
+  gameHistory: Array<{ round: number; totalDice: number; activePlayers: number; outcome: string }> = [];
   
   constructor(id: string, name: string) {
     this.id = id;
@@ -28,7 +43,7 @@ class SmartAIPlayer {
 
   // Calculate exact probability of a bid being true using binomial distribution
   calculateBidProbability(quantity: number, faceValue: number, totalDice: number, knownDice: number[] = []): number {
-    // Each die has 1/6 chance of showing the target face value
+    // Each die has 1/6 chance of showing the target face value (no wild cards in this game)
     const successProbability = 1/6;
     
     // Account for known dice (our own dice)
@@ -51,6 +66,29 @@ class SmartAIPlayer {
     return probability;
   }
 
+  // More sophisticated probability calculation including opponent modeling
+  calculateAdvancedBidProbability(quantity: number, faceValue: number, totalDice: number, 
+                                 knownDice: number[], biddingPlayerId: string): number {
+    const baseProbability = this.calculateBidProbability(quantity, faceValue, totalDice, knownDice);
+    
+    // Adjust based on opponent profile
+    const opponentProfile = this.opponentProfiles.get(biddingPlayerId);
+    if (!opponentProfile) return baseProbability;
+    
+    // If opponent tends to bluff, reduce our confidence in their bid
+    const bluffAdjustment = opponentProfile.bluffTendency * 0.15; // Up to 15% reduction
+    
+    // If opponent is very aggressive, they might be overbidding
+    const aggressionAdjustment = Math.max(0, opponentProfile.aggressiveness - 0.5) * 0.1; // Up to 10% reduction
+    
+    // If opponent is reliable, increase our confidence
+    const reliabilityAdjustment = (opponentProfile.reliability - 0.5) * 0.1; // ±10% adjustment
+    
+    const adjustedProbability = baseProbability - bluffAdjustment - aggressionAdjustment + reliabilityAdjustment;
+    
+    return Math.max(0.01, Math.min(0.99, adjustedProbability));
+  }
+
   private binomialCoefficient(n: number, k: number): number {
     if (k > n) return 0;
     if (k === 0 || k === n) return 1;
@@ -62,42 +100,202 @@ class SmartAIPlayer {
     return result;
   }
 
-  // Assess if a bid looks like a bluff based on historical patterns
-  assessBluffLikelihood(bid: any, playerId: string): number {
-    const playerHistory = this.bidHistory.filter(h => h.playerId === playerId);
-    if (playerHistory.length < 3) return 0.5; // Neutral if insufficient data
+  // Advanced bluff detection using multiple factors
+  assessBluffLikelihood(bid: any, playerId: string, gameContext: any): number {
+    const opponentProfile = this.opponentProfiles.get(playerId);
+    if (!opponentProfile || opponentProfile.bidHistory.length < 3) {
+      return 0.5; // Neutral if insufficient data
+    }
     
-    // Look for patterns of overbidding
-    const recentBids = playerHistory.slice(-5);
-    let aggressiveCount = 0;
+    // Factor 1: Historical bluffing tendency
+    let bluffScore = opponentProfile.bluffTendency;
     
-    recentBids.forEach(historicalBid => {
-      // Simple heuristic: high quantities relative to face value suggest aggression
-      const aggressionScore = historicalBid.quantity / (historicalBid.faceValue || 1);
-      if (aggressionScore > 3) aggressiveCount++;
-    });
+    // Factor 2: Bid aggressiveness relative to expected value
+    const expectedCount = gameContext.totalDice / 6; // Expected count for any face value
+    const bidAggression = bid.quantity / expectedCount;
+    if (bidAggression > 1.5) bluffScore += 0.2; // Very aggressive bid
+    else if (bidAggression > 1.2) bluffScore += 0.1; // Moderately aggressive bid
     
-    return aggressiveCount / recentBids.length;
+    // Factor 3: Sudden change in bidding pattern
+    const recentBids = opponentProfile.bidHistory.slice(-3);
+    if (recentBids.length >= 2) {
+      const avgRecentQuantity = recentBids.reduce((sum, b) => sum + b.quantity, 0) / recentBids.length;
+      if (bid.quantity > avgRecentQuantity * 1.4) {
+        bluffScore += 0.15; // Sudden escalation
+      }
+    }
+    
+    // Factor 4: Position in game (endgame pressure)
+    if (gameContext.activePlayers <= 3) {
+      bluffScore += 0.1; // More likely to bluff in endgame
+    }
+    
+    // Factor 5: Round pressure (higher bids under pressure)
+    if (bid.quantity >= gameContext.totalDice * 0.4) {
+      bluffScore += 0.1; // High-pressure bid
+    }
+    
+    return Math.max(0.1, Math.min(0.9, bluffScore));
   }
 
-  // Dynamic risk tolerance based on game state
+  // Identify high-confidence exact-match scenarios for spot-on
+  identifySpotOnOpportunity(bid: any, totalDice: number, knownDice: number[], gameContext: any): number {
+    // Calculate probability that bid is exactly correct
+    const exactProbability = this.calculateExactProbability(bid.quantity, bid.faceValue, totalDice, knownDice);
+    
+    // Base spot-on threshold
+    let spotOnThreshold = 0.15; // 15% base probability needed
+    
+    // Adjust threshold based on game state
+    if (gameContext.activePlayers <= 3) {
+      spotOnThreshold *= 0.8; // More willing to take risks in endgame
+    }
+    
+    // Adjust based on our dice count
+    const ourCount = knownDice.filter(die => die === bid.faceValue).length;
+    if (ourCount >= bid.quantity - 2) {
+      spotOnThreshold *= 0.7; // More confident if we have most of the dice
+    }
+    
+    // Factor in opponent reliability
+    const opponentProfile = this.opponentProfiles.get(bid.playerId);
+    if (opponentProfile && opponentProfile.reliability > 0.7) {
+      spotOnThreshold *= 1.2; // Need higher confidence against reliable opponents
+    }
+    
+    return exactProbability > spotOnThreshold ? exactProbability : 0;
+  }
+
+  // Calculate probability of exact match
+  private calculateExactProbability(quantity: number, faceValue: number, totalDice: number, knownDice: number[]): number {
+    const successProbability = 1/6;
+    const knownMatches = knownDice.filter(die => die === faceValue).length;
+    const remainingDice = totalDice - knownDice.length;
+    const remainingNeeded = quantity - knownMatches;
+    
+    if (remainingNeeded < 0 || remainingNeeded > remainingDice) return 0;
+    
+    // Exact binomial probability
+    return this.binomialCoefficient(remainingDice, remainingNeeded) * 
+           Math.pow(successProbability, remainingNeeded) * 
+           Math.pow(1 - successProbability, remainingDice - remainingNeeded);
+  }
+
+  // Dynamic risk tolerance with endgame awareness
   calculateRiskTolerance(activePlayers: number, isEarlyGame: boolean): number {
     let adjustedTolerance = this.riskTolerance;
     
-    // More conservative with fewer players (higher stakes)
-    if (activePlayers <= 3) adjustedTolerance *= 0.7;
-    
-    // More aggressive early in the game
-    if (isEarlyGame) adjustedTolerance *= 1.2;
-    
-    // Account for our doubt success rate
-    if (this.doubtHistory.length > 0) {
-      const successRate = this.doubtHistory.filter(d => d.success).length / this.doubtHistory.length;
-      if (successRate > 0.6) adjustedTolerance *= 1.1; // More confident
-      if (successRate < 0.4) adjustedTolerance *= 0.9; // Less confident
+    // Endgame awareness - more conservative with fewer players
+    if (activePlayers <= 2) {
+      adjustedTolerance *= 0.6; // Very conservative in final showdown
+    } else if (activePlayers <= 3) {
+      adjustedTolerance *= 0.75; // Conservative with few players
     }
     
-    return Math.min(1.0, Math.max(0.1, adjustedTolerance));
+    // Early game aggression
+    if (isEarlyGame && activePlayers >= 4) {
+      adjustedTolerance *= 1.15; // Slightly more aggressive early with many players
+    }
+    
+    // Performance-based adjustment
+    if (this.doubtHistory.length >= 3) {
+      const recentHistory = this.doubtHistory.slice(-5);
+      const successRate = recentHistory.filter(d => d.success).length / recentHistory.length;
+      
+      if (successRate >= 0.7) {
+        adjustedTolerance *= 1.1; // More confident after successes
+      } else if (successRate <= 0.3) {
+        adjustedTolerance *= 0.85; // More cautious after failures
+      }
+    }
+    
+    // Opponent adaptation
+    let avgOpponentAggression = 0.5;
+    if (this.opponentProfiles.size > 0) {
+      const totalAggression = Array.from(this.opponentProfiles.values())
+        .reduce((sum, profile) => sum + profile.aggressiveness, 0);
+      avgOpponentAggression = totalAggression / this.opponentProfiles.size;
+    }
+    
+    // If opponents are aggressive, be more conservative
+    if (avgOpponentAggression > 0.7) {
+      adjustedTolerance *= 0.9;
+    } else if (avgOpponentAggression < 0.3) {
+      adjustedTolerance *= 1.1; // Be more aggressive against conservative opponents
+    }
+    
+    return Math.min(0.8, Math.max(0.15, adjustedTolerance));
+  }
+
+  // Update opponent profile based on observed behavior
+  updateOpponentProfile(playerId: string, bid: any, actualOutcome?: { actualCount: number; wasBluff: boolean }): void {
+    if (!this.opponentProfiles.has(playerId)) {
+      this.opponentProfiles.set(playerId, {
+        playerId,
+        bidHistory: [],
+        doubtHistory: [],
+        bluffTendency: 0.5,
+        aggressiveness: 0.5,
+        conservativeness: 0.5,
+        reliability: 0.5
+      });
+    }
+    
+    const profile = this.opponentProfiles.get(playerId)!;
+    
+    // Add to bid history
+    profile.bidHistory.push({
+      playerId,
+      quantity: bid.quantity,
+      faceValue: bid.faceValue,
+      roundNumber: this.roundNumber
+    });
+    
+    // Keep recent history
+    if (profile.bidHistory.length > 20) {
+      profile.bidHistory = profile.bidHistory.slice(-20);
+    }
+    
+    // Update metrics if we have outcome data
+    if (actualOutcome) {
+      // Update bluff tendency
+      const alpha = 0.1; // Learning rate
+      if (actualOutcome.wasBluff) {
+        profile.bluffTendency = profile.bluffTendency * (1 - alpha) + 1.0 * alpha;
+      } else {
+        profile.bluffTendency = profile.bluffTendency * (1 - alpha) + 0.0 * alpha;
+      }
+      
+      // Update reliability based on bid accuracy
+      const bidAccuracy = Math.abs(bid.quantity - actualOutcome.actualCount) <= 1 ? 1.0 : 0.0;
+      profile.reliability = profile.reliability * (1 - alpha) + bidAccuracy * alpha;
+    }
+    
+    // Update aggressiveness based on bid pattern
+    if (profile.bidHistory.length >= 3) {
+      const recentBids = profile.bidHistory.slice(-3);
+      const avgQuantity = recentBids.reduce((sum, b) => sum + b.quantity, 0) / recentBids.length;
+      const expectedQuantity = 2; // Conservative baseline
+      
+      const aggressionScore = Math.min(1.0, avgQuantity / expectedQuantity / 2);
+      profile.aggressiveness = profile.aggressiveness * 0.9 + aggressionScore * 0.1;
+      profile.conservativeness = 1.0 - profile.aggressiveness;
+    }
+  }
+
+  // Clear outdated data between rounds
+  newRound(roundNumber: number): void {
+    this.roundNumber = roundNumber;
+    
+    // Clear very old history
+    this.bidHistory = this.bidHistory.filter(bid => bid.roundNumber >= roundNumber - 3);
+    this.doubtHistory = this.doubtHistory.filter(doubt => doubt.round >= roundNumber - 3);
+    
+    // Update opponent profiles for new round
+    Array.from(this.opponentProfiles.values()).forEach(profile => {
+      profile.bidHistory = profile.bidHistory.filter((bid: BidHistory) => bid.roundNumber >= roundNumber - 3);
+      profile.doubtHistory = profile.doubtHistory.filter((doubt: any) => doubt.round >= roundNumber - 3);
+    });
   }
 }
 
@@ -160,58 +358,133 @@ export class AIService {
         return this.generateRandomAction(currentBid, game.players?.length || 3);
       }
 
-      // Simple active player counting (like basic AI)
-      const totalPlayers = game.players?.length || 3;
+      // Calculate game context
+      const activePlayers = game.players?.filter((p: any) => !game.eliminatedPlayers?.includes(p.id)) || [];
+      const totalDice = activePlayers.length * 5; // Each player has 5 dice
+      const isEarlyGame = game.roundNumber <= 2;
       
-      console.log(`Smart AI ${smartAI.name} state:`, {
-        totalPlayers,
-        myDice: myDice?.length || 0,
-        currentBid
+      const gameContext = {
+        totalDice,
+        activePlayers: activePlayers.length,
+        isEarlyGame,
+        roundNumber: game.roundNumber || 1
+      };
+      
+      console.log(`🧠 Smart AI ${smartAI.name} analyzing:`, {
+        totalDice,
+        activePlayers: activePlayers.length,
+        myDiceCount: myDice?.length || 0,
+        currentBid,
+        roundNumber: game.roundNumber
       });
       
-      // If no current bid, make an opening bid (like basic AI but smarter)
+      // Update round number
+      if (game.roundNumber && game.roundNumber !== smartAI.roundNumber) {
+        smartAI.newRound(game.roundNumber);
+      }
+      
+      // If no current bid, make an intelligent opening bid
       if (!currentBid) {
-        return this.generateSmartOpeningBid(smartAI, myDice);
+        return this.generateAdvancedOpeningBid(smartAI, myDice, gameContext);
       }
 
-      // Validate current bid (basic check)
+      // Validate current bid
       if (!currentBid.quantity || !currentBid.faceValue || 
           typeof currentBid.quantity !== 'number' || typeof currentBid.faceValue !== 'number') {
         console.error(`Smart AI ${smartAI.name}: Invalid current bid, using basic AI`);
-        return this.generateRandomAction(currentBid, totalPlayers);
+        return this.generateRandomAction(currentBid, activePlayers.length);
       }
 
-      // Smart AI logic: Enhanced version of basic AI probability calculations
-      // Count how many dice we have of the current bid's face value
-      const ourDiceCount = myDice.filter(die => die === currentBid.faceValue).length;
-      
-      // Enhanced doubt probability (based on basic AI but smarter)
-      // Basic AI uses: (1 / totalPlayers) * 0.3 * quantity^1.5
-      // Smart AI enhances this with our actual dice knowledge
-      let baseDoubtProbability = (1 / totalPlayers) * 0.3 * Math.pow(currentBid.quantity, 1.5);
-      
-      // Adjust based on our dice - if we have many of the face value, less likely to doubt
-      const diceAdjustment = ourDiceCount * 0.1; // Reduce doubt probability if we have matching dice
-      const smartDoubtProbability = Math.max(0.05, baseDoubtProbability - diceAdjustment);
-      
-      // Spot-on probability (slightly higher than basic AI)
-      const spotOnProbability = 0.02; // 2% instead of 1%
-      
-      const random = Math.random();
-      
-      // Decision making (similar to basic AI)
-      if (random < smartDoubtProbability) {
-        console.log(`Smart AI ${smartAI.name} DOUBTING: probability=${smartDoubtProbability.toFixed(3)}, bid=${currentBid.quantity} ${currentBid.faceValue}s, ourDice=${ourDiceCount}`);
-        return { action: 'doubt', data: {} };
-      } else if (random < smartDoubtProbability + spotOnProbability) {
-        console.log(`Smart AI ${smartAI.name} SPOT ON: probability=${spotOnProbability.toFixed(3)}, bid=${currentBid.quantity} ${currentBid.faceValue}s`);
-        return { action: 'spotOn', data: {} };
-      } else {
-        // Make a smart bid (enhanced version of basic AI bidding)
-        const bidAction = this.generateSmartBidAction(currentBid, myDice);
-        console.log(`Smart AI ${smartAI.name} bidding:`, bidAction);
-        return bidAction;
+      // Update opponent profile with this bid
+      if (currentBid.playerId && currentBid.playerId !== playerId) {
+        smartAI.updateOpponentProfile(currentBid.playerId, currentBid);
       }
+
+      // === ADVANCED DECISION MAKING ===
+      
+      // 1. Calculate probability that current bid is true
+      const bidProbability = smartAI.calculateAdvancedBidProbability(
+        currentBid.quantity, 
+        currentBid.faceValue, 
+        totalDice, 
+        myDice, 
+        currentBid.playerId
+      );
+      
+      // 2. Assess bluff likelihood
+      const bluffLikelihood = smartAI.assessBluffLikelihood(currentBid, currentBid.playerId, gameContext);
+      
+      // 3. Check for spot-on opportunity
+      const spotOnConfidence = smartAI.identifySpotOnOpportunity(currentBid, totalDice, myDice, gameContext);
+      
+      // 4. Calculate dynamic risk tolerance
+      const riskTolerance = smartAI.calculateRiskTolerance(activePlayers.length, isEarlyGame);
+      
+      console.log(`🎯 Smart AI analysis:`, {
+        bidProbability: bidProbability.toFixed(3),
+        bluffLikelihood: bluffLikelihood.toFixed(3),
+        spotOnConfidence: spotOnConfidence.toFixed(3),
+        riskTolerance: riskTolerance.toFixed(3)
+      });
+      
+      // === DECISION LOGIC ===
+      
+      // High-confidence spot-on (prioritized)
+      if (spotOnConfidence > 0.2) {
+        console.log(`🎯 Smart AI ${smartAI.name} SPOT-ON: High confidence (${(spotOnConfidence * 100).toFixed(1)}%)`);
+        return { action: 'spotOn', data: {} };
+      }
+      
+      // Doubt decision based on multiple factors
+      let doubtScore = 0;
+      
+      // Factor 1: Low probability of bid being true
+      if (bidProbability < 0.3) doubtScore += 0.4;
+      else if (bidProbability < 0.5) doubtScore += 0.2;
+      
+      // Factor 2: High bluff likelihood
+      if (bluffLikelihood > 0.7) doubtScore += 0.3;
+      else if (bluffLikelihood > 0.5) doubtScore += 0.15;
+      
+      // Factor 3: Risk tolerance adjustment
+      doubtScore *= riskTolerance;
+      
+      // Factor 4: Our dice knowledge
+      const ourCount = myDice.filter(die => die === currentBid.faceValue).length;
+      if (ourCount === 0 && currentBid.quantity >= totalDice * 0.25) {
+        doubtScore += 0.2; // We have none and bid is substantial
+      }
+      
+      // Factor 5: Endgame pressure
+      if (activePlayers.length <= 3 && currentBid.quantity >= totalDice * 0.35) {
+        doubtScore += 0.15; // High stakes in endgame
+      }
+      
+      // Medium-confidence spot-on (secondary priority)
+      if (spotOnConfidence > 0.1 && spotOnConfidence > doubtScore * 0.7) {
+        console.log(`🎯 Smart AI ${smartAI.name} SPOT-ON: Medium confidence (${(spotOnConfidence * 100).toFixed(1)}%)`);
+        return { action: 'spotOn', data: {} };
+      }
+      
+      // Doubt decision
+      if (doubtScore > 0.4) {
+        console.log(`🚫 Smart AI ${smartAI.name} DOUBTING: Score=${doubtScore.toFixed(3)}, bidProb=${bidProbability.toFixed(3)}, bluff=${bluffLikelihood.toFixed(3)}`);
+        
+        // Track the doubt for learning
+        smartAI.doubtHistory.push({
+          success: false, // Will be updated later when we know the result
+          targetBid: currentBid,
+          round: game.roundNumber || 1
+        });
+        
+        return { action: 'doubt', data: {} };
+      }
+      
+      // Default: Make an intelligent bid
+      const bidAction = this.generateAdvancedBidAction(smartAI, currentBid, myDice, gameContext);
+      console.log(`📈 Smart AI ${smartAI.name} bidding:`, bidAction);
+      return bidAction;
+      
     } catch (error) {
       console.error(`Error in Smart AI ${playerId}:`, error);
       // Always fallback to basic AI
@@ -219,15 +492,14 @@ export class AIService {
     }
   }
 
-  private generateSmartOpeningBid(smartAI: SmartAIPlayer, myDice: number[]): { action: string; data: any } {
+  private generateAdvancedOpeningBid(smartAI: SmartAIPlayer, myDice: number[], gameContext: any): { action: string; data: any } {
     try {
-      // Simple approach: like basic AI but consider our dice
       if (!Array.isArray(myDice) || myDice.length === 0) {
-        // Fallback to basic AI logic
+        // Conservative fallback
         return {
           action: 'bid',
           data: {
-            quantity: Math.random() < 0.5 ? 1 : 2,
+            quantity: 1,
             faceValue: Math.floor(Math.random() * 6) + 1
           }
         };
@@ -241,25 +513,52 @@ export class AIService {
         }
       });
       
-      // Find our best face value (most dice)
-      let bestFaceValue = 1;
-      let maxCount = 0;
-      
+      // Calculate expected total for each face value
+      const expectedCounts = [];
       for (let face = 1; face <= 6; face++) {
-        if (diceCounts[face] > maxCount) {
-          maxCount = diceCounts[face];
-          bestFaceValue = face;
-        }
+        const expectedTotal = gameContext.totalDice / 6; // Expected count across all players
+        const ourContribution = diceCounts[face];
+        const expectedFromOthers = expectedTotal - ourContribution;
+        expectedCounts.push({
+          face,
+          ourCount: ourContribution,
+          expectedTotal: expectedTotal,
+          confidence: ourContribution / expectedTotal, // How much of expected total we provide
+          totalExpected: ourContribution + expectedFromOthers
+        });
       }
       
-      // Bid based on what we have (conservative)
-      const quantity = Math.max(1, maxCount);
+      // Sort by confidence (where we have a good foundation)
+      expectedCounts.sort((a, b) => b.confidence - a.confidence);
       
-      console.log(`Smart AI ${smartAI.name} opening bid: ${quantity} ${bestFaceValue}s (we have ${maxCount})`);
-      return { action: 'bid', data: { quantity, faceValue: bestFaceValue } };
+      // Choose strategy based on risk tolerance
+      const riskTolerance = smartAI.calculateRiskTolerance(gameContext.activePlayers, gameContext.isEarlyGame);
+      
+      let selectedBid;
+      
+      if (riskTolerance > 0.5) {
+        // Aggressive: Bid slightly optimistically
+        const bestOption = expectedCounts[0];
+        const quantity = Math.max(1, Math.min(
+          Math.ceil(bestOption.totalExpected * 1.1), // 10% above expected
+          gameContext.totalDice * 0.3 // Cap at 30% of total dice
+        ));
+        selectedBid = { quantity, faceValue: bestOption.face };
+      } else {
+        // Conservative: Bid what we're confident about
+        const bestOption = expectedCounts[0];
+        const quantity = Math.max(1, Math.min(
+          bestOption.ourCount + Math.floor(bestOption.expectedTotal * 0.3), // Our dice + 30% of expected from others
+          gameContext.totalDice * 0.2 // Cap at 20% of total dice
+        ));
+        selectedBid = { quantity, faceValue: bestOption.face };
+      }
+      
+      console.log(`🎲 Smart AI ${smartAI.name} opening bid: ${selectedBid.quantity} ${selectedBid.faceValue}s (we have ${diceCounts[selectedBid.faceValue]}, risk=${riskTolerance.toFixed(2)})`);
+      return { action: 'bid', data: selectedBid };
+      
     } catch (error) {
-      console.error(`Smart AI ${smartAI.name}: Error in generateSmartOpeningBid:`, error);
-      // Emergency fallback - basic AI style
+      console.error(`Smart AI ${smartAI.name}: Error in generateAdvancedOpeningBid:`, error);
       return {
         action: 'bid',
         data: {
@@ -270,97 +569,142 @@ export class AIService {
     }
   }
 
-  private generateSmartBidAction(currentBid: any, myDice: number[]): { action: string; data: any } {
+  private generateAdvancedBidAction(smartAI: SmartAIPlayer, currentBid: any, myDice: number[], gameContext: any): { action: string; data: any } {
     try {
-      // Enhanced version of basic AI bidding logic
       const currentQuantity = currentBid.quantity;
       const currentFaceValue = currentBid.faceValue;
       
-      // Count our dice to inform our decision
+      // Count our dice
       const diceCounts = [0, 0, 0, 0, 0, 0, 0];
-      if (Array.isArray(myDice)) {
-        myDice.forEach(die => {
-          if (die >= 1 && die <= 6) {
-            diceCounts[die]++;
-          }
-        });
+      myDice.forEach(die => {
+        if (die >= 1 && die <= 6) {
+          diceCounts[die]++;
+        }
+      });
+      
+      // Get risk tolerance for this situation
+      const riskTolerance = smartAI.calculateRiskTolerance(gameContext.activePlayers, gameContext.isEarlyGame);
+      
+      // === BIDDING STRATEGY ANALYSIS ===
+      
+      // Option 1: Increase face value (same quantity)
+      let faceValueOptions = [];
+      if (currentFaceValue < 6) {
+        for (let face = currentFaceValue + 1; face <= 6; face++) {
+          const ourSupport = diceCounts[face];
+          const confidence = smartAI.calculateBidProbability(currentQuantity, face, gameContext.totalDice, myDice);
+          
+          faceValueOptions.push({
+            quantity: currentQuantity,
+            faceValue: face,
+            ourSupport,
+            confidence,
+            score: confidence * 0.7 + (ourSupport / 5) * 0.3 // Weight confidence higher
+          });
+        }
       }
       
-      // Smart AI strategy: prefer bids where we have some dice
-      let bid;
-      
-      // Strategy 1: Same quantity, higher face value (if possible and we have dice for it)
-      if (currentFaceValue < 6) {
-        // Check if we have dice for higher face values
-        let bestHigherFace = currentFaceValue + 1;
-        let maxDiceForHigherFace = 0;
+      // Option 2: Increase quantity (same or different face value)
+      let quantityOptions = [];
+      for (let qty = currentQuantity + 1; qty <= Math.min(gameContext.totalDice, currentQuantity + 3); qty++) {
+        // Try current face value
+        let confidence = smartAI.calculateBidProbability(qty, currentFaceValue, gameContext.totalDice, myDice);
+        quantityOptions.push({
+          quantity: qty,
+          faceValue: currentFaceValue,
+          ourSupport: diceCounts[currentFaceValue],
+          confidence,
+          score: confidence * 0.8 + (diceCounts[currentFaceValue] / 5) * 0.2
+        });
         
-        for (let face = currentFaceValue + 1; face <= 6; face++) {
-          if (diceCounts[face] > maxDiceForHigherFace) {
-            maxDiceForHigherFace = diceCounts[face];
-            bestHigherFace = face;
+        // Try face values where we have dice (if quantity increase allows it)
+        for (let face = 1; face <= 6; face++) {
+          if (diceCounts[face] > 0 && (face > currentFaceValue || qty > currentQuantity)) {
+            if (this.isBidValid({ quantity: qty, faceValue: face }, currentBid)) {
+              confidence = smartAI.calculateBidProbability(qty, face, gameContext.totalDice, myDice);
+              quantityOptions.push({
+                quantity: qty,
+                faceValue: face,
+                ourSupport: diceCounts[face],
+                confidence,
+                score: confidence * 0.8 + (diceCounts[face] / 5) * 0.2
+              });
+            }
           }
         }
-        
-        // If we have dice for a higher face value, use it
-        if (maxDiceForHigherFace > 0) {
-          bid = {
-            action: 'bid',
-            data: {
-              quantity: currentQuantity,
-              faceValue: bestHigherFace
-            }
-          };
+      }
+      
+      // Combine all options and sort by score
+      const allOptions = [...faceValueOptions, ...quantityOptions];
+      allOptions.sort((a, b) => b.score - a.score);
+      
+      // Filter by confidence based on risk tolerance
+      const minConfidence = Math.max(0.1, 0.4 - riskTolerance * 0.3); // Higher risk tolerance = lower min confidence
+      const viableOptions = allOptions.filter(option => option.confidence >= minConfidence);
+      
+      let selectedBid;
+      
+      if (viableOptions.length > 0) {
+        // Choose from viable options
+        if (riskTolerance > 0.6) {
+          // Aggressive: Choose highest-scoring option
+          selectedBid = viableOptions[0];
+        } else if (riskTolerance > 0.4) {
+          // Moderate: Choose from top 2-3 options randomly
+          const topOptions = viableOptions.slice(0, Math.min(3, viableOptions.length));
+          selectedBid = topOptions[Math.floor(Math.random() * topOptions.length)];
         } else {
-          // No dice for higher faces, increase face value by 1
-          bid = {
-            action: 'bid',
-            data: {
-              quantity: currentQuantity,
-              faceValue: currentFaceValue + 1
-            }
-          };
+          // Conservative: Choose most confident option
+          const mostConfident = viableOptions.reduce((best, current) => 
+            current.confidence > best.confidence ? current : best
+          );
+          selectedBid = mostConfident;
         }
       } else {
-        // Face value is already 6, must increase quantity
-        bid = {
-          action: 'bid',
-          data: {
+        // No viable options - make minimal safe bid
+        if (currentFaceValue < 6) {
+          selectedBid = {
+            quantity: currentQuantity,
+            faceValue: currentFaceValue + 1,
+            ourSupport: diceCounts[currentFaceValue + 1],
+            confidence: 0.2
+          };
+        } else {
+          selectedBid = {
             quantity: currentQuantity + 1,
-            faceValue: currentFaceValue
-          }
-        };
+            faceValue: currentFaceValue,
+            ourSupport: diceCounts[currentFaceValue],
+            confidence: 0.2
+          };
+        }
       }
       
-      // Fallback strategy if first strategy doesn't work
-      if (!bid) {
-        // Strategy 2: Increase quantity (like basic AI)
-        bid = {
-          action: 'bid',
-          data: {
-            quantity: currentQuantity + 1,
-            faceValue: currentFaceValue
-          }
-        };
-      }
+      // Final validation
+      const finalBid = {
+        quantity: selectedBid.quantity,
+        faceValue: selectedBid.faceValue
+      };
       
-      // Validate the bid
-      if (!this.isBidValid(bid.data, currentBid)) {
+      if (!this.isBidValid(finalBid, currentBid)) {
         // Emergency fallback
-        bid = {
-          action: 'bid',
-          data: {
-            quantity: currentQuantity + 1,
-            faceValue: currentFaceValue
-          }
-        };
+        finalBid.quantity = currentQuantity + 1;
+        finalBid.faceValue = currentFaceValue;
       }
       
-      console.log(`Smart AI bid: ${bid.data.quantity} ${bid.data.faceValue}s (we have ${diceCounts[bid.data.faceValue]} of that face)`);
-      return bid;
+      console.log(`🎯 Smart AI ${smartAI.name} bid: ${finalBid.quantity} ${finalBid.faceValue}s (confidence=${selectedBid.confidence.toFixed(3)}, support=${selectedBid.ourSupport})`);
+      
+      // Track this bid for learning
+      smartAI.bidHistory.push({
+        playerId: smartAI.id,
+        quantity: finalBid.quantity,
+        faceValue: finalBid.faceValue,
+        roundNumber: gameContext.roundNumber
+      });
+      
+      return { action: 'bid', data: finalBid };
+      
     } catch (error) {
-      console.error('Error in generateSmartBidAction:', error);
-      // Emergency fallback - basic AI style
+      console.error('Error in generateAdvancedBidAction:', error);
       return {
         action: 'bid',
         data: {
@@ -496,7 +840,21 @@ export class AIService {
   trackDoubtResult(playerId: string, targetBid: any, success: boolean): void {
     const smartAI = this.smartAIPlayers.get(playerId);
     if (smartAI) {
-      smartAI.doubtHistory.push({ success, targetBid });
+      // Update the most recent doubt entry if it exists
+      const recentDoubt = smartAI.doubtHistory
+        .filter(d => d.round === smartAI.roundNumber)
+        .pop();
+      
+      if (recentDoubt) {
+        recentDoubt.success = success;
+      } else {
+        smartAI.doubtHistory.push({ 
+          success, 
+          targetBid, 
+          round: smartAI.roundNumber 
+        });
+      }
+      
       // Keep only recent history (last 20 doubts)
       if (smartAI.doubtHistory.length > 20) {
         smartAI.doubtHistory = smartAI.doubtHistory.slice(-20);
@@ -504,11 +862,48 @@ export class AIService {
       
       // Adjust risk tolerance based on success
       if (success) {
-        smartAI.riskTolerance = Math.min(0.6, smartAI.riskTolerance + 0.02);
+        smartAI.riskTolerance = Math.min(0.7, smartAI.riskTolerance + 0.02);
       } else {
-        smartAI.riskTolerance = Math.max(0.1, smartAI.riskTolerance - 0.01);
+        smartAI.riskTolerance = Math.max(0.2, smartAI.riskTolerance - 0.01);
       }
     }
+  }
+
+  // Update AI learning when round outcomes are revealed
+  updateLearningFromRoundOutcome(actualCounts: { [faceValue: number]: number }, eliminatedPlayerId?: string, wasSpotOn?: boolean): void {
+    Array.from(this.smartAIPlayers.entries()).forEach(([playerId, smartAI]) => {
+      // Update opponent profiles based on revealed dice
+      Array.from(smartAI.opponentProfiles.entries()).forEach(([opponentId, profile]) => {
+        if (opponentId === eliminatedPlayerId) return; // Skip eliminated player
+        
+        // Update reliability based on recent bids
+        const recentBids = profile.bidHistory
+          .filter((bid: BidHistory) => bid.roundNumber === smartAI.roundNumber)
+          .slice(-3);
+        
+        for (const bid of recentBids) {
+          const actualCount = actualCounts[bid.faceValue] || 0;
+          const wasBluff = actualCount < bid.quantity;
+          
+          smartAI.updateOpponentProfile(opponentId, bid, {
+            actualCount,
+            wasBluff
+          });
+        }
+      });
+      
+      // Track our own performance
+      const ourRecentDoubts = smartAI.doubtHistory
+        .filter((d: any) => d.round === smartAI.roundNumber);
+      
+      for (const doubt of ourRecentDoubts) {
+        if (doubt.targetBid && actualCounts[doubt.targetBid.faceValue] !== undefined) {
+          const actualCount = actualCounts[doubt.targetBid.faceValue];
+          const doubtWasCorrect = actualCount < doubt.targetBid.quantity;
+          doubt.success = doubtWasCorrect;
+        }
+      }
+    });
   }
 
   // Get AI action with the appropriate strategy
@@ -541,10 +936,46 @@ export class AIService {
     }
   }
 
-  // Simulate AI thinking delay
-  async simulateThinking(): Promise<void> {
-    const delay = Math.random() * 1000 + 1000; // 1-2 seconds
+  // Optimized AI thinking delay - faster for smart AI
+  async simulateThinking(playerId?: string): Promise<void> {
+    let delay;
+    
+    if (playerId && this.isSmartAIPlayer(playerId)) {
+      // Smart AI thinks faster but still has some delay for realism
+      delay = Math.random() * 800 + 800; // 0.8-1.6 seconds
+    } else {
+      // Basic AI takes longer
+      delay = Math.random() * 1200 + 1200; // 1.2-2.4 seconds
+    }
+    
     return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  // Performance monitoring for the smart AI
+  getSmartAIStats(playerId: string): any {
+    const smartAI = this.smartAIPlayers.get(playerId);
+    if (!smartAI) return null;
+    
+    const doubtSuccessRate = smartAI.doubtHistory.length > 0 
+      ? smartAI.doubtHistory.filter(d => d.success).length / smartAI.doubtHistory.length
+      : 0;
+    
+    const opponentProfiles = Array.from(smartAI.opponentProfiles.values()).map(profile => ({
+      playerId: profile.playerId,
+      bluffTendency: profile.bluffTendency,
+      aggressiveness: profile.aggressiveness,
+      reliability: profile.reliability,
+      bidsTracked: profile.bidHistory.length
+    }));
+    
+    return {
+      riskTolerance: smartAI.riskTolerance,
+      doubtSuccessRate,
+      totalDoubts: smartAI.doubtHistory.length,
+      totalBids: smartAI.bidHistory.length,
+      opponentProfiles,
+      roundNumber: smartAI.roundNumber
+    };
   }
 }
 

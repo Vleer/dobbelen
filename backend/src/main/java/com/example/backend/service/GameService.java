@@ -604,7 +604,7 @@ public class GameService {
                     System.out.println("⏰ TIMER: Set canContinue=true and broadcasted for game " + gameId);
                 }
             }
-        }, 5000); // 5 seconds
+        }, 1000); // 1 second
 
         // Auto-continue after 15 seconds
         System.out.println("⏰ SCHEDULE: Scheduling auto-continue for game " + gameId + " in 15 seconds at "

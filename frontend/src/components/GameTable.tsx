@@ -386,7 +386,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
         try {
           setIsLoading(true);
-          await aiService.simulateThinking();
+          await aiService.simulateThinking(currentPlayerId);
           
           // Check if the current player has changed during processing (race condition protection)
           if (game.currentPlayerId !== currentPlayerId) {
