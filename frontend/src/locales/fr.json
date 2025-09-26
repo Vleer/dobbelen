@@ -69,6 +69,7 @@
     "game.dobbelkoning": "Roi du dé 🎲👑",
     
     "errors.failedToAddPlayer": "Échec de l'ajout du joueur IA",
+    "errors.failedToRemovePlayer": "Échec de la suppression du joueur IA",
     "errors.failedToStart": "Échec du démarrage de la partie",
     
     "common.playAgain": "Rejouer",

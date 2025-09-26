@@ -153,4 +153,16 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/multiplayer/{gameId}/players/{playerId}")
+    public ResponseEntity<GameResponse> removePlayerFromGame(@PathVariable String gameId,
+            @PathVariable String playerId) {
+        try {
+            Game game = gameService.removePlayerFromGame(gameId, playerId);
+            GameResponse response = new GameResponse(game);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

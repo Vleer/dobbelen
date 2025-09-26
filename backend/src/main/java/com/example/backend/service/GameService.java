@@ -63,21 +63,19 @@ public class GameService {
 
         System.out.println("Starting new round " + (game.getRoundNumber() + 1) + " for game " + gameId);
 
-        // Only reset and roll dice for active (non-eliminated) players
+        // Reset ALL players for new round - everyone participates again
         for (Player player : game.getPlayers()) {
-            if (!player.isEliminated()) {
-                player.reset();
-                player.rollDice();
-            }
+            player.reset(); // This clears elimination status and dice
+            player.rollDice();
+            System.out.println("NEW_ROUND_DEBUG: Player " + player.getName() + " reset for new round, eliminated="
+                    + player.isEliminated());
         }
         
-        // Keep eliminated players list intact - don't reset it
-        // Randomize starting player from active players only
-        List<Player> activePlayers = game.getActivePlayers();
-        if (!activePlayers.isEmpty()) {
-            Player randomActivePlayer = activePlayers.get((int) (Math.random() * activePlayers.size()));
-            game.setCurrentPlayerIndex(game.getPlayers().indexOf(randomActivePlayer));
-        }
+        // Clear eliminated players list for new round
+        game.getEliminatedPlayers().clear();
+
+        // Randomize starting player from ALL players
+        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
         game.setCurrentBid(null);
         game.setPreviousBid(null);
         game.setWinner(null);
@@ -86,6 +84,54 @@ public class GameService {
 
         System.out.println("New round started. State: " + game.getState() + ", Current player: "
                 + game.getCurrentPlayer().getName());
+    }
+
+    private void checkAndHandleRoundEnd(String gameId) {
+        Game game = getGame(gameId);
+        List<Player> activePlayers = game.getActivePlayers();
+
+        System.out.println(
+                "ROUND_END_CHECK: Active players: " + activePlayers.size() + " out of " + game.getPlayers().size());
+        for (Player p : game.getPlayers()) {
+            System.out.println("  Player " + p.getName() + ": eliminated=" + p.isEliminated() +
+                    ", in eliminatedList=" + game.getEliminatedPlayers().contains(p.getId()));
+        }
+
+        if (activePlayers.size() <= 1) {
+            if (activePlayers.size() == 1) {
+                Player roundWinner = activePlayers.get(0);
+                game.setWinner(roundWinner.getId());
+                roundWinner.addWinToken();
+
+                System.out.println("ROUND_END_DEBUG: Player " + roundWinner.getName() + " won round! " +
+                        "Win tokens: " + roundWinner.getWinTokens() + ", Total players: " + game.getPlayers().size());
+
+                // Check if this player has won the entire game
+                if (roundWinner.getWinTokens() >= 7) {
+                    game.setGameWinner(roundWinner.getId());
+                    game.setState(GameState.GAME_ENDED);
+                    System.out.println("GAME_END_DEBUG: Game ended! Winner: " + roundWinner.getName() + " with "
+                            + roundWinner.getWinTokens() + " tokens");
+                } else {
+                    System.out.println("CONTINUE_DEBUG: Game continues. Player " + roundWinner.getName() +
+                            " has " + roundWinner.getWinTokens() + " tokens (needs 7 to win)");
+                    // Pass dealer button to the winner
+                    game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                    System.out.println("Dealer button passed to: " + roundWinner.getName());
+
+                    // Start new round automatically after a delay
+                    new java.util.Timer().schedule(new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            startNewRound(gameId);
+                        }
+                    }, 15000); // Start new round after 15 seconds
+                }
+
+                // Broadcast the game update with winner
+                broadcastGameUpdate(gameId);
+            }
+        }
     }
 
     public int countDiceWithValue(List<Player> players, int faceValue, boolean wildOnes) {
@@ -141,7 +187,10 @@ public class GameService {
         // Store previous round players before rerolling (deep copy) - only active
         // players
         List<Player> previousPlayers = new ArrayList<>();
+        System.out.println("DEBUG: Active players before storing previousRoundPlayers:");
         for (Player player : activePlayers) {
+            System.out.println("  Player " + player.getName() + " (ID: " + player.getId() + ") - Dice: "
+                    + player.getDice() + " - Eliminated: " + player.isEliminated());
             Player copy = new Player(player.getName());
             copy.setId(player.getId());
             copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
@@ -149,6 +198,7 @@ public class GameService {
             copy.setWinTokens(player.getWinTokens());
             previousPlayers.add(copy);
         }
+        System.out.println("DEBUG: Stored " + previousPlayers.size() + " players in previousRoundPlayers");
         game.setPreviousRoundPlayers(previousPlayers);
 
         // Store result data
@@ -186,36 +236,8 @@ public class GameService {
             attempts++;
         }
 
-        // Check if round is over
-        if (game.getActivePlayers().size() <= 1) {
-            if (game.getActivePlayers().size() == 1) {
-                Player roundWinner = game.getActivePlayers().get(0);
-                game.setWinner(roundWinner.getId());
-                roundWinner.addWinToken();
-
-                // Check if this player has won the entire game
-                if (roundWinner.getWinTokens() >= 7) {
-                    game.setGameWinner(roundWinner.getId());
-                    game.setState(GameState.GAME_ENDED);
-                    System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
-                            + roundWinner.getWinTokens() + " tokens");
-                } else {
-                    // Pass dealer button to the winner
-                    game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
-                    System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                    // Start new round automatically after a delay to allow result window to show
-                    System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
-                            + roundWinner.getWinTokens() + " tokens");
-                    new java.util.Timer().schedule(new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            startNewRound(gameId);
-                        }
-                    }, 15000); // Start new round after 15 seconds
-                }
-            }
-        }
+        // Check if round is over using centralized method
+        checkAndHandleRoundEnd(gameId);
 
         // Dice will be hidden when continue is pressed, not automatically
 
@@ -324,32 +346,8 @@ public class GameService {
                 attempts++;
             }
 
-            // Check if round is over
-            if (game.getActivePlayers().size() <= 1) {
-                if (game.getActivePlayers().size() == 1) {
-                    Player roundWinner = game.getActivePlayers().get(0);
-                    game.setWinner(roundWinner.getId());
-                    roundWinner.addWinToken();
-
-                    // Check if this player has won the entire game
-                    if (roundWinner.getWinTokens() >= 7) {
-                        game.setGameWinner(roundWinner.getId());
-                        game.setState(GameState.GAME_ENDED);
-                    } else {
-                        // Pass dealer button to the winner
-                        game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
-                        System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                        // Start new round automatically after a delay to allow result window to show
-                        new java.util.Timer().schedule(new java.util.TimerTask() {
-                            @Override
-                            public void run() {
-                                startNewRound(gameId);
-                            }
-                        }, 15000); // Start new round after 15 seconds
-                    }
-                }
-            }
+            // Check if round is over using centralized method
+            checkAndHandleRoundEnd(gameId);
         }
 
         // Dice will be hidden when continue is pressed, not automatically
@@ -406,6 +404,10 @@ public class GameService {
 
         System.out.println("TURN CHANGE: Player " + playerId + " made bid, moved from index " + oldPlayerIndex + " to "
                 + game.getCurrentPlayerIndex() + ", current player: " + game.getCurrentPlayer().getId());
+
+        // Check if round should end (in case current player advancement revealed round
+        // is over)
+        checkAndHandleRoundEnd(gameId);
 
         return new GameResult(game, null, 0, 0);
     }
@@ -475,6 +477,36 @@ public class GameService {
         return game;
     }
 
+    public Game removePlayerFromGame(String gameId, String playerId) {
+        System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", PlayerId=" + playerId + ", Timestamp="
+                + System.currentTimeMillis());
+
+        Game game = getGame(gameId);
+        if (game == null) {
+            System.out.println("REMOVE FAILED: Game not found for ID=" + gameId);
+            throw new IllegalArgumentException("Game not found");
+        }
+
+        // Only allow removing players if game hasn't started yet
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            System.out.println("REMOVE FAILED: Cannot remove players after game has started");
+            throw new IllegalArgumentException("Cannot remove players after game has started");
+        }
+
+        // Find and remove the player
+        boolean playerRemoved = game.getPlayers().removeIf(p -> p.getId().equals(playerId));
+
+        if (!playerRemoved) {
+            System.out.println("REMOVE FAILED: Player not found with ID=" + playerId);
+            throw new IllegalArgumentException("Player not found in game");
+        }
+
+        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players="
+                + game.getPlayers().size());
+
+        return game;
+    }
+
     public void addPlayerToGame(String gameId, String playerName) {
         joinGame(gameId, playerName);
     }
@@ -492,6 +524,8 @@ public class GameService {
         for (Player player : game.getPlayers()) {
             player.reset();
             player.rollDice();
+            System.out.println("GAME_START_DEBUG: Player " + player.getName() + " initialized with "
+                    + player.getWinTokens() + " win tokens");
         }
 
         // Randomize starting player and dealer

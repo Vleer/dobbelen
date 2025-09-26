@@ -69,6 +69,7 @@
     "game.dobbelkoning": "Dobbelkoning 🎲👑",
     
     "errors.failedToAddPlayer": "Aggiunta giocatore IA fallita",
+    "errors.failedToRemovePlayer": "Rimozione giocatore IA fallita",
     "errors.failedToStart": "Avvio partita fallito",
     
     "common.playAgain": "Gioca di nuovo",

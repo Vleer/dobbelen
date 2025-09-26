@@ -50,8 +50,11 @@ const GameTable: React.FC<GameTableProps> = ({
       // Register AI players when game is loaded
       game.players.forEach(player => {
         if (player.name.startsWith('AI ')) {
-          aiService.registerAIPlayer(player.id, player.name);
+          aiService.registerAIPlayer(player.id, player.name, 'basic');
           console.log('Registered AI player:', player.name, player.id);
+        } else if (player.name.startsWith('Smart AI ')) {
+          aiService.registerAIPlayer(player.id, player.name, 'smart');
+          console.log('Registered Smart AI player:', player.name, player.id);
         }
       });
       
@@ -59,10 +62,14 @@ const GameTable: React.FC<GameTableProps> = ({
         webSocketService.connect(game.id, (updatedGame) => {
           console.log('WebSocket game update received:', updatedGame);
           
-          // Register any new AI players
+          // Re-register AI players to ensure they stay registered through all state transitions
           updatedGame.players.forEach(player => {
-            if (player.name.startsWith('AI ')) {
-              aiService.registerAIPlayer(player.id, player.name);
+            if (player.name.startsWith('AI ') && !aiService.registeredPlayers.has(player.id)) {
+              aiService.registerAIPlayer(player.id, player.name, 'basic');
+              console.log('WebSocket: Re-registered basic AI player:', player.name, player.id);
+            } else if (player.name.startsWith('Smart AI ') && !aiService.registeredPlayers.has(player.id)) {
+              aiService.registerAIPlayer(player.id, player.name, 'smart');
+              console.log('WebSocket: Re-registered Smart AI player:', player.name, player.id);
             }
           });
 
@@ -140,8 +147,10 @@ const GameTable: React.FC<GameTableProps> = ({
       
       // Register AI players
       gameResponse.players.forEach(player => {
-        if (player.name.startsWith('AI ') || player.id !== humanPlayer.id) {
-          aiService.registerAIPlayer(player.id, player.name);
+        if (player.name.startsWith('AI ')) {
+          aiService.registerAIPlayer(player.id, player.name, 'basic');
+        } else if (player.name.startsWith('Smart AI ')) {
+          aiService.registerAIPlayer(player.id, player.name, 'smart');
         }
       });
     } catch (err) {
@@ -233,7 +242,22 @@ const GameTable: React.FC<GameTableProps> = ({
   };
 
   const isAITurn = (): boolean => {
-    return game?.currentPlayerId ? aiService.isAIPlayer(game.currentPlayerId) : false;
+    if (!game?.currentPlayerId) return false;
+    
+    const currentPlayer = game.players.find(p => p.id === game.currentPlayerId);
+    const isAI = aiService.isAIPlayer(game.currentPlayerId);
+    const isSmartAI = aiService.isSmartAIPlayer(game.currentPlayerId);
+    
+    console.log('AI Turn Check:', {
+      currentPlayerId: game.currentPlayerId,
+      currentPlayerName: currentPlayer?.name,
+      isRegisteredAsAI: isAI,
+      isRegisteredAsSmartAI: isSmartAI,
+      registeredAIPlayers: Array.from(aiService.registeredPlayers),
+      allPlayers: game.players.map(p => ({ id: p.id, name: p.name, eliminated: p.eliminated }))
+    });
+    
+    return isAI;
   };
 
   // Load analysis preference from localStorage
@@ -297,6 +321,19 @@ const GameTable: React.FC<GameTableProps> = ({
 
   // Handle AI turns
   useEffect(() => {
+    // Re-register AI players to ensure they don't get lost during state transitions
+    if (game && game.players) {
+      game.players.forEach(player => {
+        if (player.name.startsWith('AI ') && !aiService.registeredPlayers.has(player.id)) {
+          aiService.registerAIPlayer(player.id, player.name, 'basic');
+          console.log('Re-registered basic AI player:', player.name, player.id);
+        } else if (player.name.startsWith('Smart AI ') && !aiService.registeredPlayers.has(player.id)) {
+          aiService.registerAIPlayer(player.id, player.name, 'smart');
+          console.log('Re-registered Smart AI player:', player.name, player.id);
+        }
+      });
+    }
+    
     console.log('Game state check:', {
       game: game?.id,
       state: game?.state,
@@ -305,43 +342,182 @@ const GameTable: React.FC<GameTableProps> = ({
       isLoading,
       gameWinner: game?.gameWinner,
       showAllDice: game?.showAllDice,
-      registeredAIPlayers: Array.from(aiService.registeredPlayers)
+      registeredAIPlayers: Array.from(aiService.registeredPlayers),
+      eliminatedPlayers: game?.eliminatedPlayers || [],
+      activePlayers: game?.players?.filter(p => !game.eliminatedPlayers?.includes(p.id))?.length || 0
     });
     
-    if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS' && !game.showAllDice) {
+    // Check if it's currently an AI's turn and we should process it
+    const shouldProcessAITurn = game && 
+                                isAITurn() && 
+                                !isLoading && 
+                                game.state === 'IN_PROGRESS' && 
+                                !game.showAllDice;
+    
+    console.log('AI Turn Processing Check:', {
+      hasGame: !!game,
+      isAITurn: isAITurn(),
+      isLoading,
+      gameState: game?.state,
+      showAllDice: game?.showAllDice,
+      currentPlayerId: game?.currentPlayerId,
+      shouldProcessAITurn
+    });
+    
+    if (shouldProcessAITurn) {
       const handleAITurn = async () => {
+        const currentPlayerId = game.currentPlayerId;
+        console.log(`🤖 Starting AI turn for player ${currentPlayerId}`);
+        
+        const timeout = setTimeout(() => {
+          console.error(`AI turn timed out after 5 seconds for player ${currentPlayerId}`);
+          setIsLoading(false);
+          // Force a basic bid action as fallback
+          const emergencyAction = {
+            action: 'bid',
+            data: {
+              quantity: (game.currentBid?.quantity || 0) + 1,
+              faceValue: game.currentBid?.faceValue || Math.floor(Math.random() * 6) + 1
+            }
+          };
+          console.log('Emergency AI action:', emergencyAction);
+          webSocketService.sendAction('BID', emergencyAction.data, currentPlayerId);
+        }, 5000); // 5 second timeout
+
         try {
           setIsLoading(true);
           await aiService.simulateThinking();
           
-          const aiAction = aiService.generateRandomAction(game.currentBid, game.players.length);
-          const currentPlayer = game.players.find(p => p.id === game.currentPlayerId);
+          // Check if the current player has changed during processing (race condition protection)
+          if (game.currentPlayerId !== currentPlayerId) {
+            console.log(`🚫 AI turn cancelled: current player changed from ${currentPlayerId} to ${game.currentPlayerId}`);
+            clearTimeout(timeout);
+            setIsLoading(false);
+            return;
+          }
+          
+          const currentPlayer = game.players.find(p => p.id === currentPlayerId);
+          if (!currentPlayer) {
+            throw new Error(`Current player not found: ${currentPlayerId}`);
+          }
+          
+          // Double-check that this player is still supposed to be taking their turn
+          if (game.currentPlayerId !== currentPlayerId) {
+            console.log(`🚫 AI turn cancelled: player ${currentPlayerId} is no longer current player`);
+            clearTimeout(timeout);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Ensure AI is properly registered
+          if (currentPlayer.name.startsWith('AI ') && !aiService.registeredPlayers.has(currentPlayer.id)) {
+            aiService.registerAIPlayer(currentPlayer.id, currentPlayer.name, 'basic');
+            console.log('Emergency re-registration of basic AI:', currentPlayer.name);
+          } else if (currentPlayer.name.startsWith('Smart AI ') && !aiService.registeredPlayers.has(currentPlayer.id)) {
+            aiService.registerAIPlayer(currentPlayer.id, currentPlayer.name, 'smart');
+            console.log('Emergency re-registration of Smart AI:', currentPlayer.name);
+          }
+          
+          const myDice = currentPlayer?.dice || [];
+          console.log(`AI ${currentPlayer.name} (${currentPlayer.id}) analyzing with dice:`, myDice);
+          
+          const aiAction = aiService.getAIAction(currentPlayerId, game.currentBid, game, myDice);
+          
+          if (!aiAction || !aiAction.action) {
+            throw new Error('AI returned invalid action');
+          }
+          
           console.log(`AI ${currentPlayer?.name} chooses:`, aiAction);
           console.log('Current bid:', game.currentBid);
           console.log('AI action data:', aiAction.data);
           
+          // Track AI bid for learning (for Smart AI)
+          if (aiAction.action === 'bid' && aiAction.data && aiService.isSmartAIPlayer(currentPlayerId)) {
+            try {
+              aiService.trackBid(currentPlayerId, aiAction.data.quantity, aiAction.data.faceValue, game.roundNumber || 1);
+            } catch (trackError) {
+              console.warn('Failed to track Smart AI bid:', trackError);
+            }
+          }
+
+          // Validate action data before sending
+          let validatedAction = aiAction;
+          if (aiAction.action === 'bid') {
+            if (!aiAction.data || typeof aiAction.data.quantity !== 'number' || typeof aiAction.data.faceValue !== 'number') {
+              console.error('Invalid bid data from AI, generating emergency bid:', aiAction);
+              validatedAction = {
+                action: 'bid',
+                data: {
+                  quantity: Math.max(1, (game.currentBid?.quantity || 0) + 1),
+                  faceValue: Math.min(6, Math.max(1, game.currentBid?.faceValue || 1))
+                }
+              };
+            }
+            
+            // Ensure bid values are within valid ranges
+            validatedAction.data.quantity = Math.max(1, Math.min(30, validatedAction.data.quantity));
+            validatedAction.data.faceValue = Math.max(1, Math.min(6, validatedAction.data.faceValue));
+          }
+
+          // Final check before sending action
+          if (game.currentPlayerId !== currentPlayerId) {
+            console.log(`🚫 AI action cancelled: player ${currentPlayerId} is no longer current player before sending action`);
+            clearTimeout(timeout);
+            setIsLoading(false);
+            return;
+          }
+
           // Use WebSocket for AI actions (all games are multiplayer)
-          switch (aiAction.action) {
+          switch (validatedAction.action) {
             case 'bid':
-              webSocketService.sendAction('BID', aiAction.data, game.currentPlayerId);
+              webSocketService.sendAction('BID', validatedAction.data, currentPlayerId);
               break;
             case 'doubt':
-              webSocketService.sendAction('DOUBT', {}, game.currentPlayerId);
+              webSocketService.sendAction('DOUBT', {}, currentPlayerId);
               break;
             case 'spotOn':
-              webSocketService.sendAction('SPOT_ON', {}, game.currentPlayerId);
+              webSocketService.sendAction('SPOT_ON', {}, currentPlayerId);
               break;
             default:
-              throw new Error('Unknown AI action');
+              console.error(`Unknown AI action: ${validatedAction.action}, falling back to bid`);
+              const fallbackBid = {
+                quantity: Math.max(1, (game.currentBid?.quantity || 0) + 1),
+                faceValue: Math.min(6, Math.max(1, game.currentBid?.faceValue || 1))
+              };
+              webSocketService.sendAction('BID', fallbackBid, currentPlayerId);
           }
+          
+          console.log(`✅ AI action sent for player ${currentPlayerId}:`, validatedAction.action);
+          
+          clearTimeout(timeout);
         } catch (err: any) {
-            console.error('AI action failed:', err);
+            console.error(`AI action failed for player ${currentPlayerId}:`, err);
             console.error('Error details:', err.response?.data);
             const errorMessage = err.response?.data?.message || err.message || 'AI action failed';
             setError(errorMessage);
             
-            // Refresh game state on AI error
-            refreshGame();
+            // Only attempt fallback if this is still the current player
+            if (game.currentPlayerId === currentPlayerId) {
+              // Emergency fallback action
+              console.log(`🚨 Executing emergency AI fallback for player ${currentPlayerId}`);
+              const emergencyAction = {
+                action: 'bid',
+                data: {
+                  quantity: (game.currentBid?.quantity || 0) + 1,
+                  faceValue: game.currentBid?.faceValue || Math.floor(Math.random() * 6) + 1
+                }
+              };
+              try {
+                webSocketService.sendAction('BID', emergencyAction.data, currentPlayerId);
+              } catch (fallbackErr) {
+                console.error('Emergency fallback also failed:', fallbackErr);
+                refreshGame();
+              }
+            } else {
+              console.log(`🚫 Skipping fallback action: player ${currentPlayerId} is no longer current player`);
+            }
+            
+            clearTimeout(timeout);
           } finally {
             setIsLoading(false);
           }
@@ -349,7 +525,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       handleAITurn();
     }
-  }, [game?.currentPlayerId, game?.state, isLoading, game, isAITurn]);
+  }, [game?.currentPlayerId, game?.state, isLoading, game?.showAllDice, game?.id]);
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;
@@ -415,6 +591,12 @@ const GameTable: React.FC<GameTableProps> = ({
 
   // Check for game completion
   if (game.gameWinner) {
+    console.log('FRONTEND_DEBUG: Game has gameWinner:', {
+      gameWinner: game.gameWinner,
+      gameState: game.state,
+      allPlayers: game.players.map(p => ({ name: p.name, winTokens: p.winTokens, id: p.id })),
+      roundWinner: game.winner
+    });
     const winner = game.players.find(p => p.id === game.gameWinner);
     return (
       <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden flex items-center justify-center">

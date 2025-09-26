@@ -69,6 +69,7 @@
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
   
   "errors.failedToAddPlayer": "Failed to add AI player",
+  "errors.failedToRemovePlayer": "Failed to remove AI player",
   "errors.failedToStart": "Failed to start game",
   
   "common.playAgain": "Play Again",

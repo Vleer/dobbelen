@@ -69,6 +69,7 @@
     "game.dobbelkoning": "Würfelkönig 🎲👑",
     
     "errors.failedToAddPlayer": "KI-Spieler konnte nicht hinzugefügt werden",
+    "errors.failedToRemovePlayer": "KI-Spieler konnte nicht entfernt werden",
     "errors.failedToStart": "Spiel konnte nicht gestartet werden",
     
     "common.playAgain": "Nochmal spielen",
