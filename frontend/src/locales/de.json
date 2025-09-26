@@ -73,5 +73,36 @@
     
     "common.playAgain": "Nochmal spielen",
     "common.state": "Status",
-    "common.unknownPlayer": "Unbekannter Spieler"
+    "common.unknownPlayer": "Unbekannter Spieler",
+
+    "statistics.title": "📊 Spielstatistiken",
+    "statistics.overview": "Übersicht",
+    "statistics.bidding": "Bieten",
+    "statistics.patterns": "Muster",
+    "statistics.history": "Geschichte",
+    "statistics.reset": "Statistiken zurücksetzen",
+    
+    "statistics.totalWins": "Gesamtsiege",
+    "statistics.timesReachedLastRound": "Letzte Runde erreicht",
+    "statistics.averageBidQuantity": "Durchschnittliche Gebotmenge",
+    "statistics.averageBidFaceValue": "Durchschnittlicher Gebotswert",
+    "statistics.doubtSuccessRate": "Zweifel-Erfolgsrate",
+    "statistics.bidsExceedingProbability": "Gebote über Wahrscheinlichkeit",
+    "statistics.aggressiveness": "Aggressivitätsrate",
+    "statistics.overUnderAccuracy": "Über/Unter-Genauigkeit",
+    "statistics.diceFrequency": "Würfel-Häufigkeitsverteilung",
+    "statistics.recentBidPattern": "Aktuelles Gebotsmuster",
+    "statistics.consecutiveHighBids": "Aufeinanderfolgende hohe Gebote",
+    "statistics.consecutiveLowBids": "Aufeinanderfolgende niedrige Gebote",
+    "statistics.bluffDetectionScore": "Bluff-Erkennungs-Score",
+    "statistics.bluffDetectionDescription": "Höhere Scores deuten auf konsistenteres Überbieten hin",
+    "statistics.recentBids": "Aktuelle Gebote",
+    "statistics.recentDoubts": "Aktuelle Zweifel",
+    "statistics.doubts": "zweifel",
+    "statistics.bids": "gebote",
+    "statistics.checked": "überprüft",
+    "statistics.success": "Erfolg",
+    "statistics.failed": "Fehlgeschlagen",
+    "statistics.doubtedBid": "Bezweifeltes Gebot",
+    "statistics.actualCount": "Tatsächliche Anzahl"
 }

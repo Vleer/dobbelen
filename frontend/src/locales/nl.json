@@ -73,5 +73,36 @@
   
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
-  "common.unknownPlayer": "Onbekende Speler"
+  "common.unknownPlayer": "Onbekende Speler",
+
+  "statistics.title": "📊 Spelstatistieken",
+  "statistics.overview": "Overzicht",
+  "statistics.bidding": "Bieden",
+  "statistics.patterns": "Patronen",
+  "statistics.history": "Geschiedenis",
+  "statistics.reset": "Reset Statistieken",
+  
+  "statistics.totalWins": "Totaal Gewonnen",
+  "statistics.timesReachedLastRound": "Keer Laatste Ronde Bereikt",
+  "statistics.averageBidQuantity": "Gemiddelde Bod Hoeveelheid",
+  "statistics.averageBidFaceValue": "Gemiddelde Bod Waarde",
+  "statistics.doubtSuccessRate": "Twijfel Succespercentage",
+  "statistics.bidsExceedingProbability": "Biedingen Boven Kansberekening",
+  "statistics.aggressiveness": "Agressiviteitspercentage",
+  "statistics.overUnderAccuracy": "Over/Onder Nauwkeurigheid",
+  "statistics.diceFrequency": "Dobbelsteen Frequentie Verdeling",
+  "statistics.recentBidPattern": "Recent Bied Patroon",
+  "statistics.consecutiveHighBids": "Opeenvolgende Hoge Biedingen",
+  "statistics.consecutiveLowBids": "Opeenvolgende Lage Biedingen",
+  "statistics.bluffDetectionScore": "Bluf Detectie Score",
+  "statistics.bluffDetectionDescription": "Hogere scores duiden op meer consistent overbieden",
+  "statistics.recentBids": "Recente Biedingen",
+  "statistics.recentDoubts": "Recente Twijfels",
+  "statistics.doubts": "twijfels",
+  "statistics.bids": "biedingen",
+  "statistics.checked": "gecontroleerd",
+  "statistics.success": "Succes",
+  "statistics.failed": "Mislukt",
+  "statistics.doubtedBid": "Betwijfelde bieding",
+  "statistics.actualCount": "Werkelijk aantal"
 }

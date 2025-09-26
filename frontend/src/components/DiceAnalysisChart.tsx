@@ -1,8 +1,8 @@
 import React from 'react';
-import { Game, Player } from '../types/game';
+import { Game } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceSVG from './DiceSVG';
-import { getPlayerColor, getPlayerHexColor } from '../utils/playerColors';
+import { getPlayerHexColor } from '../utils/playerColors';
 
 interface DiceAnalysisChartProps {
   game: Game;
@@ -11,10 +11,16 @@ interface DiceAnalysisChartProps {
 const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
   const { t } = useLanguage();
 
+  // Use previousRoundPlayers when showing results (contains dice state at time of doubt/spot-on)
+  // Use current players as fallback for when results aren't being shown
+  const playersToAnalyze = game.showAllDice && game.previousRoundPlayers.length > 0 
+    ? game.previousRoundPlayers 
+    : game.players;
+
   // Group dice by player and face value
   const diceByPlayer: { [playerId: string]: { [faceValue: number]: number[] } } = {};
   
-  game.players.forEach((player, index) => {
+  playersToAnalyze.forEach((player, index) => {
     if (player.dice) {
       diceByPlayer[player.id] = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
       player.dice.forEach(die => {
@@ -25,7 +31,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
     }
   });
 
-  const totalDice = game.players.reduce((sum, player) => sum + (player.dice?.length || 0), 0);
+  const totalDice = playersToAnalyze.reduce((sum, player) => sum + (player.dice?.length || 0), 0);
 
   return (
     <div className="mt-4 p-4 bg-green-800 border-2 border-black rounded-2xl">
@@ -34,7 +40,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
       <div className="grid grid-cols-6 gap-2">
         {[1, 2, 3, 4, 5, 6].map(faceValue => {
           // Collect all dice of this face value from all players
-          const allDiceOfValue = game.players.map(player => ({
+          const allDiceOfValue = playersToAnalyze.map(player => ({
             player,
             dice: diceByPlayer[player.id][faceValue] || []
           })).filter(({ dice }) => dice.length > 0);
@@ -52,7 +58,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
                       <div
                         key={`${player.id}-${diceIndex}`}
                         className="w-6 h-6 rounded border border-black flex items-center justify-center"
-                        style={{ backgroundColor: getPlayerHexColor(game.players.indexOf(player)) }}
+                        style={{ backgroundColor: getPlayerHexColor(playersToAnalyze.indexOf(player)) }}
                       >
                         <DiceSVG value={faceValue} size="xs" />
                       </div>

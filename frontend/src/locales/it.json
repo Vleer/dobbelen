@@ -73,5 +73,36 @@
     
     "common.playAgain": "Gioca di nuovo",
     "common.state": "Stato",
-    "common.unknownPlayer": "Giocatore Sconosciuto"
+    "common.unknownPlayer": "Giocatore Sconosciuto",
+
+    "statistics.title": "📊 Statistiche di Gioco",
+    "statistics.overview": "Panoramica",
+    "statistics.bidding": "Puntate",
+    "statistics.patterns": "Modelli",
+    "statistics.history": "Storia",
+    "statistics.reset": "Resetta Statistiche",
+    
+    "statistics.totalWins": "Vittorie Totali",
+    "statistics.timesReachedLastRound": "Volte Raggiunto Ultimo Turno",
+    "statistics.averageBidQuantity": "Quantità Media Puntata",
+    "statistics.averageBidFaceValue": "Valore Medio Puntata",
+    "statistics.doubtSuccessRate": "Tasso Successo Dubbi",
+    "statistics.bidsExceedingProbability": "Puntate Oltre Probabilità",
+    "statistics.aggressiveness": "Tasso Aggressività",
+    "statistics.overUnderAccuracy": "Precisione Sopra/Sotto",
+    "statistics.diceFrequency": "Distribuzione Frequenza Dadi",
+    "statistics.recentBidPattern": "Modello Puntate Recenti",
+    "statistics.consecutiveHighBids": "Puntate Alte Consecutive",
+    "statistics.consecutiveLowBids": "Puntate Basse Consecutive",
+    "statistics.bluffDetectionScore": "Punteggio Rilevazione Bluff",
+    "statistics.bluffDetectionDescription": "Punteggi più alti indicano puntate eccessive più consistenti",
+    "statistics.recentBids": "Puntate Recenti",
+    "statistics.recentDoubts": "Dubbi Recenti",
+    "statistics.doubts": "dubbi",
+    "statistics.bids": "puntate",
+    "statistics.checked": "controllato",
+    "statistics.success": "Successo",
+    "statistics.failed": "Fallito",
+    "statistics.doubtedBid": "Puntata dubbiosa",
+    "statistics.actualCount": "Conteggio effettivo"
   }

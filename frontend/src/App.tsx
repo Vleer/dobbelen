@@ -3,6 +3,7 @@ import GameTable from "./components/GameTable";
 import MultiplayerLobby from "./components/MultiplayerLobby";
 import LanguageSelector from "./components/LanguageSelector";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { StatisticsProvider } from "./contexts/StatisticsContext";
 import { Game } from "./types/game";
 
 type AppState = 'lobby' | 'game';
@@ -46,28 +47,30 @@ function App() {
 
   return (
     <LanguageProvider>
-      <div className="min-h-screen bg-gray-900 relative">
-        {/* Language Selector - Only show in lobby */}
-        {appState === 'lobby' && (
-          <div className="absolute top-4 right-4 z-50">
-            <LanguageSelector />
-          </div>
-        )}
+      <StatisticsProvider>
+        <div className="min-h-screen bg-gray-900 relative">
+          {/* Language Selector - Only show in lobby */}
+          {appState === 'lobby' && (
+            <div className="absolute top-4 right-4 z-50">
+              <LanguageSelector />
+            </div>
+          )}
 
-        {appState === 'lobby' ? (
-          <MultiplayerLobby
-            onGameStart={handleGameStart}
-            onBack={() => {}} // No back button needed since this is the main page
-          />
-        ) : appState === 'game' ? (
-          <GameTable
-            game={game}
-            username={username}
-            playerId={playerId}
-            onBack={handleBackToLobby}
-          />
-        ) : null}
-      </div>
+          {appState === 'lobby' ? (
+            <MultiplayerLobby
+              onGameStart={handleGameStart}
+              onBack={() => {}} // No back button needed since this is the main page
+            />
+          ) : appState === 'game' ? (
+            <GameTable
+              game={game}
+              username={username}
+              playerId={playerId}
+              onBack={handleBackToLobby}
+            />
+          ) : null}
+        </div>
+      </StatisticsProvider>
     </LanguageProvider>
   );
 }

@@ -63,16 +63,21 @@ public class GameService {
 
         System.out.println("Starting new round " + (game.getRoundNumber() + 1) + " for game " + gameId);
 
-        // Reset all players for new round (but keep win tokens)
+        // Only reset and roll dice for active (non-eliminated) players
         for (Player player : game.getPlayers()) {
-            player.reset();
-            player.rollDice();
+            if (!player.isEliminated()) {
+                player.reset();
+                player.rollDice();
+            }
         }
         
-        // Reset game state
-        game.setEliminatedPlayers(new ArrayList<>());
-        // Randomize starting player
-        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
+        // Keep eliminated players list intact - don't reset it
+        // Randomize starting player from active players only
+        List<Player> activePlayers = game.getActivePlayers();
+        if (!activePlayers.isEmpty()) {
+            Player randomActivePlayer = activePlayers.get((int) (Math.random() * activePlayers.size()));
+            game.setCurrentPlayerIndex(game.getPlayers().indexOf(randomActivePlayer));
+        }
         game.setCurrentBid(null);
         game.setPreviousBid(null);
         game.setWinner(null);
@@ -133,9 +138,10 @@ public class GameService {
             eliminatedPlayerId = currentBid.getPlayerId();
         }
 
-        // Store previous round players before rerolling (deep copy)
+        // Store previous round players before rerolling (deep copy) - only active
+        // players
         List<Player> previousPlayers = new ArrayList<>();
-        for (Player player : game.getPlayers()) {
+        for (Player player : activePlayers) {
             Player copy = new Player(player.getName());
             copy.setId(player.getId());
             copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
@@ -233,9 +239,10 @@ public class GameService {
                 "Actual count: " + actualCount);
 
         if (actualCount == currentBid.getQuantity()) {
-            // Store previous round players before rerolling (deep copy)
+            // Store previous round players before rerolling (deep copy) - only active
+            // players
             List<Player> previousPlayers = new ArrayList<>();
-            for (Player player : game.getPlayers()) {
+            for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
                 copy.setId(player.getId());
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
@@ -269,9 +276,10 @@ public class GameService {
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
         } else {
-            // Store previous round players before rerolling (deep copy)
+            // Store previous round players before rerolling (deep copy) - only active
+            // players
             List<Player> previousPlayers = new ArrayList<>();
-            for (Player player : game.getPlayers()) {
+            for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
                 copy.setId(player.getId());
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values

@@ -73,5 +73,36 @@
     
     "common.playAgain": "Rejouer",
     "common.state": "État",
-    "common.unknownPlayer": "Joueur inconnu"
+    "common.unknownPlayer": "Joueur inconnu",
+
+    "statistics.title": "📊 Statistiques de Jeu",
+    "statistics.overview": "Aperçu",
+    "statistics.bidding": "Enchères",
+    "statistics.patterns": "Modèles",
+    "statistics.history": "Historique",
+    "statistics.reset": "Réinitialiser les Statistiques",
+    
+    "statistics.totalWins": "Victoires Totales",
+    "statistics.timesReachedLastRound": "Dernière Manche Atteinte",
+    "statistics.averageBidQuantity": "Quantité Moyenne des Enchères",
+    "statistics.averageBidFaceValue": "Valeur Moyenne des Enchères",
+    "statistics.doubtSuccessRate": "Taux de Réussite des Doutes",
+    "statistics.bidsExceedingProbability": "Enchères Dépassant la Probabilité",
+    "statistics.aggressiveness": "Taux d'Agressivité",
+    "statistics.overUnderAccuracy": "Précision Dessus/Dessous",
+    "statistics.diceFrequency": "Distribution de Fréquence des Dés",
+    "statistics.recentBidPattern": "Modèle d'Enchères Récent",
+    "statistics.consecutiveHighBids": "Enchères Hautes Consécutives",
+    "statistics.consecutiveLowBids": "Enchères Basses Consécutives",
+    "statistics.bluffDetectionScore": "Score de Détection de Bluff",
+    "statistics.bluffDetectionDescription": "Des scores plus élevés indiquent des surenchères plus consistantes",
+    "statistics.recentBids": "Enchères Récentes",
+    "statistics.recentDoubts": "Doutes Récents",
+    "statistics.doubts": "doutes",
+    "statistics.bids": "enchères",
+    "statistics.checked": "vérifié",
+    "statistics.success": "Succès",
+    "statistics.failed": "Échoué",
+    "statistics.doubtedBid": "Enchère douteuse",
+    "statistics.actualCount": "Compte réel"
 }
