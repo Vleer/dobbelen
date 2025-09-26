@@ -1,0 +1,16 @@
+# Environment Variables for Deployment
+
+## Frontend (Vercel)
+Set the following environment variable in your Vercel project settings:
+REACT_APP_BACKEND_URL=https://your-backend-name.onrender.com
+
+## Backend (Render)
+Set the following environment variables in your Render service settings:
+SERVER_PORT=10000
+SPRING_PROFILES_ACTIVE=production
+CORS_ALLOWED_ORIGINS=https://your-frontend-app.vercel.app
+
+## Instructions:
+1. Replace "your-backend-name" with your actual Render service name
+2. Replace "your-frontend-app" with your actual Vercel app name
+3. Update CORS_ALLOWED_ORIGINS after deploying frontend to get the actual URL

@@ -18,8 +18,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+        String allowedOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (allowedOrigins == null || allowedOrigins.equals("*")) {
+            // For development or when not configured
+            registry.addEndpoint("/ws")
+                    .setAllowedOriginPatterns("*")
+                    .withSockJS();
+        } else {
+            // For production with specific origins
+            registry.addEndpoint("/ws")
+                    .setAllowedOrigins(allowedOrigins.split(","))
+                    .withSockJS();
+        }
     }
 }

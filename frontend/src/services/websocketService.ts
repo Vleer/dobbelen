@@ -14,12 +14,19 @@ export class WebSocketService {
 
     // Get the backend URL based on environment
     const getBackendUrl = () => {
+      // Check if we have a configured backend URL (for production deployments)
+      if (process.env.REACT_APP_BACKEND_URL) {
+        const url = process.env.REACT_APP_BACKEND_URL;
+        console.log('🔌 WebSocket using configured backend URL:', url);
+        return url;
+      }
+      
       // Always use the hostname from the current window location
       const hostname = window.location.hostname;
       
       // If we're accessing from localhost, use the Docker internal URL
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+        const url = "http://localhost:8080";
         console.log('🔌 WebSocket using localhost backend URL:', url);
         return url;
       }

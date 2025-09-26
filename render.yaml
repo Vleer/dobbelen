@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: dobbelen-backend
+    env: java
+    buildCommand: cd backend && ./gradlew build -x test --no-daemon
+    startCommand: cd backend && java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
+    plan: free
+    region: oregon
+    branch: main
+    envVars:
+      - key: SERVER_PORT
+        value: 10000
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: CORS_ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: dobbelen-frontend
+          property: url
+    healthCheckPath: /actuator/health
