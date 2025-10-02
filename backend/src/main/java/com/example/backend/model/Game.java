@@ -71,9 +71,9 @@ public class Game {
         this.players = new ArrayList<>(players);
         this.state = GameState.IN_PROGRESS;
         this.isWaitingForPlayers = false;
-        // Randomize starting player and dealer
-        this.currentPlayerIndex = (int) (Math.random() * players.size());
-        this.dealerIndex = (int) (Math.random() * players.size());
+    // Randomize dealer, and always start with dealer as current player
+    this.dealerIndex = (int) (Math.random() * players.size());
+    this.currentPlayerIndex = this.dealerIndex;
     }
 
     // Getters and Setters
