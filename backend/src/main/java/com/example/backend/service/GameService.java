@@ -78,6 +78,7 @@ public class GameService {
         game.setWinner(null);
         game.setState(GameState.IN_PROGRESS);
         game.setRoundNumber(game.getRoundNumber() + 1);
+        game.setTwoPlayerRoundStartIndex(null);
 
         System.out.println("New round started. State: " + game.getState() + ", Current player: "
                 + game.getCurrentPlayer().getName());
@@ -180,6 +181,36 @@ public class GameService {
             attempts++;
         }
 
+        // If elimination resulted in 2 active players, set the start index for the
+        // 2-player phase
+        if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+            // If eliminated player had the dealer button, the next non-eliminated after
+            // them starts
+            int startIndex;
+            int eliminatedIndex = -1;
+            for (int i = 0; i < game.getPlayers().size(); i++) {
+                if (game.getPlayers().get(i).getId().equals(eliminatedPlayerId)) {
+                    eliminatedIndex = i;
+                    break;
+                }
+            }
+            if (eliminatedIndex == game.getDealerIndex()) {
+                // Find next non-eliminated player after the eliminated dealer
+                int idx = (eliminatedIndex + 1) % game.getPlayers().size();
+                int attempts2 = 0;
+                while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
+                        && attempts2 < game.getPlayers().size()) {
+                    idx = (idx + 1) % game.getPlayers().size();
+                    attempts2++;
+                }
+                startIndex = idx;
+            } else {
+                // Otherwise, keep the current player as the one to start the 2-player phase
+                startIndex = game.getCurrentPlayerIndex();
+            }
+            game.setTwoPlayerRoundStartIndex(startIndex);
+        }
+
         // Check if round is over
         if (game.getActivePlayers().size() <= 1) {
             if (game.getActivePlayers().size() == 1) {
@@ -263,8 +294,15 @@ public class GameService {
             // Reset the current bid
             game.setCurrentBid(null);
 
-            // Move to next player
-            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            // If we are in a 2-player phase and we tracked its start, reset to that start
+            // index;
+            // otherwise, move to the next player as usual
+            if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() != null) {
+                game.setCurrentPlayerIndex(game.getTwoPlayerRoundStartIndex());
+            } else {
+                // Move to next player
+                game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            }
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -314,6 +352,34 @@ public class GameService {
                     && attempts < game.getPlayers().size()) {
                 game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
                 attempts++;
+            }
+
+            // If elimination resulted in 2 active players, set the start index for the
+            // 2-player phase
+            if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+                int startIndex;
+                int eliminatedIndex = -1;
+                for (int i = 0; i < game.getPlayers().size(); i++) {
+                    if (game.getPlayers().get(i).getId().equals(spotOnPlayerId)) {
+                        eliminatedIndex = i;
+                        break;
+                    }
+                }
+                if (eliminatedIndex == game.getDealerIndex()) {
+                    // Find next non-eliminated player after the eliminated dealer
+                    int idx = (eliminatedIndex + 1) % game.getPlayers().size();
+                    int attempts2 = 0;
+                    while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
+                            && attempts2 < game.getPlayers().size()) {
+                        idx = (idx + 1) % game.getPlayers().size();
+                        attempts2++;
+                    }
+                    startIndex = idx;
+                } else {
+                    // Otherwise, keep the current player as the one to start the 2-player phase
+                    startIndex = game.getCurrentPlayerIndex();
+                }
+                game.setTwoPlayerRoundStartIndex(startIndex);
             }
 
             // Check if round is over

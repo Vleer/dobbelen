@@ -26,6 +26,9 @@ public class Game {
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
     private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
     private String lastEliminatedPlayerId; // Store eliminated player from last action
+    // Track the starting player index when the round transitions to 2 active
+    // players
+    private Integer twoPlayerRoundStartIndex;
 
     public Game() {
         this.id = generateShortGameId();
@@ -45,6 +48,7 @@ public class Game {
         this.lastBidQuantity = null;
         this.lastBidFaceValue = null;
         this.lastEliminatedPlayerId = null;
+        this.twoPlayerRoundStartIndex = null;
     }
 
     private String generateShortGameId() {
@@ -229,5 +233,13 @@ public class Game {
 
     public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
         this.lastEliminatedPlayerId = lastEliminatedPlayerId;
+    }
+
+    public Integer getTwoPlayerRoundStartIndex() {
+        return twoPlayerRoundStartIndex;
+    }
+
+    public void setTwoPlayerRoundStartIndex(Integer twoPlayerRoundStartIndex) {
+        this.twoPlayerRoundStartIndex = twoPlayerRoundStartIndex;
     }
 }
