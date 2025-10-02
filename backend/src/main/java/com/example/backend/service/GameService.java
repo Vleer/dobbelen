@@ -71,8 +71,10 @@ public class GameService {
         
         // Reset game state
         game.setEliminatedPlayers(new ArrayList<>());
-        // Randomize starting player
-        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
+        // Always start round with dealer
+        if (game.getDealerIndex() < game.getPlayers().size()) {
+            game.setCurrentPlayerIndex(game.getDealerIndex());
+        }
         game.setCurrentBid(null);
         game.setPreviousBid(null);
         game.setWinner(null);
@@ -558,9 +560,10 @@ public class GameService {
             player.rollDice();
         }
 
-        // Randomize starting player and dealer
-        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
-        game.setDealerIndex((int) (Math.random() * game.getPlayers().size()));
+        // Randomize dealer, and always start with dealer as current player
+        int dealerIdx = (int) (Math.random() * game.getPlayers().size());
+        game.setDealerIndex(dealerIdx);
+        game.setCurrentPlayerIndex(dealerIdx);
 
         game.setState(GameState.IN_PROGRESS);
         game.setWaitingForPlayers(false);
