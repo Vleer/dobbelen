@@ -60,8 +60,8 @@
   "game.result.collected7Tokens": "heeft 7 win tokens verzameld en is de ultieme",
   "game.result.champion": "kampioen",
   "game.action.doubt": "{{playerName}} tilt op",
-  "game.action.spotOn": "{{playerName}} speelt spot on",
-  "game.action.raise": "{{playerName}} verhoogt",
+  "game.action.spotOn": "{{playerName}}: Spot on",
+  "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
   
   "game.analysis.title": "Dobbelsteen Analyse ({{totalDice}} totaal)",
   "game.analysis.show": "Analyse",

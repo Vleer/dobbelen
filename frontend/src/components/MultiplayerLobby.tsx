@@ -289,7 +289,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   onClick={() => setPlayerName(getRandomDutchName())}
                   className="px-3 md:px-4 py-2 md:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                 >
-                  🎲
+                  <img src="/dobbelen.svg" alt="Dobbelen Logo" style={{ height: '1.5em', verticalAlign: 'middle' }} />
                 </button>
               </div>
             </div>

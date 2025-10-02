@@ -1,7 +1,7 @@
 {
   "game.title": "🎲 Liar's Dice",
   "game.subtitle": "The classic bluffing game",
-  
+
   "lobby.createGame": "🎮 Create New Game",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
@@ -15,7 +15,7 @@
   "lobby.pleaseEnterUsername": "Please enter your username.",
   "lobby.failedToCreateGame": "Failed to create game",
   "lobby.failedToJoinGame": "Failed to join game",
-  
+
   "lobby.shareLink": "Share this link to invite players:",
   "lobby.copy": "Copy",
   "lobby.players": "Players",
@@ -25,7 +25,7 @@
   "lobby.maxPlayersReached": "Maximum of {{maxPlayers}} players reached.",
   "lobby.startGame": "▶ Start Game",
   "lobby.waitingForHost": "Waiting for the host to start the game...",
-  
+
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Current Bid",
   "game.noCurrentBid": "No current bid",
@@ -36,12 +36,12 @@
   "game.fours": "Fours",
   "game.fives": "Fives",
   "game.sixes": "Sixes",
-  
+
   "game.makeYourBid": "Make Your Bid",
   "game.waitingForTurn": "Waiting for your turn...",
   "game.doubt": "Doubt",
   "game.spotOn": "Spot On",
-  
+
   "game.dealer": "D",
   "game.dice": "dice",
   "game.revealed": "REVEALED",
@@ -49,7 +49,7 @@
   "game.eliminated": "ELIMINATED",
   "game.previousBid": "Previous Bid: {{quantity}} of {{faceValue}}s",
   "game.winTokens": "🏆 {{count}}",
-  
+
   "game.result.thereWere": "There were {{actualCount}} {{faceValue}}s",
   "game.result.bidWasCorrect": "(Bid was correct!)",
   "game.result.bidWasWrong": "(Bid was wrong!)",
@@ -59,21 +59,21 @@
   "game.result.isEliminated": "{{playerName}} is eliminated!",
   "game.result.collected7Tokens": "collected 7 win tokens and is the ultimate",
   "game.result.champion": "champion",
-  "game.action.doubt": "{{playerName}} doubts",
-  "game.action.spotOn": "{{playerName}} calls spot on",
-  "game.action.raise": "{{playerName}} raises",
-  
+  "game.action.doubt": "{{playerName}}: Doubts",
+  "game.action.spotOn": "{{playerName}}: spot on",
+  "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
+
   "game.analysis.title": "Dice Analysis ({{totalDice}} total dice)",
   "game.analysis.show": "Show Analysis",
   "game.analysis.hide": "Hide Analysis",
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
-  
+
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
-  
+
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",
-  
+
   "common.playAgain": "Play Again",
   "common.state": "State",
   "common.unknownPlayer": "Unknown Player"
