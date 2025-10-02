@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Game, Player, CreateGameRequest } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
@@ -11,7 +11,6 @@ import BidSelector from './BidSelector';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
-import DiceHandSVG from './DiceHandSVG';
 import DiceAnalysisChart from './DiceAnalysisChart';
 
 interface GameTableProps {
@@ -142,7 +141,7 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   };
 
-  const refreshGame = async () => {
+  const refreshGame = useCallback(async () => {
     if (!game) return;
     
     try {
@@ -151,7 +150,7 @@ const GameTable: React.FC<GameTableProps> = ({
     } catch (err) {
       console.error('Error refreshing game:', err);
     }
-  };
+  }, [game]);
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;
@@ -199,9 +198,9 @@ const GameTable: React.FC<GameTableProps> = ({
     return game.players.filter(p => p.id !== localPlayerId);
   };
 
-  const isAITurn = (): boolean => {
+  const isAITurn = useCallback((): boolean => {
     return game?.currentPlayerId ? aiService.isAIPlayer(game.currentPlayerId) : false;
-  };
+  }, [game?.currentPlayerId]);
 
   // Load analysis preference from localStorage
   useEffect(() => {
@@ -316,7 +315,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       handleAITurn();
     }
-  }, [game?.currentPlayerId, game?.state, isLoading, game, isAITurn]);
+  }, [game?.currentPlayerId, game?.state, isLoading, game, isAITurn, refreshGame]);
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;
@@ -417,8 +416,17 @@ const GameTable: React.FC<GameTableProps> = ({
         {game.showAllDice && (
           <div className="px-4 py-2">
             <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-6 shadow-2xl text-center">
-              {/* Result Status */}
-              <div className="text-xl font-bold text-amber-200 mb-3">
+              {/* Action and Result Status */}
+              <div className="text-xl font-bold text-amber-200 mb-2">
+                {game.lastActionType && game.lastActionPlayerId && (
+                  game.lastActionType === 'DOUBT'
+                    ? t('game.action.doubt', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
+                    : game.lastActionType === 'SPOT_ON'
+                      ? t('game.action.spotOn', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
+                      : t('game.action.raise', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
+                )}
+              </div>
+              <div className="text-lg font-semibold text-amber-100 mb-3">
                 {game.lastActualCount !== undefined && game.lastBidQuantity !== undefined && game.lastBidFaceValue !== undefined ? (
                   game.lastActualCount >= game.lastBidQuantity ? (
                     t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue: game.lastBidFaceValue }) + ' ' + t('game.result.bidWasCorrect')

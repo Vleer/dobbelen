@@ -59,6 +59,9 @@
   "game.result.isEliminated": "{{playerName}} is eliminated!",
   "game.result.collected7Tokens": "collected 7 win tokens and is the ultimate",
   "game.result.champion": "champion",
+  "game.action.doubt": "{{playerName}} doubts",
+  "game.action.spotOn": "{{playerName}} calls spot on",
+  "game.action.raise": "{{playerName}} raises",
   
   "game.analysis.title": "Dice Analysis ({{totalDice}} total dice)",
   "game.analysis.show": "Show Analysis",

@@ -26,6 +26,9 @@ public class Game {
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
     private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
     private String lastEliminatedPlayerId; // Store eliminated player from last action
+    // Track the last action performer and type to display in UI
+    private String lastActionPlayerId;
+    private BidType lastActionType;
     // Track the starting player index when the round transitions to 2 active
     // players
     private Integer twoPlayerRoundStartIndex;
@@ -48,6 +51,8 @@ public class Game {
         this.lastBidQuantity = null;
         this.lastBidFaceValue = null;
         this.lastEliminatedPlayerId = null;
+        this.lastActionPlayerId = null;
+        this.lastActionType = null;
         this.twoPlayerRoundStartIndex = null;
     }
 
@@ -233,6 +238,22 @@ public class Game {
 
     public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
         this.lastEliminatedPlayerId = lastEliminatedPlayerId;
+    }
+
+    public String getLastActionPlayerId() {
+        return lastActionPlayerId;
+    }
+
+    public void setLastActionPlayerId(String lastActionPlayerId) {
+        this.lastActionPlayerId = lastActionPlayerId;
+    }
+
+    public BidType getLastActionType() {
+        return lastActionType;
+    }
+
+    public void setLastActionType(BidType lastActionType) {
+        this.lastActionType = lastActionType;
     }
 
     public Integer getTwoPlayerRoundStartIndex() {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Game } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import { webSocketService } from '../services/websocketService';
@@ -32,19 +32,14 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
   useEffect(() => {
     if (game.showAllDice) {
       setShowAnalysis(true);
-      
-      // Clear any existing timer
-      if (analysisTimer) {
-        clearTimeout(analysisTimer);
-      }
-      
+
       // Set timer to hide analysis after 15 seconds
       const timer = setTimeout(() => {
         setShowAnalysis(false);
       }, 15000);
-      
+
       setAnalysisTimer(timer);
-      
+
       // Cleanup timer on unmount or when game.showAllDice changes
       return () => {
         if (timer) {
@@ -107,14 +102,14 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
       setPosition({
         x: e.clientX - dragOffset.x,
         y: e.clientY - dragOffset.y
       });
     }
-  };
+  }, [isDragging, dragOffset]);
 
   const handleMouseUp = () => {
     setIsDragging(false);
@@ -129,7 +124,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, handleMouseMove]);
   
   console.log('GameResultDisplay render:', {
     showAllDice: game.showAllDice,
@@ -168,6 +163,21 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
     return '';
   };
 
+  const getActionMessage = () => {
+    if (!game.lastActionType || !game.lastActionPlayerId) return '';
+    const actor = game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer');
+    switch (game.lastActionType) {
+      case 'DOUBT':
+        return t('game.action.doubt', { playerName: actor });
+      case 'SPOT_ON':
+        return t('game.action.spotOn', { playerName: actor });
+      case 'RAISE':
+        return t('game.action.raise', { playerName: actor });
+      default:
+        return '';
+    }
+  };
+
   return (
     <div 
       className="absolute z-50"
@@ -185,6 +195,9 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
       >
         {/* Result Status */}
         <div className="text-2xl font-bold text-amber-200 mb-4">
+          {getActionMessage()}
+        </div>
+        <div className="text-xl font-semibold text-amber-100 mb-4">
           {getResultMessage()}
         </div>
         

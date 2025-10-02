@@ -146,11 +146,13 @@ public class GameService {
         }
         game.setPreviousRoundPlayers(previousPlayers);
 
-        // Store result data
+    // Store result data
         game.setLastActualCount(actualCount);
         game.setLastBidQuantity(currentBid.getQuantity());
         game.setLastBidFaceValue(currentBid.getFaceValue());
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
+    game.setLastActionPlayerId(doubtingPlayerId);
+    game.setLastActionType(BidType.DOUBT);
 
         // Show all dice for 15 seconds
         System.out
@@ -263,7 +265,7 @@ public class GameService {
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
                 "Actual count: " + actualCount);
 
-        if (actualCount == currentBid.getQuantity()) {
+    if (actualCount == currentBid.getQuantity()) {
             // Store previous round players before rerolling (deep copy)
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : game.getPlayers()) {
@@ -281,6 +283,8 @@ public class GameService {
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
+            game.setLastActionPlayerId(spotOnPlayerId);
+            game.setLastActionType(BidType.SPOT_ON);
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_CORRECT: Setting showAllDice=true for game " + gameId + " at "
@@ -324,6 +328,8 @@ public class GameService {
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(spotOnPlayerId);
+            game.setLastActionPlayerId(spotOnPlayerId);
+            game.setLastActionType(BidType.SPOT_ON);
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_WRONG: Setting showAllDice=true for game " + gameId + " at "
