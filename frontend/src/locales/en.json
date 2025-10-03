@@ -63,9 +63,6 @@
   "game.action.spotOn": "{{playerName}}: spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
 
-  "game.analysis.title": "Dice Analysis ({{totalDice}} total dice)",
-  "game.analysis.show": "Show Analysis",
-  "game.analysis.hide": "Hide Analysis",
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
 

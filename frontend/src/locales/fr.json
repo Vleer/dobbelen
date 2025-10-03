@@ -63,9 +63,6 @@
     "game.action.spotOn": "{{playerName}} dit exact",
     "game.action.raise": "{{playerName}} surenchérit",
     
-    "game.analysis.title": "Analyse des dés ({{totalDice}} dés au total)",
-    "game.analysis.show": "Afficher l'analyse",
-    "game.analysis.hide": "Masquer l'analyse",
     "game.continue": "Continuer",
     "game.continuing": "En cours...",
     

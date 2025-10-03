@@ -12,52 +12,13 @@ interface GameResultDisplayProps {
 
 const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlayerId }) => {
   const { t } = useLanguage();
-  const [showAnalysis, setShowAnalysis] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
-  const [analysisTimer, setAnalysisTimer] = useState<NodeJS.Timeout | null>(
-    null
-  );
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load analysis preference from localStorage
-  useEffect(() => {
-    const savedPreference = localStorage.getItem("diceAnalysisPreference");
-    if (savedPreference === "true") {
-      setShowAnalysis(true);
-    }
-  }, []);
 
-  // Auto-show analysis when game result is displayed
-  useEffect(() => {
-    if (game.showAllDice) {
-      setShowAnalysis(true);
-
-      // Set timer to hide analysis after 15 seconds
-      const timer = setTimeout(() => {
-        setShowAnalysis(false);
-      }, 15000);
-
-      setAnalysisTimer(timer);
-
-      // Cleanup timer on unmount or when game.showAllDice changes
-      return () => {
-        if (timer) {
-          clearTimeout(timer);
-        }
-      };
-    }
-  }, [game.showAllDice]);
-
-  // Clear analysis timer when continue is pressed
-  useEffect(() => {
-    if (isContinuing && analysisTimer) {
-      clearTimeout(analysisTimer);
-      setAnalysisTimer(null);
-    }
-  }, [isContinuing, analysisTimer]);
 
   // Handle spacebar press to continue
   useEffect(() => {
@@ -81,12 +42,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
     }
   }, [game.showAllDice, game.canContinue, currentPlayerId]);
 
-  // Save analysis preference to localStorage
-  const toggleAnalysis = () => {
-    const newShowAnalysis = !showAnalysis;
-    setShowAnalysis(newShowAnalysis);
-    localStorage.setItem("diceAnalysisPreference", newShowAnalysis.toString());
-  };
+
 
   const handleContinue = () => {
     setIsContinuing(true);
@@ -259,21 +215,11 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
           </div>
         )}
 
-        {/* Analysis Section - hidden in mobile mode */}
-        {!isMobile && showAnalysis && <DiceAnalysisChart game={game} />}
+        {/* Analysis Section - Always Visible on Desktop */}
+        {!isMobile && <DiceAnalysisChart game={game} />}
 
         {/* Action Buttons */}
         <div className="flex justify-center space-x-4 mt-6">
-          {/* Analysis Toggle Button - hidden in mobile mode */}
-          {!isMobile && (
-            <button
-              onClick={toggleAnalysis}
-              className="px-6 py-3 bg-amber-700 hover:bg-amber-600 text-amber-200 font-bold rounded-xl transition-colors duration-200 border-2 border-amber-600"
-            >
-              {showAnalysis ? t("game.analysis.hide") : t("game.analysis.show")}
-            </button>
-          )}
-
           {/* Continue Button */}
           <button
             onClick={handleContinue}

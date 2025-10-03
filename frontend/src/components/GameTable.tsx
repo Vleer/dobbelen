@@ -33,7 +33,6 @@ const GameTable: React.FC<GameTableProps> = ({
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
-  const [showMobileAnalysis, setShowMobileAnalysis] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
 
   // Connect WebSocket for all games (all games are multiplayer)
@@ -202,30 +201,7 @@ const GameTable: React.FC<GameTableProps> = ({
     return game?.currentPlayerId ? aiService.isAIPlayer(game.currentPlayerId) : false;
   }, [game?.currentPlayerId]);
 
-  // Load analysis preference from localStorage
-  useEffect(() => {
-    const savedPreference = localStorage.getItem('diceAnalysisPreference');
-    if (savedPreference === 'true') {
-      setShowMobileAnalysis(true);
-    }
-  }, []);
 
-  // Auto-show analysis when game result is displayed
-  useEffect(() => {
-    if (game?.showAllDice) {
-      setShowMobileAnalysis(true);
-      
-      // Set timer to hide analysis after 15 seconds
-      const timer = setTimeout(() => {
-        setShowMobileAnalysis(false);
-      }, 15000);
-      
-      // Cleanup timer on unmount or when game.showAllDice changes
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [game?.showAllDice]);
 
   // Handle spacebar press to continue (mobile)
   useEffect(() => {
@@ -244,12 +220,7 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game?.showAllDice, game?.canContinue, localPlayerId]);
 
-  // Save analysis preference to localStorage
-  const toggleMobileAnalysis = () => {
-    const newShowAnalysis = !showMobileAnalysis;
-    setShowMobileAnalysis(newShowAnalysis);
-    localStorage.setItem('diceAnalysisPreference', newShowAnalysis.toString());
-  };
+
 
   const handleMobileContinue = () => {
     setIsContinuing(true);
@@ -346,7 +317,7 @@ const GameTable: React.FC<GameTableProps> = ({
             {t('game.result.winsRound', { playerName: winner?.name || 'Unknown Player' })}
           </h2>
           <div className="text-xl text-green-600 mb-8">
-            {winner?.name} {t('game.result.collected7Tokens')} {t('game.title')} {t('game.result.champion')}!
+            {winner?.name} {t('game.result.collected7Tokens')} {t('game.result.champion')}!
           </div>
           <button
             onClick={() => window.location.reload()}
@@ -490,21 +461,11 @@ const GameTable: React.FC<GameTableProps> = ({
                 </div>
               )}
 
-              {/* Analysis Section */}
-              {showMobileAnalysis && <DiceAnalysisChart game={game} />}
+              {/* Analysis Section - Always Visible */}
+              <DiceAnalysisChart game={game} />
 
               {/* Action Buttons */}
               <div className="flex flex-col space-y-3 mt-4">
-                {/* Analysis Toggle Button */}
-                <button
-                  onClick={toggleMobileAnalysis}
-                  className="px-4 py-2 bg-amber-700 hover:bg-amber-600 text-amber-200 font-bold rounded-xl transition-colors duration-200 border-2 border-amber-600"
-                >
-                  {showMobileAnalysis
-                    ? t("game.analysis.hide")
-                    : t("game.analysis.show")}
-                </button>
-
                 {/* Continue Button */}
                 <button
                   onClick={handleMobileContinue}

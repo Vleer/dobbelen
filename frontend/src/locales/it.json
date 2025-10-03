@@ -63,9 +63,6 @@
   "game.action.spotOn": "{{playerName}} dice esatto",
   "game.action.raise": "{{playerName}} rilancia",
     
-    "game.analysis.title": "Analisi dei Dadi ({{totalDice}} dadi totali)",
-    "game.analysis.show": "Mostra Analisi",
-    "game.analysis.hide": "Nascondi Analisi",
     "game.continue": "Continua",
     "game.continuing": "Continuando...",
     

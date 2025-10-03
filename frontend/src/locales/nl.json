@@ -1,7 +1,7 @@
 {
   "game.title": "🎲 Dobbelen 🎲",
   "game.subtitle": "Het klassieke bluffspel",
-  
+
   "lobby.createGame": "Nieuw Spel",
   "lobby.joinGame": "Deelnemen",
   "lobby.gameId": "Spel ID",
@@ -15,7 +15,7 @@
   "lobby.pleaseEnterUsername": "Voer je gebruikersnaam in.",
   "lobby.failedToCreateGame": "Spel aanmaken mislukt",
   "lobby.failedToJoinGame": "Deelnemen aan spel mislukt",
-  
+
   "lobby.shareLink": "Deel deze link",
   "lobby.copy": "Kopiëren",
   "lobby.players": "Spelers",
@@ -25,7 +25,7 @@
   "lobby.maxPlayersReached": "Maximum van {{maxPlayers}} spelers bereikt.",
   "lobby.startGame": "▶ Spel Starten",
   "lobby.waitingForHost": "Wachten tot de host het spel start...",
-  
+
   "game.round": "Ronde {{roundNumber}}",
   "game.currentBid": "Huidige Bod",
   "game.noCurrentBid": "Geen huidig bod",
@@ -36,12 +36,12 @@
   "game.fours": "4en",
   "game.fives": "5en",
   "game.sixes": "6en",
-  
+
   "game.makeYourBid": "Doe Je Bod",
   "game.waitingForTurn": "Wachten op je beurt...",
   "game.doubt": "Optillen",
   "game.spotOn": "Spot On",
-  
+
   "game.dealer": "D",
   "game.dice": "dobbelstenen",
   "game.revealed": "Onthuld",
@@ -49,31 +49,28 @@
   "game.eliminated": "UIT",
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
   "game.winTokens": "🏆 {{count}}",
-  
+
   "game.result.thereWere": "Er waren {{actualCount}} {{faceValue}}en",
   "game.result.bidWasCorrect": "(Bod was correct!)",
   "game.result.bidWasWrong": "(Bod was fout!)",
   "game.result.thereWereOnly": "Er waren slechts {{actualCount}} {{faceValue}}en",
   "game.result.winsRound": "{{playerName}} wint 🏆!",
   "game.result.roundEnded": "Ronde beëindigd!",
-  "game.result.isEliminated": "{{playerName}} ligt er uit!",
-  "game.result.collected7Tokens": "heeft 7 win tokens verzameld en is de ultieme",
-  "game.result.champion": "kampioen",
+  "game.result.isEliminated": "{{playerName}} ligt er uit",
+  "game.result.collected7Tokens": "heeft 7 win tokens.",
+  "game.result.champion": "Dobbelkampioen!",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",
   "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
-  
-  "game.analysis.title": "Dobbelsteen Analyse ({{totalDice}} totaal)",
-  "game.analysis.show": "Analyse",
-  "game.analysis.hide": "Analyse",
+
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
-  
+
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
-  
+
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",
   "errors.failedToStart": "Spel starten mislukt",
-  
+
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
   "common.unknownPlayer": "Onbekende Speler"

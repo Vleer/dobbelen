@@ -63,9 +63,6 @@
     "game.action.spotOn": "{{playerName}} sagt genau richtig",
     "game.action.raise": "{{playerName}} erhöht",
     
-    "game.analysis.title": "Würfelanalyse ({{totalDice}} Würfel insgesamt)",
-    "game.analysis.show": "Analyse anzeigen",
-    "game.analysis.hide": "Analyse ausblenden",
     "game.continue": "Weiter",
     "game.continuing": "Weiter...",
     
