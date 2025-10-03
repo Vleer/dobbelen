@@ -369,17 +369,16 @@ const GameTable: React.FC<GameTableProps> = ({
         className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
         style={{ backgroundImage: "url(resources/bg.webp)" }}
       />
-      
+
       {/* Mobile Layout - Clean Vertical Stack */}
       <div className="md:hidden">
-        {/* Header Spacer - Account for fixed header */}
-        <div className="h-16"></div>
-        
-        {/* Opponent Players - Top section */}
-        <div className="px-2 py-2">
-          <div className="flex flex-wrap justify-center gap-1">
+        {/* Opponent Players - Top section positioned at header level */}
+        <div className="absolute top-0 left-0 right-0 pt-2 px-2 z-40">
+          <div className="flex flex-wrap justify-center gap-1 mt-1">
             {opponents.map((opponent, index) => {
-              const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
+              const previousRoundPlayer = game.previousRoundPlayers?.find(
+                (p) => p.id === opponent.id
+              );
               return (
                 <OpponentPlayer
                   key={opponent.id}
@@ -387,7 +386,11 @@ const GameTable: React.FC<GameTableProps> = ({
                   position={index}
                   isMyTurn={game.currentPlayerId === opponent.id}
                   isDealer={game.dealerId === opponent.id}
-                  showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+                  showDice={
+                    game.showAllDice ||
+                    game.state === "ROUND_ENDED" ||
+                    game.winner !== null
+                  }
                   previousBid={game.previousBid}
                   previousRoundPlayer={previousRoundPlayer}
                   isMobile={true}
@@ -398,10 +401,13 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
+        {/* Spacer for absolutely positioned opponents - adjust based on opponents height */}
+        <div className="h-20"></div>
+
         {/* Mobile Bid Display - Below players with separator */}
         {game.currentBid && (
           <div className="px-4 py-2">
-            <BidDisplay 
+            <BidDisplay
               currentBid={game.currentBid}
               currentPlayerId={game.currentPlayerId}
               players={game.players}
@@ -418,42 +424,74 @@ const GameTable: React.FC<GameTableProps> = ({
             <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-6 shadow-2xl text-center">
               {/* Action and Result Status */}
               <div className="text-xl font-bold text-amber-200 mb-2">
-                {game.lastActionType && game.lastActionPlayerId && (
-                  game.lastActionType === 'DOUBT'
-                    ? t('game.action.doubt', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
-                    : game.lastActionType === 'SPOT_ON'
-                      ? t('game.action.spotOn', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
-                      : t('game.action.raise', { playerName: game.players.find(p => p.id === game.lastActionPlayerId)?.name || t('common.unknownPlayer') })
-                )}
+                {game.lastActionType &&
+                  game.lastActionPlayerId &&
+                  (game.lastActionType === "DOUBT"
+                    ? t("game.action.doubt", {
+                        playerName:
+                          game.players.find(
+                            (p) => p.id === game.lastActionPlayerId
+                          )?.name || t("common.unknownPlayer"),
+                      })
+                    : game.lastActionType === "SPOT_ON"
+                    ? t("game.action.spotOn", {
+                        playerName:
+                          game.players.find(
+                            (p) => p.id === game.lastActionPlayerId
+                          )?.name || t("common.unknownPlayer"),
+                      })
+                    : t("game.action.raise", {
+                        playerName:
+                          game.players.find(
+                            (p) => p.id === game.lastActionPlayerId
+                          )?.name || t("common.unknownPlayer"),
+                      }))}
               </div>
               <div className="text-lg font-semibold text-amber-100 mb-3">
-                {game.lastActualCount !== undefined && game.lastBidQuantity !== undefined && game.lastBidFaceValue !== undefined ? (
-                  game.lastActualCount >= game.lastBidQuantity ? (
-                    t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue: game.lastBidFaceValue }) + ' ' + t('game.result.bidWasCorrect')
-                  ) : (
-                    t('game.result.thereWereOnly', { actualCount: game.lastActualCount, faceValue: game.lastBidFaceValue }) + ' ' + t('game.result.bidWasWrong')
-                  )
-                ) : ''}
+                {game.lastActualCount !== undefined &&
+                game.lastBidQuantity !== undefined &&
+                game.lastBidFaceValue !== undefined
+                  ? game.lastActualCount >= game.lastBidQuantity
+                    ? t("game.result.thereWere", {
+                        actualCount: game.lastActualCount,
+                        faceValue: game.lastBidFaceValue,
+                      }) +
+                      " " +
+                      t(" ")
+                    : t(" ", {
+                        actualCount: game.lastActualCount,
+                        faceValue: game.lastBidFaceValue,
+                      }) +
+                      " " +
+                      t("game.result.bidWasWrong")
+                  : ""}
               </div>
-              
+
               {/* Winner Message */}
               {game.winner && (
                 <div className="text-2xl font-bold text-green-300 mb-3">
-                  {t('game.result.winsRound', { playerName: game.players.find(p => p.id === game.winner)?.name || 'Unknown Player' })}
+                  {t("game.result.winsRound", {
+                    playerName:
+                      game.players.find((p) => p.id === game.winner)?.name ||
+                      "Unknown Player",
+                  })}
                 </div>
               )}
-              
+
               {/* Eliminated Player */}
               {game.lastEliminatedPlayerId && (
                 <div className="text-lg font-bold text-red-300 mb-4">
-                  {t('game.result.isEliminated', { playerName: game.players.find(p => p.id === game.lastEliminatedPlayerId)?.name || 'Unknown Player' })}
+                  {t("game.result.isEliminated", {
+                    playerName:
+                      game.players.find(
+                        (p) => p.id === game.lastEliminatedPlayerId
+                      )?.name || "Unknown Player",
+                  })}
                 </div>
               )}
 
               {/* Analysis Section */}
-              {showMobileAnalysis && (
-                <DiceAnalysisChart game={game} />
-              )}
+              {showMobileAnalysis && <DiceAnalysisChart game={game} />}
 
               {/* Action Buttons */}
               <div className="flex flex-col space-y-3 mt-4">
@@ -462,20 +500,34 @@ const GameTable: React.FC<GameTableProps> = ({
                   onClick={toggleMobileAnalysis}
                   className="px-4 py-2 bg-amber-700 hover:bg-amber-600 text-amber-200 font-bold rounded-xl transition-colors duration-200 border-2 border-amber-600"
                 >
-                  {showMobileAnalysis ? t('game.analysis.hide') : t('game.analysis.show')}
+                  {showMobileAnalysis
+                    ? t("game.analysis.hide")
+                    : t("game.analysis.show")}
                 </button>
-                
+
                 {/* Continue Button */}
                 <button
                   onClick={handleMobileContinue}
-                  disabled={isContinuing || !game.canContinue || (localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)}
+                  disabled={
+                    isContinuing ||
+                    !game.canContinue ||
+                    (localPlayerId
+                      ? aiService.isAIPlayer(localPlayerId)
+                      : false)
+                  }
                   className={`px-4 py-2 font-bold rounded-xl transition-all duration-200 border-2 ${
-                    isContinuing || !game.canContinue || (localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)
-                      ? 'bg-amber-800 text-amber-400 border-amber-600 cursor-not-allowed'
-                      : 'bg-amber-900 hover:bg-amber-800 text-amber-200 border-amber-700 hover:border-amber-600'
+                    isContinuing ||
+                    !game.canContinue ||
+                    (localPlayerId
+                      ? aiService.isAIPlayer(localPlayerId)
+                      : false)
+                      ? "bg-amber-800 text-amber-400 border-amber-600 cursor-not-allowed"
+                      : "bg-amber-900 hover:bg-amber-800 text-amber-200 border-amber-700 hover:border-amber-600"
                   }`}
                 >
-                  {isContinuing ? t('game.continuing') : `${t('game.continue')} (Space)`}
+                  {isContinuing
+                    ? t("game.continuing")
+                    : `${t("game.continue")} (Space)`}
                 </button>
               </div>
             </div>
@@ -487,16 +539,20 @@ const GameTable: React.FC<GameTableProps> = ({
           {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
             <BidSelector
               currentBid={game.currentBid}
-              onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
-              onDoubt={() => handleAction('doubt')}
-              onSpotOn={() => handleAction('spotOn')}
+              onBidSelect={(quantity, faceValue) =>
+                handleAction("bid", { quantity, faceValue })
+              }
+              onDoubt={() => handleAction("doubt")}
+              onSpotOn={() => handleAction("spotOn")}
               disabled={isLoading || bettingDisabled}
               isMobile={true}
             />
           ) : (
             <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
               <div className="text-center text-white text-lg font-bold">
-                {localPlayer && isMyTurn() ? t('game.makeYourBid') : t('game.waitingForTurn')}
+                {localPlayer && isMyTurn()
+                  ? t("game.makeYourBid")
+                  : t("game.waitingForTurn")}
               </div>
             </div>
           )}
@@ -505,16 +561,22 @@ const GameTable: React.FC<GameTableProps> = ({
         {/* Local Player - Bottom section */}
         {localPlayer && (
           <div className="px-2 py-2">
-            <LocalPlayer 
-              player={localPlayer} 
+            <LocalPlayer
+              player={localPlayer}
               isMyTurn={isMyTurn()}
               isDealer={game.dealerId === localPlayer.id}
               onAction={handleAction}
               disabled={isLoading || bettingDisabled}
               currentBid={game.currentBid}
               previousBid={game.previousBid}
-              showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
-              previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
+              showDice={
+                game.showAllDice ||
+                game.state === "ROUND_ENDED" ||
+                game.winner !== null
+              }
+              previousRoundPlayer={game.previousRoundPlayers?.find(
+                (p) => p.id === localPlayer.id
+              )}
               isMobile={true}
             />
           </div>
@@ -525,32 +587,46 @@ const GameTable: React.FC<GameTableProps> = ({
       <div className="hidden md:block">
         {/* Local Player - Bottom Center */}
         {localPlayer && (
-          <LocalPlayer 
-            player={localPlayer} 
+          <LocalPlayer
+            player={localPlayer}
             isMyTurn={isMyTurn()}
             isDealer={game.dealerId === localPlayer.id}
             onAction={handleAction}
             disabled={isLoading || bettingDisabled}
             currentBid={game.currentBid}
             previousBid={game.previousBid}
-            showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
-            previousRoundPlayer={game.previousRoundPlayers?.find(p => p.id === localPlayer.id)}
+            showDice={
+              game.showAllDice ||
+              game.state === "ROUND_ENDED" ||
+              game.winner !== null
+            }
+            previousRoundPlayer={game.previousRoundPlayers?.find(
+              (p) => p.id === localPlayer.id
+            )}
           />
         )}
 
         {/* Opponents */}
         {opponents.map((opponent, index) => {
-          const previousRoundPlayer = game.previousRoundPlayers?.find(p => p.id === opponent.id);
+          const previousRoundPlayer = game.previousRoundPlayers?.find(
+            (p) => p.id === opponent.id
+          );
           console.log(`GameTable - Opponent ${opponent.name}:`, {
             showAllDice: game.showAllDice,
             state: game.state,
             winner: game.winner,
-            previousRoundPlayer: previousRoundPlayer ? {
-              id: previousRoundPlayer.id,
-              name: previousRoundPlayer.name,
-              dice: previousRoundPlayer.dice
-            } : null,
-            previousRoundPlayers: game.previousRoundPlayers?.map(p => ({ id: p.id, name: p.name, dice: p.dice }))
+            previousRoundPlayer: previousRoundPlayer
+              ? {
+                  id: previousRoundPlayer.id,
+                  name: previousRoundPlayer.name,
+                  dice: previousRoundPlayer.dice,
+                }
+              : null,
+            previousRoundPlayers: game.previousRoundPlayers?.map((p) => ({
+              id: p.id,
+              name: p.name,
+              dice: p.dice,
+            })),
           });
           return (
             <OpponentPlayer
@@ -559,7 +635,11 @@ const GameTable: React.FC<GameTableProps> = ({
               position={index}
               isMyTurn={game.currentPlayerId === opponent.id}
               isDealer={game.dealerId === opponent.id}
-              showDice={game.showAllDice || game.state === 'ROUND_ENDED' || game.winner !== null}
+              showDice={
+                game.showAllDice ||
+                game.state === "ROUND_ENDED" ||
+                game.winner !== null
+              }
               previousBid={game.previousBid}
               previousRoundPlayer={previousRoundPlayer}
               playerIndex={index + 1}
@@ -571,9 +651,11 @@ const GameTable: React.FC<GameTableProps> = ({
         {localPlayer && isMyTurn() && !localPlayer.eliminated && (
           <BidSelector
             currentBid={game.currentBid}
-            onBidSelect={(quantity, faceValue) => handleAction('bid', { quantity, faceValue })}
-            onDoubt={() => handleAction('doubt')}
-            onSpotOn={() => handleAction('spotOn')}
+            onBidSelect={(quantity, faceValue) =>
+              handleAction("bid", { quantity, faceValue })
+            }
+            onDoubt={() => handleAction("doubt")}
+            onSpotOn={() => handleAction("spotOn")}
             disabled={isLoading || bettingDisabled}
           />
         )}
@@ -581,7 +663,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Center Bid Display - Desktop only */}
       <div className="hidden md:block">
-        <BidDisplay 
+        <BidDisplay
           currentBid={game.currentBid}
           currentPlayerId={game.currentPlayerId}
           players={game.players}
@@ -596,13 +678,15 @@ const GameTable: React.FC<GameTableProps> = ({
         <GameResultDisplay game={game} currentPlayerId={localPlayerId} />
       </div>
 
-
       {/* Error Display - Only show critical errors, not WebSocket warnings */}
-      {error && !error.toLowerCase().includes('stomp') && !error.toLowerCase().includes('websocket') && !error.toLowerCase().includes('connection') && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded z-50">
-          {error}
-        </div>
-      )}
+      {error &&
+        !error.toLowerCase().includes("stomp") &&
+        !error.toLowerCase().includes("websocket") &&
+        !error.toLowerCase().includes("connection") && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded z-50">
+            {error}
+          </div>
+        )}
 
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4 bg-green-800 bg-opacity-90">
@@ -627,15 +711,19 @@ const GameTable: React.FC<GameTableProps> = ({
                 onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
                 className="text-white hover:text-gray-300 mr-2 text-sm"
               >
-                {isGameInfoMinimized ? '▶' : '▼'}
+                {isGameInfoMinimized ? "▶" : "▼"}
               </button>
               <span className="text-sm font-bold">Game Info</span>
             </div>
             {!isGameInfoMinimized && (
               <div className="px-2 pb-2 text-sm">
-                <div>{t('lobby.gameId')}: {game.id}</div>
-                <div>{t('game.round', { roundNumber: game.roundNumber })}</div>
-                <div>{t('common.state')}: {game.state}</div>
+                <div>
+                  {t("lobby.gameId")}: {game.id}
+                </div>
+                <div>{t("game.round", { roundNumber: game.roundNumber })}</div>
+                <div>
+                  {t("common.state")}: {game.state}
+                </div>
               </div>
             )}
           </div>

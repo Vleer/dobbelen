@@ -147,9 +147,14 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
       // Use the stored face value from the last doubt/spot-on
       const faceValue = game.lastBidFaceValue;
       if (game.lastActualCount >= game.lastBidQuantity) {
-        return t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue }) + ' ' + t('game.result.bidWasCorrect');
+        return t('game.result.thereWere', { actualCount: game.lastActualCount, faceValue }) + ' ';
       } else {
-        return t('game.result.thereWereOnly', { actualCount: game.lastActualCount, faceValue }) + ' ' + t('game.result.bidWasWrong');
+        return (
+          t("game.result.thereWereOnly", {
+            actualCount: game.lastActualCount,
+            faceValue,
+          }) + " "
+        );
       }
     }
     return '';
