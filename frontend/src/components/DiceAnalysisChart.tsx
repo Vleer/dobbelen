@@ -28,10 +28,10 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
   const totalDice = game.players.reduce((sum, player) => sum + (player.dice?.length || 0), 0);
 
   return (
-    <div className="mt-4 p-4 bg-green-800 border-2 border-black rounded-2xl">
+    <div className="mt-2 p-2 bg-green-800 border-2 border-black rounded-xl">
       
-      {/* Bar chart with dice stacked vertically */}
-      <div className="grid grid-cols-6 gap-2">
+      {/* Bar chart with dice stacked vertically - Compact version */}
+      <div className="grid grid-cols-6 gap-1.5">
         {[1, 2, 3, 4, 5, 6].map(faceValue => {
           // Collect all dice of this face value from all players
           const allDiceOfValue = game.players.map(player => ({
@@ -43,15 +43,15 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
           
           return (
             <div key={faceValue} className="flex flex-col items-center">
-              <div className="text-xs text-green-300 mb-2 font-bold">{faceValue}</div>
-              <div className="flex flex-col justify-end h-24 w-8 bg-green-700 rounded border border-black p-1">
+              <div className="text-xs text-green-300 mb-1 font-bold">{faceValue}</div>
+              <div className="flex flex-col justify-end h-20 w-7 bg-green-700 rounded border border-black p-0.5">
                 {/* Stack dice vertically */}
                 <div className="flex flex-col-reverse gap-0.5">
                   {allDiceOfValue.map(({ player, dice }, playerIndex) => 
                     dice.map((_, diceIndex) => (
                       <div
                         key={`${player.id}-${diceIndex}`}
-                        className="w-7 h-7 rounded border border-black flex items-center justify-center"
+                        className="w-6 h-6 rounded border border-black flex items-center justify-center"
                         style={{ backgroundColor: getPlayerHexColor(game.players.indexOf(player)) }}
                       >
                         <DiceSVG value={faceValue} size="xs" />
@@ -60,7 +60,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({ game }) => {
                   )}
                 </div>
               </div>
-              <div className="text-xs text-green-200 mt-1 font-bold">{totalCount}</div>
+              <div className="text-xs text-green-200 mt-0.5 font-bold">{totalCount}</div>
             </div>
           );
         })}

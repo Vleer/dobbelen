@@ -457,13 +457,13 @@ const GameTable: React.FC<GameTableProps> = ({
         style={{ backgroundImage: "url(resources/bg.webp)" }}
       />
 
-      {/* Mobile Layout - Clean Vertical Stack with fixed bottom player */}
+      {/* Mobile Layout - Clean Vertical Stack with fixed bottom elements */}
       <div className="md:hidden flex flex-col h-screen">
-        {/* Scrollable content area - everything except local player */}
-        <div className="flex-1 overflow-y-auto pb-24">
-          {/* Opponent Players - Top section positioned at header level */}
-          <div className="absolute top-0 left-0 right-0 pt-2 px-2 z-40">
-            <div className="flex flex-wrap justify-center gap-1 mt-1">
+        {/* Scrollable content area - opponents and results/bid display */}
+        <div className="flex-1 overflow-y-auto pb-80 pt-16">
+          {/* Opponent Players - Top section with natural flow, below header */}
+          <div className="px-2">
+            <div className="flex flex-wrap justify-center gap-1">
               {opponentsInTurnOrder.map((opponent, index) => {
                 const previousRoundPlayer = game.previousRoundPlayers?.find(
                   (p) => p.id === opponent.id
@@ -493,15 +493,12 @@ const GameTable: React.FC<GameTableProps> = ({
             </div>
           </div>
 
-          {/* Spacer for absolutely positioned opponents - adjust based on opponents height */}
-          <div className="h-20"></div>
-
-          {/* Mobile Bid Display - Below players with separator */}
+          {/* Mobile Bid Display - Below opponents (when no results showing) */}
           {game.currentBid &&
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
             showBidDisplay && (
-              <div className="px-4 py-2">
+              <div className="px-3 py-2">
                 <BidDisplay
                   currentBid={game.currentBid}
                   currentPlayerId={game.currentPlayerId}
@@ -513,12 +510,13 @@ const GameTable: React.FC<GameTableProps> = ({
               </div>
             )}
 
-          {/* Mobile Game Result Display - Below bid display, above bid selector */}
+          {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
-            <div className="px-4 py-2">
-              <div className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-6 shadow-2xl text-center">
-                {/* Action and Result Status */}
-                <div className="text-xl font-bold text-amber-200 mb-2">
+            <div className="px-3 py-2">
+              <div className="bg-amber-900 border-4 border-amber-700 rounded-2xl p-3 shadow-2xl">
+              {/* Compact Header - Action and Who */}
+              <div className="text-center mb-2">
+                <div className="text-base font-bold text-amber-200">
                   {game.lastActionType &&
                     game.lastActionPlayerId &&
                     (game.lastActionType === "DOUBT"
@@ -542,84 +540,98 @@ const GameTable: React.FC<GameTableProps> = ({
                             )?.name || t("common.unknownPlayer"),
                         }))}
                 </div>
-                <div className="text-lg font-semibold text-amber-100 mb-3">
-                  {game.lastActualCount !== undefined &&
-                  game.lastBidQuantity !== undefined &&
-                  game.lastBidFaceValue !== undefined
-                    ? game.lastActualCount >= game.lastBidQuantity
-                      ? t("game.result.thereWere", {
-                          actualCount: game.lastActualCount,
-                          faceValue: game.lastBidFaceValue,
-                        }) +
-                        " " +
-                        t(" ")
-                      : t(" ", {
-                          actualCount: game.lastActualCount,
-                          faceValue: game.lastBidFaceValue,
-                        }) +
-                        " " +
-                        t("game.result.bidWasWrong")
-                    : ""}
-                </div>
+              </div>
 
-                {/* Winner Message */}
-                {game.winner && (
-                  <div className="text-2xl font-bold text-green-300 mb-3">
-                    {t("game.result.winsRound", {
+              {/* Result - Correct/Incorrect with Clear Visual Indicator */}
+              {game.lastActualCount !== undefined &&
+                game.lastBidQuantity !== undefined &&
+                game.lastBidFaceValue !== undefined && (
+                  <div className={`text-center mb-2 p-2 rounded-lg ${
+                    game.lastActualCount >= game.lastBidQuantity 
+                      ? 'bg-green-800 border-2 border-green-400' 
+                      : 'bg-red-800 border-2 border-red-400'
+                  }`}>
+                    <div className={`text-lg font-bold ${
+                      game.lastActualCount >= game.lastBidQuantity 
+                        ? 'text-green-200' 
+                        : 'text-red-200'
+                    }`}>
+                      {game.lastActualCount >= game.lastBidQuantity 
+                        ? `✓ ${t("game.result.thereWere", {
+                            actualCount: game.lastActualCount,
+                            faceValue: game.lastBidFaceValue,
+                          })}` 
+                        : `✗ ${t("game.result.thereWereOnly", {
+                            actualCount: game.lastActualCount,
+                            faceValue: game.lastBidFaceValue,
+                          })}`}
+                    </div>
+                  </div>
+                )}
+
+              {/* Winner - Prominent */}
+              {game.winner && (
+                <div className="text-center mb-2 p-2 bg-green-700 rounded-lg border-2 border-green-300">
+                  <div className="text-xl font-bold text-green-100">
+                    🏆 {t("game.result.winsRound", {
                       playerName:
                         game.players.find((p) => p.id === game.winner)?.name ||
                         "Unknown Player",
                     })}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Eliminated Player */}
-                {game.lastEliminatedPlayerId && (
-                  <div className="text-lg font-bold text-red-300 mb-4">
-                    {t("game.result.isEliminated", {
+              {/* Eliminated Player - Very Prominent */}
+              {game.lastEliminatedPlayerId && (
+                <div className="text-center mb-2 p-2 bg-red-700 rounded-lg border-2 border-red-300">
+                  <div className="text-lg font-bold text-red-100">
+                    💀 {t("game.result.isEliminated", {
                       playerName:
                         game.players.find(
                           (p) => p.id === game.lastEliminatedPlayerId
                         )?.name || "Unknown Player",
                     })}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Analysis Section - Always Visible */}
-                <DiceAnalysisChart game={game} />
+              {/* Compact Dice Analysis Chart */}
+              <DiceAnalysisChart game={game} />
+            </div>
+          </div>
+        )}
+
+          {/* Waiting Message - In scrollable area, below results */}
+          {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
+            <div className="px-3 py-2">
+              <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
+                <div className="text-center text-white text-lg font-bold">
+                  {localPlayer.eliminated
+                    ? t("game.waitingForNextRound")
+                    : t("game.waitingForTurn")}
+                </div>
               </div>
             </div>
           )}
-
-          {/* Bid Selector - Center section with proper spacing */}
-          {showBidDisplay && (
-            <div className="px-4 py-4">
-              {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
-                <BidSelector
-                  currentBid={game.currentBid}
-                  previousBid={game.previousBid}
-                  onBidSelect={(quantity, faceValue) =>
-                    handleAction("bid", { quantity, faceValue })
-                  }
-                  onDoubt={() => handleAction("doubt")}
-                  onSpotOn={() => handleAction("spotOn")}
-                  disabled={isLoading || bettingDisabled}
-                  isMobile={true}
-                />
-              ) : (
-                <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
-                  <div className="text-center text-white text-lg font-bold">
-                    {localPlayer && isMyTurn()
-                      ? t("game.makeYourBid")
-                      : localPlayer?.eliminated
-                      ? t("game.waitingForNextRound")
-                      : t("game.waitingForTurn")}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
+
+        {/* Bid Selector - Fixed above local player (only when active turn) */}
+        {showBidDisplay && localPlayer && isMyTurn() && !localPlayer.eliminated && (
+          <div className="fixed bottom-24 left-0 right-0 z-45 px-3">
+            <BidSelector
+              currentBid={game.currentBid}
+              previousBid={game.previousBid}
+              onBidSelect={(quantity, faceValue) =>
+                handleAction("bid", { quantity, faceValue })
+              }
+              onDoubt={() => handleAction("doubt")}
+              onSpotOn={() => handleAction("spotOn")}
+              disabled={isLoading || bettingDisabled}
+              isMobile={true}
+            />
+          </div>
+        )}
 
         {/* Local Player - Fixed to bottom */}
         {localPlayer && (
