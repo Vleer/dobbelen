@@ -33,108 +33,140 @@ const GameTable: React.FC<GameTableProps> = ({
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
-  const [isContinuing, setIsContinuing] = useState(false);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
-    console.log('WebSocket useEffect triggered:', { gameId: game?.id, localPlayerId });
+    console.log("WebSocket useEffect triggered:", {
+      gameId: game?.id,
+      localPlayerId,
+    });
     if (game && localPlayerId) {
-      console.log('Connecting WebSocket for game:', game.id);
-      
+      console.log("Connecting WebSocket for game:", game.id);
+
       // Register AI players when game is loaded
-      game.players.forEach(player => {
-        if (player.name.startsWith('AI ')) {
+      game.players.forEach((player) => {
+        if (player.name.startsWith("AI ")) {
           aiService.registerAIPlayer(player.id, player.name);
-          console.log('Registered AI player:', player.name, player.id);
+          console.log("Registered AI player:", player.name, player.id);
         }
       });
-      
+
       try {
         webSocketService.connect(game.id, (updatedGame) => {
-          console.log('WebSocket game update received:', updatedGame);
-          
+          console.log("WebSocket game update received:", updatedGame);
+
           // Register any new AI players
-          updatedGame.players.forEach(player => {
-            if (player.name.startsWith('AI ')) {
+          updatedGame.players.forEach((player) => {
+            if (player.name.startsWith("AI ")) {
               aiService.registerAIPlayer(player.id, player.name);
             }
           });
-          
+
           setGame(updatedGame);
         });
       } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
+        console.error("Failed to connect WebSocket:", error);
         // Fallback to polling if WebSocket fails
-        console.log('Falling back to polling for game');
+        console.log("Falling back to polling for game");
       }
-      
+
       // Cleanup on unmount
       return () => {
-        console.log('Disconnecting WebSocket for game:', game.id);
+        console.log("Disconnecting WebSocket for game:", game.id);
         webSocketService.disconnect();
       };
     } else {
-      console.log('WebSocket not connected - conditions not met:', { hasGame: !!game, hasLocalPlayerId: !!localPlayerId });
+      console.log("WebSocket not connected - conditions not met:", {
+        hasGame: !!game,
+        hasLocalPlayerId: !!localPlayerId,
+      });
     }
   }, [game?.id, localPlayerId, game]);
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
-    console.log('Polling useEffect triggered:', { gameId: game?.id, localPlayerId });
+    console.log("Polling useEffect triggered:", {
+      gameId: game?.id,
+      localPlayerId,
+    });
     if (game && localPlayerId) {
-      console.log('Starting polling for game:', game.id);
+      console.log("Starting polling for game:", game.id);
       const pollInterval = setInterval(async () => {
         try {
-          console.log('Polling game updates for game:', game.id);
+          console.log("Polling game updates for game:", game.id);
           const updatedGame = await gameApi.getMultiplayerGame(game.id);
-          console.log('Polled game state:', updatedGame.state, 'currentPlayerId:', updatedGame.currentPlayerId, 'myPlayerId:', localPlayerId);
-          
+          console.log(
+            "Polled game state:",
+            updatedGame.state,
+            "currentPlayerId:",
+            updatedGame.currentPlayerId,
+            "myPlayerId:",
+            localPlayerId
+          );
+
           // Check if showAllDice state changed
           if (game.showAllDice !== updatedGame.showAllDice) {
-            console.log('🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:', game.showAllDice, 'New:', updatedGame.showAllDice, 'at', new Date().toISOString());
+            console.log(
+              "🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:",
+              game.showAllDice,
+              "New:",
+              updatedGame.showAllDice,
+              "at",
+              new Date().toISOString()
+            );
           }
-          
+
           // Check if the current player has changed
           if (game.currentPlayerId !== updatedGame.currentPlayerId) {
-            console.log('🎯 TURN CHANGE DETECTED! Old:', game.currentPlayerId, 'New:', updatedGame.currentPlayerId);
+            console.log(
+              "🎯 TURN CHANGE DETECTED! Old:",
+              game.currentPlayerId,
+              "New:",
+              updatedGame.currentPlayerId
+            );
           }
-          
+
           setGame(updatedGame);
         } catch (err) {
-          console.error('Error polling game updates:', err);
+          console.error("Error polling game updates:", err);
         }
       }, 1000); // Poll every 1 second for faster updates
 
       return () => {
-        console.log('Clearing polling interval for game:', game.id);
+        console.log("Clearing polling interval for game:", game.id);
         clearInterval(pollInterval);
       };
     } else {
-      console.log('Polling not started - conditions not met:', { hasGame: !!game, hasLocalPlayerId: !!localPlayerId });
+      console.log("Polling not started - conditions not met:", {
+        hasGame: !!game,
+        hasLocalPlayerId: !!localPlayerId,
+      });
     }
   }, [game?.id, localPlayerId, game]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {
     setIsLoading(true);
-    setError('');
+    setError("");
     try {
       const request: CreateGameRequest = { playerNames };
       const gameResponse = await gameApi.createGame(request);
       setGame(gameResponse);
-      
+
       // Find the human player (first player in AI mode, or by username)
-      const humanPlayer = gameResponse.players.find(p => p.name === userUsername) || gameResponse.players[0];
+      const humanPlayer =
+        gameResponse.players.find((p) => p.name === userUsername) ||
+        gameResponse.players[0];
       setLocalPlayerId(humanPlayer.id);
-      
+
       // Register AI players
-      gameResponse.players.forEach(player => {
-        if (player.name.startsWith('AI ') || player.id !== humanPlayer.id) {
+      gameResponse.players.forEach((player) => {
+        if (player.name.startsWith("AI ") || player.id !== humanPlayer.id) {
           aiService.registerAIPlayer(player.id, player.name);
         }
       });
     } catch (err) {
-      setError('Failed to create game');
-      console.error('Error creating game:', err);
+      setError("Failed to create game");
+      console.error("Error creating game:", err);
     } finally {
       setIsLoading(false);
     }
@@ -142,42 +174,43 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const refreshGame = useCallback(async () => {
     if (!game) return;
-    
+
     try {
       const gameResponse = await gameApi.getGame(game.id);
       setGame(gameResponse);
     } catch (err) {
-      console.error('Error refreshing game:', err);
+      console.error("Error refreshing game:", err);
     }
   }, [game]);
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;
-    
+
     setIsLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       // Use WebSocket for all games (all games are multiplayer)
-      const actionName = action === 'spotOn' ? 'SPOT_ON' : action.toUpperCase();
+      const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
-      
+
       // If doubt or spot-on, disable betting for 15 seconds
-      if (action === 'doubt' || action === 'spotOn') {
+      if (action === "doubt" || action === "spotOn") {
         setBettingDisabled(true);
-        
+
         // Re-enable betting after 15 seconds
         setTimeout(() => {
           setBettingDisabled(false);
         }, 15000);
       }
-      
+
       // The game state will be updated via WebSocket subscription
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || `Failed to ${action}`;
+      const errorMessage =
+        err.response?.data?.message || err.message || `Failed to ${action}`;
       setError(errorMessage);
       console.error(`Error with ${action}:`, err);
-      
+
       // If there's an error, try to refresh the game state
       if (game) {
         refreshGame();
@@ -189,52 +222,23 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const getLocalPlayer = (): Player | null => {
     if (!game || !localPlayerId) return null;
-    return game.players.find(p => p.id === localPlayerId) || null;
+    return game.players.find((p) => p.id === localPlayerId) || null;
   };
 
   const getOpponents = (): Player[] => {
     if (!game || !localPlayerId) return [];
-    return game.players.filter(p => p.id !== localPlayerId);
+    return game.players.filter((p) => p.id !== localPlayerId);
   };
 
   const isAITurn = useCallback((): boolean => {
-    return game?.currentPlayerId ? aiService.isAIPlayer(game.currentPlayerId) : false;
+    return game?.currentPlayerId
+      ? aiService.isAIPlayer(game.currentPlayerId)
+      : false;
   }, [game?.currentPlayerId]);
-
-
-
-  // Handle spacebar press to continue (mobile)
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && game?.showAllDice && game.canContinue && !(localPlayerId ? aiService.isAIPlayer(localPlayerId) : false)) {
-        e.preventDefault();
-        handleMobileContinue();
-      }
-    };
-
-    if (game?.showAllDice) {
-      document.addEventListener('keydown', handleKeyPress);
-      return () => {
-        document.removeEventListener('keydown', handleKeyPress);
-      };
-    }
-  }, [game?.showAllDice, game?.canContinue, localPlayerId]);
-
-
-
-  const handleMobileContinue = () => {
-    setIsContinuing(true);
-    webSocketService.sendAction('CONTINUE', {}, '');
-    
-    // Reset the continuing state after 1 second
-    setTimeout(() => {
-      setIsContinuing(false);
-    }, 1000);
-  };
 
   // Handle AI turns
   useEffect(() => {
-    console.log('Game state check:', {
+    console.log("Game state check:", {
       game: game?.id,
       state: game?.state,
       currentPlayerId: game?.currentPlayerId,
@@ -242,63 +246,93 @@ const GameTable: React.FC<GameTableProps> = ({
       isLoading,
       gameWinner: game?.gameWinner,
       showAllDice: game?.showAllDice,
-      registeredAIPlayers: Array.from(aiService.registeredPlayers)
+      registeredAIPlayers: Array.from(aiService.registeredPlayers),
     });
-    
-    if (game && isAITurn() && !isLoading && game.state === 'IN_PROGRESS' && !game.showAllDice) {
+
+    if (
+      game &&
+      isAITurn() &&
+      !isLoading &&
+      game.state === "IN_PROGRESS" &&
+      !game.showAllDice
+    ) {
       const handleAITurn = async () => {
         try {
           setIsLoading(true);
           await aiService.simulateThinking();
-          
-          const aiAction = aiService.generateRandomAction(game.currentBid, game.players.length);
-          const currentPlayer = game.players.find(p => p.id === game.currentPlayerId);
+
+          const aiAction = aiService.generateRandomAction(
+            game.currentBid,
+            game.players.length
+          );
+          const currentPlayer = game.players.find(
+            (p) => p.id === game.currentPlayerId
+          );
           console.log(`AI ${currentPlayer?.name} chooses:`, aiAction);
-          console.log('Current bid:', game.currentBid);
-          console.log('AI action data:', aiAction.data);
-          
+          console.log("Current bid:", game.currentBid);
+          console.log("AI action data:", aiAction.data);
+
           // Use WebSocket for AI actions (all games are multiplayer)
           switch (aiAction.action) {
-            case 'bid':
-              webSocketService.sendAction('BID', aiAction.data, game.currentPlayerId);
+            case "bid":
+              webSocketService.sendAction(
+                "BID",
+                aiAction.data,
+                game.currentPlayerId
+              );
               break;
-            case 'doubt':
-              webSocketService.sendAction('DOUBT', {}, game.currentPlayerId);
+            case "doubt":
+              webSocketService.sendAction("DOUBT", {}, game.currentPlayerId);
               break;
-            case 'spotOn':
-              webSocketService.sendAction('SPOT_ON', {}, game.currentPlayerId);
+            case "spotOn":
+              webSocketService.sendAction("SPOT_ON", {}, game.currentPlayerId);
               break;
             default:
-              throw new Error('Unknown AI action');
+              throw new Error("Unknown AI action");
           }
         } catch (err: any) {
-            console.error('AI action failed:', err);
-            console.error('Error details:', err.response?.data);
-            const errorMessage = err.response?.data?.message || err.message || 'AI action failed';
-            setError(errorMessage);
-            
-            // Refresh game state on AI error
-            refreshGame();
-          } finally {
-            setIsLoading(false);
-          }
+          console.error("AI action failed:", err);
+          console.error("Error details:", err.response?.data);
+          const errorMessage =
+            err.response?.data?.message || err.message || "AI action failed";
+          setError(errorMessage);
+
+          // Refresh game state on AI error
+          refreshGame();
+        } finally {
+          setIsLoading(false);
+        }
       };
 
       handleAITurn();
     }
-  }, [game?.currentPlayerId, game?.state, isLoading, game, isAITurn, refreshGame]);
+  }, [
+    game?.currentPlayerId,
+    game?.state,
+    isLoading,
+    game,
+    isAITurn,
+    refreshGame,
+  ]);
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;
   };
 
   if (!game) {
-    return <GameSetup onCreateGame={createGame} onMultiplayer={() => {}} isLoading={isLoading} error={error} />;
+    return (
+      <GameSetup
+        onCreateGame={createGame}
+        onMultiplayer={() => {}}
+        isLoading={isLoading}
+        error={error}
+      />
+    );
   }
 
   // Check for game completion
   if (game.gameWinner) {
-    const winner = game.players.find(p => p.id === game.gameWinner);
+    const winner = game.players.find((p) => p.id === game.gameWinner);
     return (
       <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden flex items-center justify-center">
         {/* Background */}
@@ -306,24 +340,27 @@ const GameTable: React.FC<GameTableProps> = ({
           className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
           style={{ backgroundImage: "url(resources/bg.webp)" }}
         />
-        
+
         {/* Victory Screen */}
         <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
           <div className="text-6xl mb-4">🎲👑</div>
           <h1 className="text-5xl font-bold text-green-800 mb-4">
-            {t('game.dobbelkoning')}
+            {t("game.dobbelkoning")}
           </h1>
           <h2 className="text-3xl font-bold text-green-700 mb-6">
-            {t('game.result.winsRound', { playerName: winner?.name || 'Unknown Player' })}
+            {t("game.result.winsRound", {
+              playerName: winner?.name || "Unknown Player",
+            })}
           </h2>
           <div className="text-xl text-green-600 mb-8">
-            {winner?.name} {t('game.result.collected7Tokens')} {t('game.result.champion')}!
+            {winner?.name} {t("game.result.collected7Tokens")}{" "}
+            {t("game.result.champion")}!
           </div>
           <button
             onClick={() => window.location.reload()}
             className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg"
           >
-            {t('common.playAgain')}
+            {t("common.playAgain")}
           </button>
         </div>
       </div>
@@ -466,34 +503,6 @@ const GameTable: React.FC<GameTableProps> = ({
 
               {/* Analysis Section - Always Visible */}
               <DiceAnalysisChart game={game} />
-
-              {/* Action Buttons */}
-              <div className="flex flex-col space-y-3 mt-4">
-                {/* Continue Button */}
-                <button
-                  onClick={handleMobileContinue}
-                  disabled={
-                    isContinuing ||
-                    !game.canContinue ||
-                    (localPlayerId
-                      ? aiService.isAIPlayer(localPlayerId)
-                      : false)
-                  }
-                  className={`px-4 py-2 font-bold rounded-xl transition-all duration-200 border-2 ${
-                    isContinuing ||
-                    !game.canContinue ||
-                    (localPlayerId
-                      ? aiService.isAIPlayer(localPlayerId)
-                      : false)
-                      ? "bg-amber-800 text-amber-400 border-amber-600 cursor-not-allowed"
-                      : "bg-amber-900 hover:bg-amber-800 text-amber-200 border-amber-700 hover:border-amber-600"
-                  }`}
-                >
-                  {isContinuing
-                    ? t("game.continuing")
-                    : `${t("game.continue")} (Space)`}
-                </button>
-              </div>
             </div>
           </div>
         )}
