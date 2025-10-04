@@ -180,7 +180,14 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   if (isMobile) {
     return (
-      <div className={`w-full ${getPlayerColor(0, 'bg')} p-3 shadow-2xl border-t-4 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(0, 'border')}`}>
+      <div
+        className={`w-full ${getPlayerColor(
+          0,
+          "bg"
+        )} p-3 shadow-2xl border-t-4 select-none ${
+          isMyTurn ? "border-green-300" : getPlayerColor(0, "border")
+        } ${player.eliminated ? "opacity-70" : ""}`}
+      >
         {/* Mobile Layout - Horizontal */}
         <div className="flex items-center justify-between">
           {/* Left side - Player info */}
@@ -211,7 +218,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           <div className="text-right">
             {player.eliminated && (
               <div className="text-red-300 font-bold text-sm">
-                {t('game.eliminated')}
+                {t("game.eliminated")}
               </div>
             )}
           </div>
