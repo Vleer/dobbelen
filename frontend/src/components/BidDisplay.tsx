@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
-import DiceHand from './DiceHand';
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
@@ -38,22 +37,22 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newPosition = {
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
-      };
-      setPosition(newPosition);
-      localStorage.setItem('bidDisplayPosition', JSON.stringify(newPosition));
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
   React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newPosition = {
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        };
+        setPosition(newPosition);
+        localStorage.setItem('bidDisplayPosition', JSON.stringify(newPosition));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -72,15 +71,6 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     );
   }
 
-  const faceValueNames = {
-    1: t('game.ones'),
-    2: t('game.twos'), 
-    3: t('game.threes'),
-    4: t('game.fours'),
-    5: t('game.fives'),
-    6: t('game.sixes')
-  };
-
   // Get the player name who made the bid
   const bidderName = playerName || (players && currentPlayerId ? 
     players.find(p => p.id === currentBid.playerId)?.name : 
@@ -94,10 +84,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
         <div className="flex items-center justify-center space-x-3">
           <div className="text-lg font-bold text-white">
-            {bidderName} {t('game.bids')}
-          </div>
-          <div className="text-xl font-bold text-amber-200">
-            {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
+            {bidderName}
           </div>
           
           {/* Dice Visualization */}
@@ -124,10 +111,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     >
       <div className="flex items-center justify-center space-x-6 drag-handle">
         <div className="text-xl font-bold text-white">
-          {bidderName} {t('game.bids')}
-        </div>
-        <div className="text-2xl font-bold text-amber-200">
-          {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
+          {bidderName}
         </div>
         
         {/* Dice Visualization */}
