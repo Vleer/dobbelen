@@ -348,23 +348,39 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
               <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">{t('lobby.players')} ({game.players.length})</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {game.players.map((player, index) => (
-                  <div key={player.id} className="flex items-center bg-white p-2 rounded">
-                    <span className="w-5 h-5 md:w-6 md:h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold">
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-sm md:text-base flex-1">{player.name}</span>
-                    {isHost && player.name.startsWith('AI ') && (
-                      <button
-                        onClick={() => removeAIPlayer(player.id)}
-                        className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                        title="Remove AI player"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {game.players.map((player, index) => {
+                  console.log('MultiplayerLobby player color:', player.color);
+                  const colorClassMap: Record<string, string> = {
+                    blue: 'bg-blue-700',
+                    red: 'bg-red-700',
+                    green: 'bg-green-700',
+                    yellow: 'bg-yellow-600',
+                    brown: 'bg-amber-900', // more distinct brown
+                    cyan: 'bg-cyan-600',
+                  };
+                  let playerColorClass = colorClassMap[player.color];
+                  if (!playerColorClass) {
+                    console.warn('Unknown player color:', player.color);
+                    playerColorClass = 'bg-red-900'; // fallback to red for visibility
+                  }
+                  return (
+                    <div key={player.id} className="flex items-center bg-white p-2 rounded">
+                      <span className={`w-5 h-5 md:w-6 md:h-6 ${playerColorClass} text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold`}>
+                        {index + 1}
+                      </span>
+                      <span className="font-medium text-sm md:text-base flex-1">{player.name}</span>
+                      {isHost && player.name.startsWith('AI ') && (
+                        <button
+                          onClick={() => removeAIPlayer(player.id)}
+                          className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                          title="Remove AI player"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

@@ -5,6 +5,7 @@ export interface Player {
   eliminated: boolean;
   dice: number[];
   winTokens: number;
+  color: string;
 }
 
 export interface Bid {

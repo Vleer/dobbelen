@@ -209,12 +209,13 @@ public class GameResponse {
     }
 
     public static class PlayerInfo {
-        private String id;
-        private String name;
-        private int diceCount;
-        private boolean isEliminated;
-        private List<Integer> dice;
-        private int winTokens;
+    private String id;
+    private String name;
+    private int diceCount;
+    private boolean isEliminated;
+    private List<Integer> dice;
+    private int winTokens;
+    private String color;
 
         public PlayerInfo(Player player) {
             this.id = player.getId();
@@ -223,6 +224,7 @@ public class GameResponse {
             this.isEliminated = player.isEliminated();
             this.dice = new ArrayList<>(player.getDice());
             this.winTokens = player.getWinTokens();
+            this.color = player.getColor();
         }
 
         // Getters and Setters
@@ -231,6 +233,9 @@ public class GameResponse {
 
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 
         public int getDiceCount() { return diceCount; }
         public void setDiceCount(int diceCount) { this.diceCount = diceCount; }

@@ -350,6 +350,7 @@ const GameTable: React.FC<GameTableProps> = ({
               const previousRoundPlayer = game.previousRoundPlayers?.find(
                 (p) => p.id === opponent.id
               );
+              const originalIndex = game.players.findIndex(p => p.id === opponent.id);
               return (
                 <OpponentPlayer
                   key={opponent.id}
@@ -365,7 +366,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   previousBid={game.previousBid}
                   previousRoundPlayer={previousRoundPlayer}
                   isMobile={true}
-                  playerIndex={index + 1}
+                  playerIndex={originalIndex}
                 />
               );
             })}
@@ -572,10 +573,12 @@ const GameTable: React.FC<GameTableProps> = ({
           const previousRoundPlayer = game.previousRoundPlayers?.find(
             (p) => p.id === opponent.id
           );
+          const originalIndex = game.players.findIndex(p => p.id === opponent.id);
           console.log(`GameTable - Opponent ${opponent.name}:`, {
             showAllDice: game.showAllDice,
             state: game.state,
             winner: game.winner,
+            playerIndex: originalIndex,
             previousRoundPlayer: previousRoundPlayer
               ? {
                   id: previousRoundPlayer.id,
@@ -603,7 +606,7 @@ const GameTable: React.FC<GameTableProps> = ({
               }
               previousBid={game.previousBid}
               previousRoundPlayer={previousRoundPlayer}
-              playerIndex={index + 1}
+              playerIndex={originalIndex}
             />
           );
         })}

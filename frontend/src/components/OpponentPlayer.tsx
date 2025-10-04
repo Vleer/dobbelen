@@ -20,6 +20,10 @@ interface OpponentPlayerProps {
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyTurn, isDealer, showDice = false, previousBid, previousRoundPlayer, isMobile = false, playerIndex = 0 }) => {
   const { t } = useLanguage();
+  
+  useEffect(() => {
+    console.log('OpponentPlayer color:', player.color);
+  }, [player.color]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const getDefaultPosition = () => {
@@ -38,6 +42,27 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
     return saved ? JSON.parse(saved) : getDefaultPosition();
   });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    console.log('OpponentPlayer rendering:', {
+      playerName: player.name,
+      playerColor: player.color,
+      playerId: player.id,
+      playerIndex
+    });
+  }, [player.name, player.color, player.id, playerIndex]);
+
+  // Map backend color to Tailwind class
+  const colorClassMap: Record<string, string> = {
+    blue: 'bg-blue-700 border-blue-400',
+    red: 'bg-red-700 border-red-400',
+    green: 'bg-green-700 border-green-400',
+    yellow: 'bg-yellow-600 border-yellow-400',
+    brown: 'bg-amber-900 border-amber-900', // more distinct brown
+    cyan: 'bg-cyan-600 border-cyan-400',
+  };
+  const playerColor = player.color || 'blue';
+  const playerColorClass = colorClassMap[playerColor] || colorClassMap['blue'];
 
   // Debug logging
   console.log(`OpponentPlayer ${player.name}:`, {
@@ -113,7 +138,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
 
   if (isMobile) {
     return (
-      <div className={`${getPlayerColor(playerIndex, 'bg')} rounded-lg shadow-lg border-2 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(playerIndex, 'border')} ${player.eliminated ? 'opacity-50' : ''} p-2 min-w-0 flex-shrink-0`}>
+      <div className={`${playerColorClass.split(' ')[0]} rounded-lg shadow-lg border-2 select-none ${isMyTurn ? 'border-green-300' : playerColorClass.split(' ')[1]} ${player.eliminated ? 'opacity-50' : ''} p-2 min-w-0 flex-shrink-0`}>
         {/* Username with Dealer Button and Win Tokens */}
         <div className="text-center mb-1">
           <div className="flex items-center justify-center space-x-1">
@@ -166,7 +191,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({ player, position, isMyT
       <div 
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 ${getPlayerColor(playerIndex, 'bg')} rounded-2xl shadow-lg border-4 select-none ${isMyTurn ? 'border-green-300' : getPlayerColor(playerIndex, 'border')} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center p-3`}
+        className={`w-40 h-48 ${playerColorClass.split(' ')[0]} rounded-2xl shadow-lg border-4 select-none ${isMyTurn ? 'border-green-300' : playerColorClass.split(' ')[1]} ${player.eliminated ? 'opacity-50' : ''} ${position === 0 ? 'transform -rotate-90' : position === 1 ? 'transform rotate-90' : ''} flex flex-col items-center justify-center p-3`}
       >
         {/* Content with counter-rotation for text readability */}
         <div className={`${position === 0 ? 'transform rotate-90' : position === 1 ? 'transform -rotate-90' : ''} w-full h-full flex flex-col items-center justify-center`}>

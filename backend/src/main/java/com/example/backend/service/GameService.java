@@ -23,9 +23,13 @@ public class GameService {
             throw new IllegalArgumentException("Game requires at least 3 players");
         }
 
-        List<Player> players = playerNames.stream()
-                .map(Player::new)
-                .toList();
+
+        List<Player> players = new ArrayList<>();
+        for (int i = 0; i < playerNames.size(); i++) {
+            String color = COLOR_ORDER[i % COLOR_ORDER.length];
+            System.out.println("Creating player " + playerNames.get(i) + " with color " + color);
+            players.add(new Player(playerNames.get(i), color));
+        }
 
         Game game = new Game(players);
         
@@ -117,7 +121,7 @@ public class GameService {
         // Store previous round players before rerolling (deep copy)
         List<Player> previousPlayers = new ArrayList<>();
         for (Player player : game.getPlayers()) {
-            Player copy = new Player(player.getName());
+            Player copy = new Player(player.getName(), "");
             copy.setId(player.getId());
             copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
             copy.setEliminated(player.isEliminated());
@@ -239,7 +243,7 @@ public class GameService {
             // Store previous round players before rerolling (deep copy)
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : game.getPlayers()) {
-                Player copy = new Player(player.getName());
+                Player copy = new Player(player.getName(), "");
                 copy.setId(player.getId());
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
                 copy.setEliminated(player.isEliminated());
@@ -284,7 +288,7 @@ public class GameService {
             // Store previous round players before rerolling (deep copy)
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : game.getPlayers()) {
-                Player copy = new Player(player.getName());
+                Player copy = new Player(player.getName(), "");
                 copy.setId(player.getId());
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
                 copy.setEliminated(player.isEliminated());
@@ -464,6 +468,13 @@ public class GameService {
         return game;
     }
 
+    private static final String[] COLOR_ORDER = {"blue", "red", "green", "yellow", "brown", "cyan"};
+
+    private String getNextColor(Game game) {
+        int currentPlayerCount = game.getPlayers().size();
+        return COLOR_ORDER[currentPlayerCount % COLOR_ORDER.length];
+    }
+
     public Game joinGame(String gameId, String playerName) {
         System.out.println("JOIN ATTEMPT: GameId=" + gameId + ", PlayerName=" + playerName + ", Timestamp="
                 + System.currentTimeMillis());
@@ -488,7 +499,10 @@ public class GameService {
             throw new IllegalArgumentException("Player with name '" + playerName + "' already exists in this game");
         }
 
-        Player player = new Player(playerName);
+        String color = getNextColor(game);
+        System.out.println("Assigning color " + color + " to player " + playerName);
+        
+        Player player = new Player(playerName, color);
         game.getPlayers().add(player);
 
         System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size());

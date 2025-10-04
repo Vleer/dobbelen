@@ -34,6 +34,26 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
 
+  useEffect(() => {
+    console.log('LocalPlayer rendering:', {
+      playerName: player.name,
+      playerColor: player.color,
+      playerId: player.id
+    });
+  }, [player.name, player.color, player.id]);
+
+  // Map backend color to Tailwind class
+  const colorClassMap: Record<string, string> = {
+    blue: 'bg-blue-700 border-blue-400',
+    red: 'bg-red-700 border-red-400',
+    green: 'bg-green-700 border-green-400',
+    yellow: 'bg-yellow-600 border-yellow-400',
+    brown: 'bg-amber-900 border-amber-900', // more distinct brown
+    cyan: 'bg-cyan-600 border-cyan-400',
+  };
+  const playerColor = player.color || 'blue';
+  const playerColorClass = colorClassMap[playerColor] || colorClassMap['blue'];
+
   // Inactivity tracking and flashing
   const startInactivityTimer = () => {
     if (inactivityTimer) {
@@ -221,12 +241,12 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             resetInactivityTimer();
           }
         }}
-        className={`${getPlayerColor(0, 'bg')} p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
+        className={`${playerColorClass} p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
           isFlashing 
             ? 'border-yellow-400 animate-pulse' 
             : isMyTurn 
               ? 'border-green-300' 
-              : getPlayerColor(0, 'border')
+              : playerColorClass.split(' ')[1]
         } ${player.eliminated ? 'opacity-50' : ''}`}
       >
         {/* Username with Dealer Button and Win Tokens */}
