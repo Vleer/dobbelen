@@ -273,11 +273,6 @@ const GameTable: React.FC<GameTableProps> = ({
     return reorderedPlayers;
   };
 
-  const getOpponents = (): Player[] => {
-    if (!game || !localPlayerId) return [];
-    return game.players.filter((p) => p.id !== localPlayerId);
-  };
-
   const isAITurn = useCallback((): boolean => {
     return game?.currentPlayerId
       ? aiService.isAIPlayer(game.currentPlayerId)
@@ -416,7 +411,6 @@ const GameTable: React.FC<GameTableProps> = ({
   }
 
   const localPlayer = getLocalPlayer();
-  const opponents = getOpponents();
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
 
   return (
@@ -634,7 +628,7 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
 
         {/* Opponents */}
-        {opponents.map((opponent, index) => {
+        {opponentsInTurnOrder.map((opponent, index) => {
           const previousRoundPlayer = game.previousRoundPlayers?.find(
             (p) => p.id === opponent.id
           );
