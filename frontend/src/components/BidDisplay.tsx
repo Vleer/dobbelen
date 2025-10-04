@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bid, Player } from '../types/game';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from "../contexts/LanguageContext";
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
@@ -42,10 +42,10 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       if (isDragging) {
         const newPosition = {
           x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y
+          y: e.clientY - dragOffset.y,
         };
         setPosition(newPosition);
-        localStorage.setItem('bidDisplayPosition', JSON.stringify(newPosition));
+        localStorage.setItem("bidDisplayPosition", JSON.stringify(newPosition));
       }
     };
 
@@ -54,19 +54,19 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [isDragging, dragOffset]);
-  
+
   if (!currentBid) {
     return (
       <div className="text-center text-gray-500 italic">
-        {t('game.noCurrentBid')}
+        {t("game.noCurrentBid")}
       </div>
     );
   }
@@ -83,10 +83,8 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     return (
       <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
         <div className="flex items-center justify-center space-x-3">
-          <div className="text-lg font-bold text-white">
-            {bidderName}
-          </div>
-          
+          <div className="text-lg font-bold text-white">{bidderName}</div>
+
           {/* Dice Visualization */}
           <div className="flex items-center space-x-1">
             <DiceHandSVG diceValues={diceValues} size="sm" />
@@ -101,19 +99,17 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       ref={containerRef}
       className="bg-amber-900 border-2 border-amber-700 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
       style={{
-        position: 'fixed',
+        position: "fixed",
         left: position.x,
         top: position.y,
         zIndex: 1000,
-        cursor: isDragging ? 'grabbing' : 'grab'
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center justify-center space-x-6 drag-handle">
-        <div className="text-xl font-bold text-white">
-          {bidderName}
-        </div>
-        
+        <div className="text-xl font-bold text-white">{bidderName}</div>
+
         {/* Dice Visualization */}
         <div className="flex items-center space-x-2">
           <DiceHandSVG diceValues={diceValues} size="lg" />
