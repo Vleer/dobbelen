@@ -56,6 +56,8 @@ public class Game {
             .orElse(null);
         if (winnerPlayer != null) {
             winnerPlayer.addWinToken();
+            // Pass dealer button to the winner regardless of whether game is ending
+            passDealerToWinner(winnerId);
             if (winnerPlayer.getWinTokens() >= 7) {
                 gameWinner = winnerId;
                 state = GameState.GAME_ENDED;

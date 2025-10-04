@@ -155,13 +155,18 @@ public class GameService {
         // Reset the current bid after elimination
         game.setCurrentBid(null);
 
-        // Always adjust current player index to skip eliminated players
+        // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+        int dealerIndex = game.getDealerIndex();
         int attempts = 0;
-        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+        int nextIndex = dealerIndex;
+        
+        // Find the next non-eliminated player starting from the dealer
+        while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                 && attempts < game.getPlayers().size()) {
-            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            nextIndex = (nextIndex + 1) % game.getPlayers().size();
             attempts++;
         }
+        game.setCurrentPlayerIndex(nextIndex);
 
         // If elimination resulted in 2 active players, set the start index for the
         // 2-player phase
@@ -272,15 +277,18 @@ public class GameService {
             // Reset the current bid
             game.setCurrentBid(null);
 
-            // If we are in a 2-player phase and we tracked its start, reset to that start
-            // index;
-            // otherwise, move to the next player as usual
-            if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() != null) {
-                game.setCurrentPlayerIndex(game.getTwoPlayerRoundStartIndex());
-            } else {
-                // Move to next player
-                game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            // After a correct spot-on, start with the dealer
+            int dealerIndex = game.getDealerIndex();
+            int attempts = 0;
+            int nextIndex = dealerIndex;
+            
+            // Find the next non-eliminated player starting from the dealer
+            while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
+                    && attempts < game.getPlayers().size()) {
+                nextIndex = (nextIndex + 1) % game.getPlayers().size();
+                attempts++;
             }
+            game.setCurrentPlayerIndex(nextIndex);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -322,13 +330,18 @@ public class GameService {
             // Reset the current bid after elimination
             game.setCurrentBid(null);
 
-            // Always adjust current player index to skip eliminated players
+            // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+            int dealerIndex = game.getDealerIndex();
             int attempts = 0;
-            while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+            int nextIndex = dealerIndex;
+            
+            // Find the next non-eliminated player starting from the dealer
+            while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                     && attempts < game.getPlayers().size()) {
-                game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+                nextIndex = (nextIndex + 1) % game.getPlayers().size();
                 attempts++;
             }
+            game.setCurrentPlayerIndex(nextIndex);
 
             // If elimination resulted in 2 active players, set the start index for the
             // 2-player phase
