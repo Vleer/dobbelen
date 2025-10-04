@@ -514,93 +514,99 @@ const GameTable: React.FC<GameTableProps> = ({
           {game.showAllDice && (
             <div className="px-3 py-2">
               <div className="bg-amber-900 border-4 border-amber-700 rounded-2xl p-3 shadow-2xl">
-              {/* Compact Header - Action and Who */}
-              <div className="text-center mb-2">
-                <div className="text-base font-bold text-amber-200">
-                  {game.lastActionType &&
-                    game.lastActionPlayerId &&
-                    (game.lastActionType === "DOUBT"
-                      ? t("game.action.doubt", {
-                          playerName:
-                            game.players.find(
-                              (p) => p.id === game.lastActionPlayerId
-                            )?.name || t("common.unknownPlayer"),
-                        })
-                      : game.lastActionType === "SPOT_ON"
-                      ? t("game.action.spotOn", {
-                          playerName:
-                            game.players.find(
-                              (p) => p.id === game.lastActionPlayerId
-                            )?.name || t("common.unknownPlayer"),
-                        })
-                      : t("game.action.raise", {
-                          playerName:
-                            game.players.find(
-                              (p) => p.id === game.lastActionPlayerId
-                            )?.name || t("common.unknownPlayer"),
-                        }))}
+                {/* Compact Header - Action and Who */}
+                <div className="text-center mb-2">
+                  <div className="text-base font-bold text-amber-200">
+                    {game.lastActionType &&
+                      game.lastActionPlayerId &&
+                      (game.lastActionType === "DOUBT"
+                        ? t("game.action.doubt", {
+                            playerName:
+                              game.players.find(
+                                (p) => p.id === game.lastActionPlayerId
+                              )?.name || t("common.unknownPlayer"),
+                          })
+                        : game.lastActionType === "SPOT_ON"
+                        ? t("game.action.spotOn", {
+                            playerName:
+                              game.players.find(
+                                (p) => p.id === game.lastActionPlayerId
+                              )?.name || t("common.unknownPlayer"),
+                          })
+                        : t("game.action.raise", {
+                            playerName:
+                              game.players.find(
+                                (p) => p.id === game.lastActionPlayerId
+                              )?.name || t("common.unknownPlayer"),
+                          }))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Result - Correct/Incorrect with Clear Visual Indicator */}
-              {game.lastActualCount !== undefined &&
-                game.lastBidQuantity !== undefined &&
-                game.lastBidFaceValue !== undefined && (
-                  <div className={`text-center mb-2 p-2 rounded-lg ${
-                    game.lastActualCount >= game.lastBidQuantity 
-                      ? 'bg-green-800 border-2 border-green-400' 
-                      : 'bg-red-800 border-2 border-red-400'
-                  }`}>
-                    <div className={`text-lg font-bold ${
-                      game.lastActualCount >= game.lastBidQuantity 
-                        ? 'text-green-200' 
-                        : 'text-red-200'
-                    }`}>
-                      {game.lastActualCount >= game.lastBidQuantity 
-                        ? `✓ ${t("game.result.thereWere", {
-                            actualCount: game.lastActualCount,
-                            faceValue: game.lastBidFaceValue,
-                          })}` 
-                        : `✗ ${t("game.result.thereWereOnly", {
-                            actualCount: game.lastActualCount,
-                            faceValue: game.lastBidFaceValue,
-                          })}`}
+                {/* Result - Correct/Incorrect with Clear Visual Indicator */}
+                {game.lastActualCount !== undefined &&
+                  game.lastBidQuantity !== undefined &&
+                  game.lastBidFaceValue !== undefined && (
+                    <div
+                      className={`text-center mb-2 p-2 rounded-lg ${
+                        game.lastActualCount >= game.lastBidQuantity
+                          ? "bg-green-800 border-2 border-green-400"
+                          : "bg-red-800 border-2 border-red-400"
+                      }`}
+                    >
+                      <div
+                        className={`text-lg font-bold ${
+                          game.lastActualCount >= game.lastBidQuantity
+                            ? "text-green-200"
+                            : "text-red-200"
+                        }`}
+                      >
+                        {game.lastActualCount >= game.lastBidQuantity
+                          ? `✓ ${t("game.result.thereWere", {
+                              actualCount: game.lastActualCount,
+                              faceValue: game.lastBidFaceValue,
+                            })}`
+                          : `✗ ${t("game.result.thereWereOnly", {
+                              actualCount: game.lastActualCount,
+                              faceValue: game.lastBidFaceValue,
+                            })}`}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Winner - Prominent */}
+                {game.winner && (
+                  <div className="text-center mb-2 p-2 bg-green-700 rounded-lg border-2 border-green-300">
+                    <div className="text-xl font-bold text-green-100">
+                      🏆{" "}
+                      {t("game.result.winsRound", {
+                        playerName:
+                          game.players.find((p) => p.id === game.winner)
+                            ?.name || "Unknown Player",
+                      })}
                     </div>
                   </div>
                 )}
 
-              {/* Winner - Prominent */}
-              {game.winner && (
-                <div className="text-center mb-2 p-2 bg-green-700 rounded-lg border-2 border-green-300">
-                  <div className="text-xl font-bold text-green-100">
-                    🏆 {t("game.result.winsRound", {
-                      playerName:
-                        game.players.find((p) => p.id === game.winner)?.name ||
-                        "Unknown Player",
-                    })}
+                {/* Eliminated Player - Very Prominent */}
+                {game.lastEliminatedPlayerId && (
+                  <div className="text-center mb-2 p-2 bg-red-700 rounded-lg border-2 border-red-300">
+                    <div className="text-lg font-bold text-red-100">
+                      💀{" "}
+                      {t("game.result.isEliminated", {
+                        playerName:
+                          game.players.find(
+                            (p) => p.id === game.lastEliminatedPlayerId
+                          )?.name || "Unknown Player",
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Eliminated Player - Very Prominent */}
-              {game.lastEliminatedPlayerId && (
-                <div className="text-center mb-2 p-2 bg-red-700 rounded-lg border-2 border-red-300">
-                  <div className="text-lg font-bold text-red-100">
-                    💀 {t("game.result.isEliminated", {
-                      playerName:
-                        game.players.find(
-                          (p) => p.id === game.lastEliminatedPlayerId
-                        )?.name || "Unknown Player",
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Compact Dice Analysis Chart */}
-              <DiceAnalysisChart game={game} />
+                {/* Compact Dice Analysis Chart */}
+                <DiceAnalysisChart game={game} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
           {/* Waiting Message - In scrollable area, below results */}
           {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
@@ -617,21 +623,24 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* Bid Selector - Fixed above local player (only when active turn) */}
-        {showBidDisplay && localPlayer && isMyTurn() && !localPlayer.eliminated && (
-          <div className="fixed bottom-24 left-0 right-0 z-45 px-3">
-            <BidSelector
-              currentBid={game.currentBid}
-              previousBid={game.previousBid}
-              onBidSelect={(quantity, faceValue) =>
-                handleAction("bid", { quantity, faceValue })
-              }
-              onDoubt={() => handleAction("doubt")}
-              onSpotOn={() => handleAction("spotOn")}
-              disabled={isLoading || bettingDisabled}
-              isMobile={true}
-            />
-          </div>
-        )}
+        {showBidDisplay &&
+          localPlayer &&
+          isMyTurn() &&
+          !localPlayer.eliminated && (
+            <div className="fixed bottom-24 left-0 right-0 z-45 px-3">
+              <BidSelector
+                currentBid={game.currentBid}
+                previousBid={game.previousBid}
+                onBidSelect={(quantity, faceValue) =>
+                  handleAction("bid", { quantity, faceValue })
+                }
+                onDoubt={() => handleAction("doubt")}
+                onSpotOn={() => handleAction("spotOn")}
+                disabled={isLoading || bettingDisabled}
+                isMobile={true}
+              />
+            </div>
+          )}
 
         {/* Local Player - Fixed to bottom */}
         {localPlayer && (
