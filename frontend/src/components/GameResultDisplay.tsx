@@ -1,24 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Game } from '../types/game';
-import { useLanguage } from '../contexts/LanguageContext';
-import DiceAnalysisChart from './DiceAnalysisChart';
+import { useLanguage } from "../contexts/LanguageContext";
+import DiceAnalysisChart from "./DiceAnalysisChart";
 
 interface GameResultDisplayProps {
   game: Game;
   currentPlayerId?: string;
 }
 
-const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlayerId }) => {
+const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
+  game,
+  currentPlayerId,
+}) => {
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-
-
-
-
-
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (
