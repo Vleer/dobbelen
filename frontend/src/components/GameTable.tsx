@@ -253,6 +253,26 @@ const GameTable: React.FC<GameTableProps> = ({
     return game.players.find((p) => p.id === localPlayerId) || null;
   };
 
+  const getOpponentsInTurnOrder = (): Player[] => {
+    if (!game || !localPlayerId) return [];
+
+    // Find the local player's index in the players array
+    const localPlayerIndex = game.players.findIndex(
+      (p) => p.id === localPlayerId
+    );
+    if (localPlayerIndex === -1)
+      return game.players.filter((p) => p.id !== localPlayerId);
+
+    // Create a new array starting from the player after the local player
+    const reorderedPlayers: Player[] = [];
+    for (let i = 1; i < game.players.length; i++) {
+      const playerIndex = (localPlayerIndex + i) % game.players.length;
+      reorderedPlayers.push(game.players[playerIndex]);
+    }
+
+    return reorderedPlayers;
+  };
+
   const getOpponents = (): Player[] => {
     if (!game || !localPlayerId) return [];
     return game.players.filter((p) => p.id !== localPlayerId);
@@ -397,6 +417,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const localPlayer = getLocalPlayer();
   const opponents = getOpponents();
+  const opponentsInTurnOrder = getOpponentsInTurnOrder();
 
   return (
     <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden select-none">
@@ -411,7 +432,7 @@ const GameTable: React.FC<GameTableProps> = ({
         {/* Opponent Players - Top section positioned at header level */}
         <div className="absolute top-0 left-0 right-0 pt-2 px-2 z-40">
           <div className="flex flex-wrap justify-center gap-1 mt-1">
-            {opponents.map((opponent, index) => {
+            {opponentsInTurnOrder.map((opponent, index) => {
               const previousRoundPlayer = game.previousRoundPlayers?.find(
                 (p) => p.id === opponent.id
               );
@@ -444,18 +465,21 @@ const GameTable: React.FC<GameTableProps> = ({
         <div className="h-20"></div>
 
         {/* Mobile Bid Display - Below players with separator */}
-        {game.currentBid && game.state !== 'ROUND_ENDED' && !game.showAllDice && showBidDisplay && (
-          <div className="px-4 py-2">
-            <BidDisplay
-              currentBid={game.currentBid}
-              currentPlayerId={game.currentPlayerId}
-              players={game.players}
-              roundNumber={game.roundNumber}
-              winner={game.winner || undefined}
-              isMobile={true}
-            />
-          </div>
-        )}
+        {game.currentBid &&
+          game.state !== "ROUND_ENDED" &&
+          !game.showAllDice &&
+          showBidDisplay && (
+            <div className="px-4 py-2">
+              <BidDisplay
+                currentBid={game.currentBid}
+                currentPlayerId={game.currentPlayerId}
+                players={game.players}
+                roundNumber={game.roundNumber}
+                winner={game.winner || undefined}
+                isMobile={true}
+              />
+            </div>
+          )}
 
         {/* Mobile Game Result Display - Below bid display, above bid selector */}
         {game.showAllDice && (
@@ -669,7 +693,7 @@ const GameTable: React.FC<GameTableProps> = ({
       </div>
 
       {/* Center Bid Display - Desktop only */}
-      {game.state !== 'ROUND_ENDED' && !game.showAllDice && showBidDisplay && (
+      {game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
         <div className="hidden md:block">
           <BidDisplay
             currentBid={game.currentBid}
