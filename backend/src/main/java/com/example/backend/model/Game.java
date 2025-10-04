@@ -5,6 +5,65 @@ import java.util.List;
 import java.util.Random;
 
 public class Game {
+    // Eliminate a player by ID
+    public void eliminatePlayer(String playerId) {
+        if (!eliminatedPlayers.contains(playerId)) {
+            eliminatedPlayers.add(playerId);
+            players.stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .ifPresent(Player::eliminate);
+        }
+    }
+
+    // Start a new round, resetting state but keeping win tokens
+    public void startNewRound() {
+        for (Player player : players) {
+            player.reset();
+            player.rollDice();
+        }
+        eliminatedPlayers.clear();
+        if (dealerIndex < players.size()) {
+            currentPlayerIndex = dealerIndex;
+        }
+        currentBid = null;
+        previousBid = null;
+        winner = null;
+        state = GameState.IN_PROGRESS;
+        roundNumber++;
+        twoPlayerRoundStartIndex = null;
+    }
+
+    // Pass dealer button to winner
+    public void passDealerToWinner(String winnerId) {
+        int idx = -1;
+        for (int i = 0; i < players.size(); i++) {
+            if (players.get(i).getId().equals(winnerId)) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx != -1) {
+            dealerIndex = idx;
+        }
+    }
+
+    // Add win token to round winner and check for game winner
+    public boolean addRoundWinner(String winnerId) {
+        Player winnerPlayer = players.stream()
+            .filter(p -> p.getId().equals(winnerId))
+            .findFirst()
+            .orElse(null);
+        if (winnerPlayer != null) {
+            winnerPlayer.addWinToken();
+            if (winnerPlayer.getWinTokens() >= 7) {
+                gameWinner = winnerId;
+                state = GameState.GAME_ENDED;
+                return true;
+            }
+        }
+        return false;
+    }
     private String id;
     private List<Player> players;
     private GameState state;

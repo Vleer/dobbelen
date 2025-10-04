@@ -86,30 +86,7 @@ public class GameService {
                 + game.getCurrentPlayer().getName());
     }
 
-    public int countDiceWithValue(List<Player> players, int faceValue, boolean wildOnes) {
-        int count = 0;
-        for (Player player : players) {
-            for (int die : player.getDice()) {
-                if (die == faceValue || (wildOnes && die == 1)) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
-    public boolean isBidValid(Bid newBid, Bid previousBid) {
-        if (previousBid == null) {
-            return true; // First bid is always valid
-        }
-
-        // New bid must either:
-        // 1. Increase the quantity, OR
-        // 2. Increase the face value while maintaining or increasing quantity
-        return newBid.getQuantity() > previousBid.getQuantity() ||
-               (newBid.getFaceValue() > previousBid.getFaceValue() && 
-                newBid.getQuantity() >= previousBid.getQuantity());
-    }
+    // Use GameRules for bid validation and dice counting
 
     public GameResult processDoubt(String gameId, String doubtingPlayerId) {
         Game game = getGame(gameId);
@@ -121,7 +98,8 @@ public class GameService {
 
         List<Player> activePlayers = game.getActivePlayers();
         // No wild cards - only count exact face value matches
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
+        int actualCount = com.example.backend.model.GameRules.countDiceWithValue(activePlayers,
+                currentBid.getFaceValue(), false);
         
         System.out.println("DOUBT: Player " + doubtingPlayerId + " doubted " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
@@ -165,11 +143,7 @@ public class GameService {
         System.out.println("🎲 DOUBT: Broadcasted game update with showAllDice=true for game " + gameId);
 
         // Eliminate the player
-        game.getEliminatedPlayers().add(eliminatedPlayerId);
-        game.getPlayers().stream()
-                .filter(p -> p.getId().equals(eliminatedPlayerId))
-                .findFirst()
-                .ifPresent(Player::eliminate);
+    game.eliminatePlayer(eliminatedPlayerId);
 
         // Schedule to enable continue button after 15 seconds
         scheduleEnableContinue(gameId);
@@ -220,20 +194,13 @@ public class GameService {
             if (game.getActivePlayers().size() == 1) {
                 Player roundWinner = game.getActivePlayers().get(0);
                 game.setWinner(roundWinner.getId());
-                roundWinner.addWinToken();
-
-                // Check if this player has won the entire game
-                if (roundWinner.getWinTokens() >= 7) {
-                    game.setGameWinner(roundWinner.getId());
-                    game.setState(GameState.GAME_ENDED);
+                boolean gameEnded = game.addRoundWinner(roundWinner.getId());
+                if (gameEnded) {
                     System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
                             + roundWinner.getWinTokens() + " tokens");
                 } else {
-                    // Pass dealer button to the winner
-                    game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                    game.passDealerToWinner(roundWinner.getId());
                     System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                    // Start new round automatically after a delay to allow result window to show
                     System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
                             + roundWinner.getWinTokens() + " tokens");
                     new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -261,7 +228,8 @@ public class GameService {
 
         List<Player> activePlayers = game.getActivePlayers();
         // No wild cards - only count exact face value matches
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
+        int actualCount = com.example.backend.model.GameRules.countDiceWithValue(activePlayers,
+                currentBid.getFaceValue(), false);
         
         System.out.println("SPOT ON: Player " + spotOnPlayerId + " called spot on for " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
@@ -342,11 +310,7 @@ public class GameService {
             System.out.println("🎲 SPOT_ON_WRONG: Broadcasted game update with showAllDice=true for game " + gameId);
 
             // Spot on is wrong - spot on player is eliminated
-            game.getEliminatedPlayers().add(spotOnPlayerId);
-            game.getPlayers().stream()
-                    .filter(p -> p.getId().equals(spotOnPlayerId))
-                    .findFirst()
-                    .ifPresent(Player::eliminate);
+        game.eliminatePlayer(spotOnPlayerId);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -395,18 +359,12 @@ public class GameService {
                 if (game.getActivePlayers().size() == 1) {
                     Player roundWinner = game.getActivePlayers().get(0);
                     game.setWinner(roundWinner.getId());
-                    roundWinner.addWinToken();
-
-                    // Check if this player has won the entire game
-                    if (roundWinner.getWinTokens() >= 7) {
-                        game.setGameWinner(roundWinner.getId());
-                        game.setState(GameState.GAME_ENDED);
+                    boolean gameEnded = game.addRoundWinner(roundWinner.getId());
+                    if (gameEnded) {
+                        // Game ended, nothing more to do
                     } else {
-                        // Pass dealer button to the winner
-                        game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                        game.passDealerToWinner(roundWinner.getId());
                         System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                        // Start new round automatically after a delay to allow result window to show
                         new java.util.Timer().schedule(new java.util.TimerTask() {
                             @Override
                             public void run() {
@@ -446,7 +404,7 @@ public class GameService {
 
         Bid newBid = new Bid(playerId, quantity, faceValue, BidType.RAISE);
 
-        if (!isBidValid(newBid, game.getCurrentBid())) {
+        if (!com.example.backend.model.GameRules.isBidValid(newBid, game.getCurrentBid())) {
             String currentBidStr = game.getCurrentBid() != null
                     ? game.getCurrentBid().getQuantity() + " of " + game.getCurrentBid().getFaceValue()
                     : "none";
