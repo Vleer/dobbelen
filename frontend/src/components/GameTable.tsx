@@ -33,6 +33,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
+  const [showBidDisplay, setShowBidDisplay] = useState(true);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -82,6 +83,22 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   }, [game?.id, localPlayerId, game]);
+
+  // Handle bid display and betting delay when round ends or showAllDice changes
+  useEffect(() => {
+    if (game?.state === 'ROUND_ENDED' || game?.showAllDice) {
+      setShowBidDisplay(false);
+      setBettingDisabled(true);
+      const timer = setTimeout(() => {
+        setShowBidDisplay(true);
+        setBettingDisabled(false);
+      }, 6000); // 6 second delay
+      return () => clearTimeout(timer);
+    } else {
+      setShowBidDisplay(true);
+      setBettingDisabled(false);
+    }
+  }, [game?.state, game?.showAllDice]);
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
@@ -143,6 +160,17 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   }, [game?.id, localPlayerId, game]);
+
+  // Handle bid display delay when round ends or showAllDice changes
+  useEffect(() => {
+    if (game?.state === 'ROUND_ENDED' || game?.showAllDice) {
+      setShowBidDisplay(false);
+      const timer = setTimeout(() => {
+        setShowBidDisplay(true);
+      }, 6000); // 6 second delay
+      return () => clearTimeout(timer);
+    }
+  }, [game?.state, game?.showAllDice]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {
     setIsLoading(true);
@@ -416,7 +444,7 @@ const GameTable: React.FC<GameTableProps> = ({
         <div className="h-20"></div>
 
         {/* Mobile Bid Display - Below players with separator */}
-        {game.currentBid && (
+        {game.currentBid && game.state !== 'ROUND_ENDED' && !game.showAllDice && showBidDisplay && (
           <div className="px-4 py-2">
             <BidDisplay
               currentBid={game.currentBid}
@@ -508,28 +536,30 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
 
         {/* Bid Selector - Center section with proper spacing */}
-        <div className="px-4 py-4">
-          {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
-            <BidSelector
-              currentBid={game.currentBid}
-              onBidSelect={(quantity, faceValue) =>
-                handleAction("bid", { quantity, faceValue })
-              }
-              onDoubt={() => handleAction("doubt")}
-              onSpotOn={() => handleAction("spotOn")}
-              disabled={isLoading || bettingDisabled}
-              isMobile={true}
-            />
-          ) : (
-            <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
-              <div className="text-center text-white text-lg font-bold">
-                {localPlayer && isMyTurn()
-                  ? t("game.makeYourBid")
-                  : t("game.waitingForTurn")}
+        {showBidDisplay && (
+          <div className="px-4 py-4">
+            {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
+              <BidSelector
+                currentBid={game.currentBid}
+                onBidSelect={(quantity, faceValue) =>
+                  handleAction("bid", { quantity, faceValue })
+                }
+                onDoubt={() => handleAction("doubt")}
+                onSpotOn={() => handleAction("spotOn")}
+                disabled={isLoading || bettingDisabled}
+                isMobile={true}
+              />
+            ) : (
+              <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
+                <div className="text-center text-white text-lg font-bold">
+                  {localPlayer && isMyTurn()
+                    ? t("game.makeYourBid")
+                    : t("game.waitingForTurn")}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* Local Player - Bottom section */}
         {localPlayer && (
@@ -639,16 +669,18 @@ const GameTable: React.FC<GameTableProps> = ({
       </div>
 
       {/* Center Bid Display - Desktop only */}
-      <div className="hidden md:block">
-        <BidDisplay
-          currentBid={game.currentBid}
-          currentPlayerId={game.currentPlayerId}
-          players={game.players}
-          roundNumber={game.roundNumber}
-          winner={game.winner || undefined}
-          isMobile={false}
-        />
-      </div>
+      {game.state !== 'ROUND_ENDED' && !game.showAllDice && showBidDisplay && (
+        <div className="hidden md:block">
+          <BidDisplay
+            currentBid={game.currentBid}
+            currentPlayerId={game.currentPlayerId}
+            players={game.players}
+            roundNumber={game.roundNumber}
+            winner={game.winner || undefined}
+            isMobile={false}
+          />
+        </div>
+      )}
 
       {/* Game Result Display - Desktop only */}
       <div className="hidden md:block">
