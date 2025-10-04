@@ -87,7 +87,7 @@
   "game.history.comingSoon": "Binnenkort beschikbaar...",
   "game.history.noAction": "Geen actie geregistreerd",
   "game.history.unknownAction": "Onbekende actie",
-  "game.history.playerEliminated": "{{playerName}} is geëlimineerd!",
+  "game.history.playerEliminated": "{{playerName}} ligt eruit",
   "game.history.playerActions": "Speler Acties",
   "game.history.doubts": "Twijfels",
   "game.history.spotOns": "Precies Goed",

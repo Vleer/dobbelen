@@ -19,11 +19,11 @@ const DUTCH_NAMES = [
 
 const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack }) => {
   const { t } = useLanguage();
-  const [gameId, setGameId] = useState('');
-  const [playerName, setPlayerName] = useState('');
+  const [gameId, setGameId] = useState("");
+  const [playerName, setPlayerName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [game, setGame] = useState<Game | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
@@ -37,67 +37,86 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   };
 
   // Separate function to join game with a specific ID
-  const handleAutoJoin = useCallback(async (gameIdToJoin: string) => {
-    if (!playerName.trim() || hasJoined) {
-      return;
-    }
+  const handleAutoJoin = useCallback(
+    async (gameIdToJoin: string) => {
+      if (!playerName.trim() || hasJoined) {
+        return;
+      }
 
-    try {
-      setIsJoining(true);
-      setError('');
-      
-      console.log('Auto-joining game with ID:', gameIdToJoin, 'and name:', playerName);
-      const joinedGame = await gameApi.joinMultiplayerGame(gameIdToJoin, playerName);
-      console.log('Auto-joined game successfully:', joinedGame);
-      
-      setGame(joinedGame);
-      setIsHost(false);
-      setHasJoined(true);
-      
-      // Update URL with game ID
-      const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
-      window.history.pushState({}, '', newUrl);
-    } catch (err: any) {
-      console.error('Error auto-joining game:', err);
-      setError(err.response?.data?.message || err.message || t('lobby.failedToJoinGame'));
-    } finally {
-      setIsJoining(false);
-    }
-  }, [playerName, hasJoined]);
+      try {
+        setIsJoining(true);
+        setError("");
+
+        console.log(
+          "Auto-joining game with ID:",
+          gameIdToJoin,
+          "and name:",
+          playerName
+        );
+        const joinedGame = await gameApi.joinMultiplayerGame(
+          gameIdToJoin,
+          playerName
+        );
+        console.log("Auto-joined game successfully:", joinedGame);
+
+        setGame(joinedGame);
+        setIsHost(false);
+        setHasJoined(true);
+
+        // Update URL with game ID
+        const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
+        window.history.pushState({}, "", newUrl);
+      } catch (err: any) {
+        console.error("Error auto-joining game:", err);
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            t("lobby.failedToJoinGame")
+        );
+      } finally {
+        setIsJoining(false);
+      }
+    },
+    [playerName, hasJoined]
+  );
 
   // Initialize component - only run once
   useEffect(() => {
     if (isInitialized) return;
-    
+
     // Pre-fill with a random Dutch name
     setPlayerName(getRandomDutchName());
-    
+
     // Check if we have a game ID in the URL
     const urlParams = new URLSearchParams(window.location.search);
-    const urlGameId = urlParams.get('gameId');
+    const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
       setGameId(urlGameId);
       // Automatically try to join the game
       handleAutoJoin(urlGameId);
     }
-    
+
     setIsInitialized(true);
   }, [isInitialized]);
 
-  // Auto-select text in the player name input when it gets focused
+  // Auto-select text in the player name input on initial load only
   useEffect(() => {
     if (isInitialized && playerName) {
       // Small delay to ensure the input is focused and rendered
       const timer = setTimeout(() => {
-        const input = document.querySelector('input[type="text"]') as HTMLInputElement;
-        if (input) {
+        const input = document.querySelector(
+          'input[type="text"]'
+        ) as HTMLInputElement;
+        if (input && input.value === playerName) {
+          input.focus();
           input.select();
         }
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
-  }, [isInitialized, playerName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitialized]); // Only run once on initialization, not when playerName changes
 
   // Poll for game updates when in a game - only fetch, don't join
   useEffect(() => {
@@ -105,30 +124,38 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
     const pollInterval = setInterval(async () => {
       try {
-        console.log('Polling game updates for gameId:', gameId);
+        console.log("Polling game updates for gameId:", gameId);
         const updatedGame = await gameApi.getMultiplayerGame(gameId);
-        console.log('Polled game state:', updatedGame.state, 'players:', updatedGame.players.length);
-        
+        console.log(
+          "Polled game state:",
+          updatedGame.state,
+          "players:",
+          updatedGame.players.length
+        );
+
         // Register AI players when game is updated
-        updatedGame.players.forEach(player => {
-          if (player.name.startsWith('AI ')) {
+        updatedGame.players.forEach((player) => {
+          if (player.name.startsWith("AI ")) {
             aiService.registerAIPlayer(player.id, player.name);
-            console.log('Registered AI player:', player.name, player.id);
+            console.log("Registered AI player:", player.name, player.id);
           }
         });
-        
+
         // Check if game has started
-        if (updatedGame.state === 'IN_PROGRESS' && game.state === 'WAITING_FOR_PLAYERS') {
-          console.log('Game started! Transitioning to game table...');
-          const player = updatedGame.players.find(p => p.name === playerName);
+        if (
+          updatedGame.state === "IN_PROGRESS" &&
+          game.state === "WAITING_FOR_PLAYERS"
+        ) {
+          console.log("Game started! Transitioning to game table...");
+          const player = updatedGame.players.find((p) => p.name === playerName);
           if (player) {
             onGameStart(updatedGame, player.id, playerName);
           }
         }
-        
+
         setGame(updatedGame);
       } catch (err) {
-        console.error('Error polling game updates:', err);
+        console.error("Error polling game updates:", err);
       }
     }, 2000); // Poll every 2 seconds
 
@@ -137,21 +164,24 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   const createGame = async () => {
     if (!playerName.trim()) {
-      setError(t('lobby.pleaseEnterUsername'));
+      setError(t("lobby.pleaseEnterUsername"));
       return;
     }
 
     try {
       setIsCreating(true);
-      setError('');
+      setError("");
 
-      console.log('Creating multiplayer game...');
+      console.log("Creating multiplayer game...");
       const gameResponse = await gameApi.createMultiplayerGame();
-      console.log('Game created successfully:', gameResponse);
+      console.log("Game created successfully:", gameResponse);
 
       // Add the host (creator) to the game
-      const updatedGame = await gameApi.joinMultiplayerGame(gameResponse.id, playerName);
-      console.log('Host joined game successfully:', updatedGame);
+      const updatedGame = await gameApi.joinMultiplayerGame(
+        gameResponse.id,
+        playerName
+      );
+      console.log("Host joined game successfully:", updatedGame);
 
       setGame(updatedGame);
       setGameId(updatedGame.id);
@@ -163,10 +193,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
       // Update URL with game ID
       const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${updatedGame.id}`;
-      window.history.pushState({}, '', newUrl);
+      window.history.pushState({}, "", newUrl);
     } catch (err: any) {
-      console.error('Error creating game:', err);
-      setError(err.response?.data?.message || err.message || t('lobby.failedToCreateGame'));
+      console.error("Error creating game:", err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          t("lobby.failedToCreateGame")
+      );
     } finally {
       setIsCreating(false);
     }
@@ -174,38 +208,44 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   const joinGame = async () => {
     if (!gameId.trim() || !playerName.trim()) {
-      setError(t('lobby.pleaseEnterGameId') + ' ' + t('lobby.pleaseEnterUsername'));
+      setError(
+        t("lobby.pleaseEnterGameId") + " " + t("lobby.pleaseEnterUsername")
+      );
       return;
     }
 
     // Prevent duplicate joins
     if (hasJoined) {
-      console.log('Already joined a game, skipping duplicate join attempt');
+      console.log("Already joined a game, skipping duplicate join attempt");
       return;
     }
 
     try {
       setIsJoining(true);
-      setError('');
-      
-      console.log('Joining game with ID:', gameId, 'and name:', playerName);
+      setError("");
+
+      console.log("Joining game with ID:", gameId, "and name:", playerName);
       const joinedGame = await gameApi.joinMultiplayerGame(gameId, playerName);
-      console.log('Joined game successfully:', joinedGame);
-      
+      console.log("Joined game successfully:", joinedGame);
+
       setGame(joinedGame);
       setIsHost(false);
       setHasJoined(true); // Mark as joined to prevent duplicates
-      
+
       // For now, skip WebSocket and just show the lobby
       // TODO: Add WebSocket back once basic functionality works
-      
+
       // Update URL with game ID
       const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
-      window.history.pushState({}, '', newUrl);
+      window.history.pushState({}, "", newUrl);
     } catch (err: any) {
-      console.error('Error joining game:', err);
-      console.error('Error details:', err.response?.data);
-      setError(err.response?.data?.message || err.message || t('lobby.failedToJoinGame'));
+      console.error("Error joining game:", err);
+      console.error("Error details:", err.response?.data);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          t("lobby.failedToJoinGame")
+      );
     } finally {
       setIsJoining(false);
     }
@@ -213,46 +253,46 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   const addAIPlayer = async () => {
     if (!game || !isHost) return;
-    
+
     try {
       // Get all existing AI player names to avoid duplicates
       const existingAINames = game.players
-        .filter(p => p.name.startsWith('AI '))
-        .map(p => p.name.replace('AI ', ''));
-      
+        .filter((p) => p.name.startsWith("AI "))
+        .map((p) => p.name.replace("AI ", ""));
+
       let aiName;
       do {
         aiName = `AI ${getRandomDutchName()}`;
-      } while (existingAINames.includes(aiName.replace('AI ', '')));
-      
+      } while (existingAINames.includes(aiName.replace("AI ", "")));
+
       const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
       setGame(updatedGame);
-      console.log('Added AI player:', aiName);
+      console.log("Added AI player:", aiName);
     } catch (err: any) {
-      console.error('Error adding AI player:', err);
-      setError(t('errors.failedToAddPlayer'));
+      console.error("Error adding AI player:", err);
+      setError(t("errors.failedToAddPlayer"));
     }
   };
 
   const removeAIPlayer = async (playerId: string) => {
     if (!game || !isHost) return;
-    
+
     try {
       // Only allow removing AI players
-      const player = game.players.find(p => p.id === playerId);
-      if (!player || !player.name.startsWith('AI ')) {
-        console.warn('Cannot remove non-AI player');
+      const player = game.players.find((p) => p.id === playerId);
+      if (!player || !player.name.startsWith("AI ")) {
+        console.warn("Cannot remove non-AI player");
         return;
       }
-      
+
       // For now, we'll just refresh the game to get the updated state
       // In a real implementation, you'd need a backend endpoint to remove players
       const updatedGame = await gameApi.getMultiplayerGame(gameId);
       setGame(updatedGame);
-      console.log('Removed AI player:', player.name);
+      console.log("Removed AI player:", player.name);
     } catch (err: any) {
-      console.error('Error removing AI player:', err);
-      setError('Failed to remove AI player');
+      console.error("Error removing AI player:", err);
+      setError("Failed to remove AI player");
     }
   };
 
@@ -265,7 +305,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     <div className="flex items-center justify-center min-h-screen bg-green-800 p-4 select-none">
       <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full">
         <h1 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800">
-          {t('game.title')}
+          {t("game.title")}
         </h1>
 
         {!game ? (
@@ -273,7 +313,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             {/* Player Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('lobby.username')}
+                {t("lobby.username")}
               </label>
               <div className="flex space-x-2">
                 <input
@@ -282,18 +322,21 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   onChange={(e) => setPlayerName(e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
-                  placeholder={t('lobby.enterUsername')}
+                  placeholder={t("lobby.enterUsername")}
                   autoFocus
                 />
                 <button
                   onClick={() => setPlayerName(getRandomDutchName())}
                   className="px-3 md:px-4 py-2 md:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
                 >
-                  <img src="/dobbelen.svg" alt="Dobbelen Logo" style={{ height: '1.5em', verticalAlign: 'middle' }} />
+                  <img
+                    src="/dobbelen.svg"
+                    alt="Dobbelen Logo"
+                    style={{ height: "1.5em", verticalAlign: "middle" }}
+                  />
                 </button>
               </div>
             </div>
-
 
             {/* Main Action Buttons */}
             <div className="space-y-3 md:space-y-4">
@@ -302,32 +345,44 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 disabled={isCreating || !playerName.trim()}
                 className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-lg md:text-xl font-bold"
               >
-                {isCreating ? t('lobby.creating') : t('lobby.createGame')}
+                {isCreating ? t("lobby.creating") : t("lobby.createGame")}
               </button>
 
               <div className="flex items-center space-x-2 md:space-x-4">
                 <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-gray-500 font-medium text-sm md:text-base">{t('lobby.or')}</span>
+                <span className="text-gray-500 font-medium text-sm md:text-base">
+                  {t("lobby.or")}
+                </span>
                 <div className="flex-1 h-px bg-gray-300"></div>
               </div>
 
               <div>
                 <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={gameId}
-                        onChange={(e) => setGameId(e.target.value.toLowerCase())}
-                        onFocus={(e) => e.target.select()}
-                        className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
-                        placeholder={t('lobby.gameId')}
-                        maxLength={3}
-                      />
+                  <input
+                    type="text"
+                    value={gameId}
+                    onChange={(e) => setGameId(e.target.value.toLowerCase())}
+                    onFocus={(e) => e.target.select()}
+                    onKeyPress={(e) => {
+                      if (
+                        e.key === "Enter" &&
+                        gameId.trim() &&
+                        playerName.trim() &&
+                        !isJoining
+                      ) {
+                        joinGame();
+                      }
+                    }}
+                    className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
+                    placeholder={t("lobby.gameId")}
+                    maxLength={3}
+                  />
                   <button
                     onClick={joinGame}
                     disabled={isJoining || !gameId.trim() || !playerName.trim()}
                     className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm md:text-base"
                   >
-                    {isJoining ? t('lobby.joining') : t('lobby.joinGame')}
+                    {isJoining ? t("lobby.joining") : t("lobby.joinGame")}
                   </button>
                 </div>
               </div>
@@ -337,39 +392,54 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           <div className="space-y-4 md:space-y-6">
             <div className="text-center">
               <h2 className="text-lg md:text-2xl font-bold text-green-800 mb-2">
-                {isHost ? t('lobby.createGame') : '✅ ' + t('lobby.joinGame') + ''}
+                {isHost
+                  ? t("lobby.createGame")
+                  : "✅ " + t("lobby.joinGame") + ""}
               </h2>
               <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
-                <p className="text-xs md:text-sm text-gray-600 mb-1">{t('lobby.gameId')}</p>
-                <p className="text-xl md:text-2xl font-mono font-bold text-green-600">{gameId}</p>
+                <p className="text-xs md:text-sm text-gray-600 mb-1">
+                  {t("lobby.gameId")}
+                </p>
+                <p className="text-xl md:text-2xl font-mono font-bold text-green-600">
+                  {gameId}
+                </p>
               </div>
             </div>
 
             <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
-              <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">{t('lobby.players')} ({game.players.length})</h3>
+              <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">
+                {t("lobby.players")} ({game.players.length})
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {game.players.map((player, index) => {
-                  console.log('MultiplayerLobby player color:', player.color);
+                  console.log("MultiplayerLobby player color:", player.color);
                   const colorClassMap: Record<string, string> = {
-                    blue: 'bg-blue-700',
-                    red: 'bg-red-700',
-                    green: 'bg-green-700',
-                    yellow: 'bg-yellow-600',
-                    brown: 'bg-amber-900', // more distinct brown
-                    cyan: 'bg-cyan-600',
+                    blue: "bg-blue-700",
+                    red: "bg-red-700",
+                    green: "bg-green-700",
+                    yellow: "bg-yellow-600",
+                    brown: "bg-amber-900", // more distinct brown
+                    cyan: "bg-cyan-600",
                   };
                   let playerColorClass = colorClassMap[player.color];
                   if (!playerColorClass) {
-                    console.warn('Unknown player color:', player.color);
-                    playerColorClass = 'bg-red-900'; // fallback to red for visibility
+                    console.warn("Unknown player color:", player.color);
+                    playerColorClass = "bg-red-900"; // fallback to red for visibility
                   }
                   return (
-                    <div key={player.id} className="flex items-center bg-white p-2 rounded">
-                      <span className={`w-5 h-5 md:w-6 md:h-6 ${playerColorClass} text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold`}>
+                    <div
+                      key={player.id}
+                      className="flex items-center bg-white p-2 rounded"
+                    >
+                      <span
+                        className={`w-5 h-5 md:w-6 md:h-6 ${playerColorClass} text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold`}
+                      >
                         {index + 1}
                       </span>
-                      <span className="font-medium text-sm md:text-base flex-1">{player.name}</span>
-                      {isHost && player.name.startsWith('AI ') && (
+                      <span className="font-medium text-sm md:text-base flex-1">
+                        {player.name}
+                      </span>
+                      {isHost && player.name.startsWith("AI ") && (
                         <button
                           onClick={() => removeAIPlayer(player.id)}
                           className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
@@ -390,39 +460,49 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   onClick={copyGameLink}
                   className="w-full py-2 md:py-3 px-3 md:px-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-bold text-sm md:text-base"
                 >
-                  📋 {t('lobby.copy')} {t('lobby.shareLink')}
+                  📋 {t("lobby.copy")} {t("lobby.shareLink")}
                 </button>
                 <button
                   onClick={addAIPlayer}
                   className="w-full py-2 md:py-3 px-3 md:px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-sm md:text-base"
                   disabled={game.players.length >= 6}
                 >
-                  🤖 {t('lobby.addAiPlayer')} ({game.players.length}/6)
+                  🤖 {t("lobby.addAiPlayer")} ({game.players.length}/6)
                 </button>
                 <button
                   onClick={async () => {
-                    const player = game.players.find(p => p.name === playerName);
+                    const player = game.players.find(
+                      (p) => p.name === playerName
+                    );
                     if (player) {
                       try {
-                        console.log('Starting multiplayer game...');
-                        const startedGame = await gameApi.startMultiplayerGame(gameId);
-                        console.log('Game started successfully:', startedGame);
+                        console.log("Starting multiplayer game...");
+                        const startedGame = await gameApi.startMultiplayerGame(
+                          gameId
+                        );
+                        console.log("Game started successfully:", startedGame);
                         onGameStart(startedGame, player.id, playerName);
                       } catch (err: any) {
-                        console.error('Error starting game:', err);
-                        setError(err.response?.data?.message || err.message || t('errors.failedToStart'));
+                        console.error("Error starting game:", err);
+                        setError(
+                          err.response?.data?.message ||
+                            err.message ||
+                            t("errors.failedToStart")
+                        );
                       }
                     }
                   }}
                   className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg md:text-xl"
                 >
-                      🚀 {t('lobby.startGame')}
+                  🚀 {t("lobby.startGame")}
                 </button>
               </div>
             )}
 
             <div className="text-center text-gray-600">
-              {game.isWaitingForPlayers ? '⏳ ' + t('lobby.waitingForHost') : ''}
+              {game.isWaitingForPlayers
+                ? "⏳ " + t("lobby.waitingForHost")
+                : ""}
             </div>
           </div>
         )}
