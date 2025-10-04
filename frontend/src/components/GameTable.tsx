@@ -350,7 +350,9 @@ const GameTable: React.FC<GameTableProps> = ({
               const previousRoundPlayer = game.previousRoundPlayers?.find(
                 (p) => p.id === opponent.id
               );
-              const originalIndex = game.players.findIndex(p => p.id === opponent.id);
+              const originalIndex = game.players.findIndex(
+                (p) => p.id === opponent.id
+              );
               return (
                 <OpponentPlayer
                   key={opponent.id}
@@ -573,7 +575,9 @@ const GameTable: React.FC<GameTableProps> = ({
           const previousRoundPlayer = game.previousRoundPlayers?.find(
             (p) => p.id === opponent.id
           );
-          const originalIndex = game.players.findIndex(p => p.id === opponent.id);
+          const originalIndex = game.players.findIndex(
+            (p) => p.id === opponent.id
+          );
           console.log(`GameTable - Opponent ${opponent.name}:`, {
             showAllDice: game.showAllDice,
             state: game.state,
@@ -653,7 +657,7 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
 
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4 bg-green-800 bg-opacity-90">
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4">
         {/* Left side - Back Button */}
         <div>
           {onBack && (
