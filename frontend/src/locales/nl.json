@@ -73,5 +73,25 @@
 
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
-  "common.unknownPlayer": "Onbekende Speler"
+  "common.unknownPlayer": "Onbekende Speler",
+
+  "game.history.title": "Geschiedenis",
+  "game.history.lastHand": "Laatste Hand",
+  "game.history.stats": "Statistieken",
+  "game.history.action": "Actie",
+  "game.history.bid": "Bod",
+  "game.history.actualCount": "Werkelijk Aantal",
+  "game.history.playerDice": "Speler Dobbelstenen",
+  "game.history.noData": "Geen gegevens van vorige hand beschikbaar",
+  "game.history.comingSoon": "Binnenkort beschikbaar...",
+  "game.history.noAction": "Geen actie geregistreerd",
+  "game.history.unknownAction": "Onbekende actie",
+  "game.history.playerEliminated": "{{playerName}} is geëlimineerd!",
+  "game.history.playerActions": "Speler Acties",
+  "game.history.doubts": "Twijfels",
+  "game.history.spotOns": "Precies Goed",
+  "game.history.correct": "Correct",
+  "game.history.wrong": "Fout",
+  "game.history.noActions": "nog geen acties",
+  "game.history.noStatsYet": "Nog geen statistieken beschikbaar"
 }

@@ -12,6 +12,7 @@ import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
+import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 
 interface GameTableProps {
   game?: Game | null;
@@ -34,6 +35,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [bettingDisabled, setBettingDisabled] = useState(false);
   const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
   const [showBidDisplay, setShowBidDisplay] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -172,6 +175,34 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game?.state, game?.showAllDice]);
 
+  // Track action result when round ends
+  useEffect(() => {
+    if (!pendingAction || !game) return;
+    
+    // Check if we have the result (round ended with elimination data)
+    if (game.lastEliminatedPlayerId && game.lastActionPlayerId === pendingAction.playerId) {
+      const player = game.players.find(p => p.id === pendingAction.playerId);
+      if (!player) return;
+
+      // Determine if action was correct
+      // For DOUBT: correct if someone OTHER than the doubter was eliminated
+      // For SPOT_ON: correct if someone OTHER than the caller was eliminated
+      const wasCorrect = game.lastEliminatedPlayerId !== pendingAction.playerId;
+
+      // Track the action with the result
+      trackPlayerAction(
+        game.id,
+        pendingAction.playerId,
+        player.name,
+        pendingAction.actionType,
+        wasCorrect
+      );
+
+      // Clear the pending action
+      setPendingAction(null);
+    }
+  }, [pendingAction, game, game?.lastEliminatedPlayerId, game?.lastActionPlayerId]);
+
   const createGame = async (playerNames: string[], userUsername: string) => {
     setIsLoading(true);
     setError("");
@@ -222,8 +253,13 @@ const GameTable: React.FC<GameTableProps> = ({
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
 
-      // If doubt or spot-on, disable betting for 15 seconds
+      // Track doubt/spot-on actions immediately when button is pressed
       if (action === "doubt" || action === "spotOn") {
+        setPendingAction({
+          playerId: localPlayerId,
+          actionType: action === "spotOn" ? "SPOT_ON" : "DOUBT"
+        });
+
         setBettingDisabled(true);
 
         // Re-enable betting after 15 seconds
@@ -729,10 +765,18 @@ const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Right side - Game Info and Language Selector (hidden on mobile) */}
-        <div className="hidden md:flex items-center space-x-4">
-          {/* Game Info */}
-          <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+        {/* Right side - History Button, Game Info and Language Selector */}
+        <div className="flex items-center space-x-2 md:space-x-4">
+          {/* History Button - Always visible */}
+          <button
+            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+            className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+          >
+            {t("game.history.title")}
+          </button>
+
+          {/* Game Info - Desktop only */}
+          <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
             <div className="flex items-center justify-between p-2">
               <button
                 onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
@@ -755,12 +799,19 @@ const GameTable: React.FC<GameTableProps> = ({
             )}
           </div>
 
-          {/* Language Selector */}
-          <div className="bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+          {/* Language Selector - Desktop only */}
+          <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
             <LanguageSelector />
           </div>
         </div>
       </div>
+
+      {/* History Panel */}
+      <HistoryPanel 
+        game={game} 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+      />
     </div>
   );
 };

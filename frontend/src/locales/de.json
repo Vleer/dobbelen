@@ -73,5 +73,25 @@
     
     "common.playAgain": "Nochmal spielen",
     "common.state": "Status",
-    "common.unknownPlayer": "Unbekannter Spieler"
+    "common.unknownPlayer": "Unbekannter Spieler",
+
+    "game.history.title": "Verlauf",
+    "game.history.lastHand": "Letzte Hand",
+    "game.history.stats": "Statistiken",
+    "game.history.action": "Aktion",
+    "game.history.bid": "Gebot",
+    "game.history.actualCount": "Tatsächliche Anzahl",
+    "game.history.playerDice": "Spielerwürfel",
+    "game.history.noData": "Keine Daten zur vorherigen Hand verfügbar",
+    "game.history.comingSoon": "Demnächst verfügbar...",
+    "game.history.noAction": "Keine Aktion aufgezeichnet",
+    "game.history.unknownAction": "Unbekannte Aktion",
+    "game.history.playerEliminated": "{{playerName}} wurde eliminiert!",
+    "game.history.playerActions": "Spieleraktionen",
+    "game.history.doubts": "Zweifel",
+    "game.history.spotOns": "Genau Richtig",
+    "game.history.correct": "Richtig",
+    "game.history.wrong": "Falsch",
+    "game.history.noActions": "noch keine Aktionen",
+    "game.history.noStatsYet": "Noch keine Statistiken verfügbar"
 }

@@ -73,5 +73,25 @@
     
     "common.playAgain": "Gioca di nuovo",
     "common.state": "Stato",
-    "common.unknownPlayer": "Giocatore Sconosciuto"
+    "common.unknownPlayer": "Giocatore Sconosciuto",
+
+    "game.history.title": "Cronologia",
+    "game.history.lastHand": "Ultima Mano",
+    "game.history.stats": "Statistiche",
+    "game.history.action": "Azione",
+    "game.history.bid": "Offerta",
+    "game.history.actualCount": "Conteggio Effettivo",
+    "game.history.playerDice": "Dadi dei Giocatori",
+    "game.history.noData": "Nessun dato della mano precedente disponibile",
+    "game.history.comingSoon": "Prossimamente...",
+    "game.history.noAction": "Nessuna azione registrata",
+    "game.history.unknownAction": "Azione sconosciuta",
+    "game.history.playerEliminated": "{{playerName}} è stato eliminato!",
+    "game.history.playerActions": "Azioni dei Giocatori",
+    "game.history.doubts": "Dubbi",
+    "game.history.spotOns": "Esatti",
+    "game.history.correct": "Corretto",
+    "game.history.wrong": "Sbagliato",
+    "game.history.noActions": "nessuna azione ancora",
+    "game.history.noStatsYet": "Nessuna statistica ancora disponibile"
   }
