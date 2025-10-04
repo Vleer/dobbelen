@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Game } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
-import { webSocketService } from '../services/websocketService';
-import { aiService } from '../services/aiService';
 import DiceAnalysisChart from './DiceAnalysisChart';
 
 interface GameResultDisplayProps {
@@ -12,7 +10,6 @@ interface GameResultDisplayProps {
 
 const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlayerId }) => {
   const { t } = useLanguage();
-  const [isContinuing, setIsContinuing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -20,39 +17,8 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
 
 
 
-  // Handle spacebar press to continue
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (
-        e.code === "Space" &&
-        game.showAllDice &&
-        game.canContinue &&
-        !(currentPlayerId ? aiService.isAIPlayer(currentPlayerId) : false)
-      ) {
-        e.preventDefault();
-        handleContinue();
-      }
-    };
-
-    if (game.showAllDice) {
-      document.addEventListener("keydown", handleKeyPress);
-      return () => {
-        document.removeEventListener("keydown", handleKeyPress);
-      };
-    }
-  }, [game.showAllDice, game.canContinue, currentPlayerId]);
 
 
-
-  const handleContinue = () => {
-    setIsContinuing(true);
-    webSocketService.sendAction("CONTINUE", {}, "");
-
-    // Reset the continuing state after 1 second
-    setTimeout(() => {
-      setIsContinuing(false);
-    }, 1000);
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (
@@ -218,29 +184,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({ game, currentPlay
         {/* Analysis Section - Always Visible on Desktop */}
         {!isMobile && <DiceAnalysisChart game={game} />}
 
-        {/* Action Buttons */}
-        <div className="flex justify-center space-x-4 mt-6">
-          {/* Continue Button */}
-          <button
-            onClick={handleContinue}
-            disabled={
-              isContinuing ||
-              !game.canContinue ||
-              (currentPlayerId ? aiService.isAIPlayer(currentPlayerId) : false)
-            }
-            className={`px-6 py-3 font-bold rounded-xl transition-all duration-200 border-2 ${
-              isContinuing ||
-              !game.canContinue ||
-              (currentPlayerId ? aiService.isAIPlayer(currentPlayerId) : false)
-                ? "bg-amber-800 text-amber-400 border-amber-600 cursor-not-allowed"
-                : "bg-amber-900 hover:bg-amber-800 text-amber-200 border-amber-700 hover:border-amber-600"
-            }`}
-          >
-            {isContinuing
-              ? t("game.continuing")
-              : `${t("game.continue")} (Space)`}
-          </button>
-        </div>
+        {/* Action Buttons section removed */}
       </div>
     </div>
   );

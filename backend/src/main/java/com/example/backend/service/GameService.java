@@ -217,7 +217,7 @@ public class GameService {
                         public void run() {
                             startNewRound(gameId);
                         }
-                    }, 15000); // Start new round after 15 seconds
+                    }, 6000); // Start new round after 15 seconds
                 }
             }
         }
@@ -387,7 +387,7 @@ public class GameService {
                             public void run() {
                                 startNewRound(gameId);
                             }
-                        }, 15000); // Start new round after 15 seconds
+                        }, 6000); // Start new round after 15 seconds
                     }
                 }
             }
@@ -639,7 +639,7 @@ public class GameService {
                     continueGame(gameId);
                 }
             }
-        }, 15000); // 15 seconds
+        }, 6000); // 15 seconds
     }
 
     public void continueGame(String gameId) {
