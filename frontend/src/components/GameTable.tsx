@@ -595,6 +595,7 @@ const GameTable: React.FC<GameTableProps> = ({
             {localPlayer && isMyTurn() && !localPlayer.eliminated ? (
               <BidSelector
                 currentBid={game.currentBid}
+                previousBid={game.previousBid}
                 onBidSelect={(quantity, faceValue) =>
                   handleAction("bid", { quantity, faceValue })
                 }
@@ -608,6 +609,8 @@ const GameTable: React.FC<GameTableProps> = ({
                 <div className="text-center text-white text-lg font-bold">
                   {localPlayer && isMyTurn()
                     ? t("game.makeYourBid")
+                    : localPlayer?.eliminated
+                    ? t("game.waitingForNextRound")
                     : t("game.waitingForTurn")}
                 </div>
               </div>
@@ -712,6 +715,7 @@ const GameTable: React.FC<GameTableProps> = ({
         {localPlayer && isMyTurn() && !localPlayer.eliminated && (
           <BidSelector
             currentBid={game.currentBid}
+            previousBid={game.previousBid}
             onBidSelect={(quantity, faceValue) =>
               handleAction("bid", { quantity, faceValue })
             }
@@ -792,7 +796,9 @@ const GameTable: React.FC<GameTableProps> = ({
                   <div>
                     {t("lobby.gameId")}: {game.id}
                   </div>
-                  <div>{t("game.round", { roundNumber: game.roundNumber })}</div>
+                  <div>
+                    {t("game.round", { roundNumber: game.roundNumber })}
+                  </div>
                   <div>
                     {t("common.state")}: {game.state}
                   </div>
@@ -810,10 +816,10 @@ const GameTable: React.FC<GameTableProps> = ({
         {/* History Panel - Positioned below the header */}
         {isHistoryOpen && (
           <div className="mt-2 flex justify-end">
-            <HistoryPanel 
-              game={game} 
-              isOpen={isHistoryOpen} 
-              onClose={() => setIsHistoryOpen(false)} 
+            <HistoryPanel
+              game={game}
+              isOpen={isHistoryOpen}
+              onClose={() => setIsHistoryOpen(false)}
             />
           </div>
         )}
