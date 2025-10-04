@@ -752,66 +752,72 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
 
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between z-50 p-2 md:p-4">
-        {/* Left side - Back Button */}
-        <div>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
-            >
-              ← Back
-            </button>
-          )}
-        </div>
-
-        {/* Right side - History Button, Game Info and Language Selector */}
-        <div className="flex items-center space-x-2 md:space-x-4">
-          {/* History Button - Always visible */}
-          <button
-            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
-          >
-            {t("game.history.title")}
-          </button>
-
-          {/* Game Info - Desktop only */}
-          <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
-            <div className="flex items-center justify-between p-2">
+      <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
+        <div className="flex items-center justify-between">
+          {/* Left side - Back Button */}
+          <div>
+            {onBack && (
               <button
-                onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
-                className="text-white hover:text-gray-300 mr-2 text-sm"
+                onClick={onBack}
+                className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
               >
-                {isGameInfoMinimized ? "▶" : "▼"}
+                ← Back
               </button>
-              <span className="text-sm font-bold">Game Info</span>
-            </div>
-            {!isGameInfoMinimized && (
-              <div className="px-2 pb-2 text-sm">
-                <div>
-                  {t("lobby.gameId")}: {game.id}
-                </div>
-                <div>{t("game.round", { roundNumber: game.roundNumber })}</div>
-                <div>
-                  {t("common.state")}: {game.state}
-                </div>
-              </div>
             )}
           </div>
 
-          {/* Language Selector - Desktop only */}
-          <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
-            <LanguageSelector />
+          {/* Right side - History Button, Game Info and Language Selector */}
+          <div className="flex items-center space-x-2 md:space-x-4">
+            {/* History Button - Always visible */}
+            <button
+              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+            >
+              {t("game.history.title")}
+            </button>
+
+            {/* Game Info - Desktop only */}
+            <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+              <div className="flex items-center justify-between p-2">
+                <button
+                  onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
+                  className="text-white hover:text-gray-300 mr-2 text-sm"
+                >
+                  {isGameInfoMinimized ? "▶" : "▼"}
+                </button>
+                <span className="text-sm font-bold">Game Info</span>
+              </div>
+              {!isGameInfoMinimized && (
+                <div className="px-2 pb-2 text-sm">
+                  <div>
+                    {t("lobby.gameId")}: {game.id}
+                  </div>
+                  <div>{t("game.round", { roundNumber: game.roundNumber })}</div>
+                  <div>
+                    {t("common.state")}: {game.state}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Language Selector - Desktop only */}
+            <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+              <LanguageSelector />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* History Panel */}
-      <HistoryPanel 
-        game={game} 
-        isOpen={isHistoryOpen} 
-        onClose={() => setIsHistoryOpen(false)} 
-      />
+        {/* History Panel - Positioned below the header */}
+        {isHistoryOpen && (
+          <div className="mt-2 flex justify-end">
+            <HistoryPanel 
+              game={game} 
+              isOpen={isHistoryOpen} 
+              onClose={() => setIsHistoryOpen(false)} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

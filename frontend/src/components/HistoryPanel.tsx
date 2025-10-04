@@ -85,8 +85,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
     setPlayerStats(stats);
   }, [game.id, game.players, isOpen]); // Refresh when panel opens
 
-  if (!isOpen) return null;
-
   // Get the last hand data from previousRoundPlayers
   const lastHandPlayers = game.previousRoundPlayers || [];
   const hasLastHandData = lastHandPlayers.length > 0;
@@ -147,8 +145,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-end p-4 pointer-events-none">
-      <div className="pointer-events-auto bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg shadow-2xl border-2 border-amber-700 w-full md:w-96 max-h-[80vh] overflow-y-auto">
+    <div className="bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg shadow-2xl border-2 border-amber-700 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-amber-700">
           <h2 className="text-xl font-bold text-amber-400">
@@ -358,7 +355,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
           )}
         </div>
       </div>
-    </div>
   );
 };
 
