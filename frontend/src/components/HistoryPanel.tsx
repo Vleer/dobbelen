@@ -342,7 +342,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                             {player.name}
                           </span>
                           {/* Display dice inline */}
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1 justify-end ml-auto">
                             {player.dice.map((diceValue, index) => (
                               <DiceSVG key={index} value={diceValue} size="sm" />
                             ))}
