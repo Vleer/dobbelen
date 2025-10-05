@@ -50,6 +50,7 @@
   "game.eliminated": "ÉLIMINÉ",
   "game.previousBid": "Enchère précédente : {{quantity}} de {{faceValue}}",
   "game.winTokens": "🏆 {{count}}",
+  "game.diceHidden": "Caché",
 
   "game.result.thereWere": "Il y avait {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "(L'enchère était correcte !)",

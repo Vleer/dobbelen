@@ -50,6 +50,7 @@
   "game.eliminated": "ELIMINATO",
   "game.previousBid": "Offerta precedente: {{quantity}} di {{faceValue}}",
   "game.winTokens": "🏆 {{count}}",
+  "game.diceHidden": "Nascosto",
 
   "game.result.thereWere": "C'erano {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "(Offerta corretta!)",
