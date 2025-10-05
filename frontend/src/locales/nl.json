@@ -50,6 +50,7 @@
   "game.eliminated": "UIT",
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
   "game.winTokens": "🏆 {{count}}",
+  "game.diceHidden": "Verborgen",
 
   "game.result.thereWere": "Er waren {{actualCount}} {{faceValue}}en",
   "game.result.bidWasCorrect": "(Bod was correct!)",

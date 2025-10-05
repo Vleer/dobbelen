@@ -234,28 +234,40 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           <div className="flex items-center space-x-2">
             <div className="flex flex-col items-start">
               <div className="flex items-center space-x-2">
-                <div className="font-bold text-lg text-white">{player.name}</div>
+                <div className="font-bold text-lg text-white">
+                  {player.name}
+                </div>
                 {/* Eye toggle button - next to name */}
                 {!showDice && (
                   <button
                     type="button"
                     onTouchStart={(e) => {
-                      console.log('MOBILE BUTTON TOUCH START!', e);
-                      console.log('isDiceVisible before toggle:', isDiceVisible);
+                      console.log("MOBILE BUTTON TOUCH START!", e);
+                      console.log(
+                        "isDiceVisible before toggle:",
+                        isDiceVisible
+                      );
                       e.preventDefault();
                       e.stopPropagation();
                       handleToggleDiceVisibility();
                     }}
                     onClick={(e) => {
-                      console.log('MOBILE BUTTON CLICKED!', e);
-                      console.log('isDiceVisible before toggle:', isDiceVisible);
+                      console.log("MOBILE BUTTON CLICKED!", e);
+                      console.log(
+                        "isDiceVisible before toggle:",
+                        isDiceVisible
+                      );
                       e.preventDefault();
                       e.stopPropagation();
                       handleToggleDiceVisibility();
                     }}
-                    className="p-2 rounded-md bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all text-white flex-shrink-0 cursor-pointer z-50 relative touch-manipulation"
-                    style={{ touchAction: 'manipulation', pointerEvents: 'auto', WebkitTapHighlightColor: 'transparent' }}
-                    aria-label={isDiceVisible ? 'Hide dice' : 'Show dice'}
+                    className="p-2 rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white flex-shrink-0 cursor-pointer z-50 relative touch-manipulation"
+                    style={{
+                      touchAction: "manipulation",
+                      pointerEvents: "auto",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                    aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
                   >
                     <div className="pointer-events-none">
                       {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
@@ -285,7 +297,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
               <DiceHandSVG diceValues={diceValues} size="md" />
             ) : (
               <div className="text-gray-400 text-sm italic">
-                {t('game.diceHidden') || 'Hidden'}
+                {t("game.diceHidden") || "Hidden"}
               </div>
             )}
           </div>
@@ -304,18 +316,18 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   }
 
   return (
-    <div 
+    <div
       className="absolute"
       style={{
-        left: position.x || '50%',
-        top: position.y || 'auto',
-        bottom: position.y ? 'auto' : '1rem',
-        transform: position.x ? 'none' : 'translateX(-50%)',
-        cursor: isDragging ? 'grabbing' : 'grab'
+        left: position.x || "50%",
+        top: position.y || "auto",
+        bottom: position.y ? "auto" : "1rem",
+        transform: position.x ? "none" : "translateX(-50%)",
+        cursor: isDragging ? "grabbing" : "grab",
       }}
     >
       {/* Player Container */}
-      <div 
+      <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onClick={() => {
@@ -325,12 +337,12 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           }
         }}
         className={`${playerColorClass} p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
-          isFlashing 
-            ? 'border-yellow-400 animate-pulse' 
-            : isMyTurn 
-              ? 'border-green-300' 
-              : playerColorClass.split(' ')[1]
-        } ${player.eliminated ? 'opacity-50' : ''}`}
+          isFlashing
+            ? "border-yellow-400 animate-pulse"
+            : isMyTurn
+            ? "border-green-300"
+            : playerColorClass.split(" ")[1]
+        } ${player.eliminated ? "opacity-50" : ""}`}
       >
         {/* Username with Dealer Button, Win Tokens, and Eye Toggle */}
         <div className="text-center mb-4">
@@ -353,20 +365,20 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
               <button
                 type="button"
                 onClick={(e) => {
-                  console.log('DESKTOP BUTTON CLICKED!', e);
-                  console.log('isDiceVisible before toggle:', isDiceVisible);
+                  console.log("DESKTOP BUTTON CLICKED!", e);
+                  console.log("isDiceVisible before toggle:", isDiceVisible);
                   e.preventDefault();
                   e.stopPropagation();
                   handleToggleDiceVisibility();
                 }}
                 onMouseDown={(e) => {
-                  console.log('DESKTOP BUTTON MOUSE DOWN!', e);
+                  console.log("DESKTOP BUTTON MOUSE DOWN!", e);
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="p-1.5 rounded-md bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all text-white cursor-pointer z-50 relative"
-                style={{ pointerEvents: 'auto' }}
-                aria-label={isDiceVisible ? 'Hide dice' : 'Show dice'}
+                className="p-1.5 rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
+                style={{ pointerEvents: "auto" }}
+                aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
                 {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
@@ -380,22 +392,27 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             <DiceHandSVG diceValues={diceValues} size="lg" />
           ) : (
             <div className="text-gray-300 text-lg italic">
-              {t('game.diceHidden') || 'Hidden'}
+              {t("game.diceHidden") || "Hidden"}
             </div>
           )}
         </div>
 
         {/* Previous Bid Display - Only show when relevant to current game state */}
-        {previousBid && previousBid.playerId === player.id && !player.eliminated && (
-          <div className="text-center text-amber-200 font-bold text-sm mb-2">
-            {t('game.previousBid', { quantity: previousBid.quantity, faceValue: previousBid.faceValue })}
-          </div>
-        )}
+        {previousBid &&
+          previousBid.playerId === player.id &&
+          !player.eliminated && (
+            <div className="text-center text-amber-200 font-bold text-sm mb-2">
+              {t("game.previousBid", {
+                quantity: previousBid.quantity,
+                faceValue: previousBid.faceValue,
+              })}
+            </div>
+          )}
 
         {/* Eliminated State */}
         {player.eliminated && (
           <div className="text-center text-red-300 font-bold text-xl bg-red-900 rounded-lg p-3">
-            {t('game.eliminated')}
+            {t("game.eliminated")}
           </div>
         )}
       </div>
