@@ -3,6 +3,7 @@ import { Game, Player, CreateGameRequest } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
 import { webSocketService } from '../services/websocketService';
+import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
@@ -33,12 +34,101 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
-  const [isMuted, setIsMuted] = useState(false); // Audio mute state (functionality to be implemented)
+  const [isMuted, setIsMuted] = useState(false);
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
   const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
   const [previousRoundNumber, setPreviousRoundNumber] = useState<number>(1);
+  const [previousGameState, setPreviousGameState] = useState<string>('');
+  const [previousActionKey, setPreviousActionKey] = useState<string>('');
+  const [previousRoundWinner, setPreviousRoundWinner] = useState<string>('');
+  const [previousGameWinner, setPreviousGameWinner] = useState<string>('');
+  const [hasPlayedGameStart, setHasPlayedGameStart] = useState(false);
+  const [previousBidKey, setPreviousBidKey] = useState<string>('');
+
+  // Update audio service when mute state changes
+  useEffect(() => {
+    audioService.setMuted(isMuted);
+  }, [isMuted]);
+
+  // Play game start sound when game first loads and starts
+  useEffect(() => {
+    if (!game || hasPlayedGameStart) return;
+    
+    // Play game start sound when game enters IN_PROGRESS state for the first time
+    if (game.state === 'IN_PROGRESS' && game.roundNumber === 1 && previousGameState !== 'IN_PROGRESS') {
+      console.log('Playing game start sound');
+      audioService.playGameStart();
+      setHasPlayedGameStart(true);
+    }
+    
+    setPreviousGameState(game.state);
+  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
+
+  // Play sounds based on game state changes
+  useEffect(() => {
+    if (!game) return;
+
+    // Play new round sound when round number changes (new round starts)
+    if (game.roundNumber > previousRoundNumber) {
+      console.log('Playing new round sound - round:', game.roundNumber);
+      audioService.playNewRound();
+      setPreviousRoundNumber(game.roundNumber);
+      // Reset round winner tracking so win sound can play for next round
+      setPreviousRoundWinner('');
+    }
+
+    // Play doubt/spot-on sound when action happens (using unique key with player ID and action type)
+    // But don't play if there's a winner (win sound takes priority)
+    if (game.lastActionType && game.lastActionPlayerId) {
+      const currentActionKey = `${game.lastActionPlayerId}-${game.lastActionType}`;
+      if (currentActionKey !== previousActionKey && previousActionKey !== '') {
+        // Don't play doubt/spot-on sound if someone won (win sound takes priority)
+        const hasWinner = game.winner || game.gameWinner;
+        if (!hasWinner) {
+          if (game.lastActionType === 'DOUBT') {
+            console.log('Playing doubt sound for player:', game.lastActionPlayerId);
+            audioService.playDoubt();
+          } else if (game.lastActionType === 'SPOT_ON') {
+            console.log('Playing spot-on sound for player:', game.lastActionPlayerId);
+            audioService.playSpotOn();
+          }
+        } else {
+          console.log('Skipping doubt/spot-on sound - winner detected, win sound will play');
+        }
+      }
+      setPreviousActionKey(currentActionKey);
+    }
+
+    // Play raise sound when a new bid is placed (currentBid changes)
+    // Don't play if it's the local player's bid (already played immediately in handleAction)
+    if (game.currentBid) {
+      const currentBidKey = `${game.currentBid.playerId}-${game.currentBid.quantity}-${game.currentBid.faceValue}`;
+      if (currentBidKey !== previousBidKey && previousBidKey !== '') {
+        // Only play sound if it's NOT the local player (they already heard it immediately)
+        if (game.currentBid.playerId !== localPlayerId) {
+          console.log('Playing raise sound - new bid placed by other player:', game.currentBid);
+          audioService.playRaise();
+        }
+      }
+      setPreviousBidKey(currentBidKey);
+    }
+
+    // Play win sound when someone wins a round
+    if (game.winner && game.winner !== previousRoundWinner) {
+      console.log('Playing win sound for round winner:', game.winner);
+      audioService.playWin();
+      setPreviousRoundWinner(game.winner);
+    }
+
+    // Also play win sound when there's a game winner (final victory)
+    if (game.gameWinner && game.gameWinner !== previousGameWinner) {
+      console.log('Playing win sound for game winner:', game.gameWinner);
+      audioService.playWin();
+      setPreviousGameWinner(game.gameWinner);
+    }
+  }, [game, previousRoundNumber, previousActionKey, previousRoundWinner, previousGameWinner, previousBidKey, localPlayerId]);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -298,6 +388,13 @@ const GameTable: React.FC<GameTableProps> = ({
     setError("");
 
     try {
+      // Play sound immediately for local player bid action
+      // Note: Don't play doubt/spot-on immediately - wait for game state update
+      // to check if it resulted in a win (win sound takes priority)
+      if (action === "bid") {
+        audioService.playRaise();
+      }
+
       // Use WebSocket for all games (all games are multiplayer)
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
