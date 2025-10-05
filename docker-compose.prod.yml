@@ -6,8 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: dobbelen-backend-prod
-    ports:
-      - "0.0.0.0:8080:8080"
+    # No external port exposure - only accessible through frontend proxy
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
@@ -28,8 +27,6 @@ services:
     networks:
       - dobbelen-network
     restart: unless-stopped
-    environment:
-      - REACT_APP_BACKEND_URL=http://localhost:8080
 
 networks:
   dobbelen-network:
