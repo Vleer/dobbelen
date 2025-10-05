@@ -415,6 +415,6 @@ public class MediumAIService {
      * Simulate AI thinking delay (1.5-4 seconds, slightly longer than easy AI)
      */
     public long getThinkingDelay() {
-        return (long) (Math.random() * 2500) + 1500; // 1.5-4 seconds
+    return (long) (Math.random() * 1000) + 500; // 1-1.5 seconds
     }
 }

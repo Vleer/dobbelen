@@ -186,6 +186,6 @@ public class EasyAIService {
      * Simulate AI thinking delay (1-3 seconds)
      */
     public long getThinkingDelay() {
-        return (long) (Math.random() * 2000) + 1000; // 1-3 seconds
+        return (long) (Math.random() * 1000) + 500; // 1-1.5 seconds
     }
 }
