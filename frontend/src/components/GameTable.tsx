@@ -83,7 +83,17 @@ const GameTable: React.FC<GameTableProps> = ({
     // But don't play if there's a winner (win sound takes priority)
     if (game.lastActionType && game.lastActionPlayerId) {
       const currentActionKey = `${game.lastActionPlayerId}-${game.lastActionType}`;
-      if (currentActionKey !== previousActionKey && previousActionKey !== '') {
+      console.log('Action detected:', {
+        currentActionKey,
+        previousActionKey,
+        lastActionType: game.lastActionType,
+        lastActionPlayerId: game.lastActionPlayerId,
+        winner: game.winner,
+        gameWinner: game.gameWinner,
+        isNewAction: currentActionKey !== previousActionKey
+      });
+      
+      if (currentActionKey !== previousActionKey) {
         // Don't play doubt/spot-on sound if someone won (win sound takes priority)
         const hasWinner = game.winner || game.gameWinner;
         if (!hasWinner) {
@@ -97,8 +107,8 @@ const GameTable: React.FC<GameTableProps> = ({
         } else {
           console.log('Skipping doubt/spot-on sound - winner detected, win sound will play');
         }
+        setPreviousActionKey(currentActionKey);
       }
-      setPreviousActionKey(currentActionKey);
     }
 
     // Play raise sound when a new bid is placed (currentBid changes)
