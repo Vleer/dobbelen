@@ -130,25 +130,31 @@ public class MediumAIService {
         System.out.println(String.format("🧠 Bid analysis: expected=%.2f, probability=%.2f%%, confidence=%.2f%%, inMyHand=%d",
             analysis.expectedCount, analysis.probabilityTrue * 100, analysis.confidence * 100, analysis.diceInMyHand));
         
-        // Decision logic based on confidence levels (conservative thresholds)
-        if (analysis.confidence < 0.15) {
-            // Extremely unlikely - doubt it
-            System.out.println("🧠 Very high confidence bid is false - DOUBTING");
+        // More critical decision logic - be skeptical of unlikely bids
+        if (analysis.confidence < 0.20) {
+            // Very unlikely based on statistics - always doubt
+            System.out.println("🧠 Bid is statistically very unlikely - DOUBTING");
             return new AIAction("doubt");
         } else if (analysis.confidence > 0.90 && Math.random() < 0.03) {
-            // Extremely confident it's true and small chance - spot on!
+            // Extremely confident it's true - rare spot on attempt
             System.out.println("🧠 Extremely high confidence - attempting SPOT ON");
             return new AIAction("spotOn");
-        } else if (analysis.confidence < 0.30) {
-            // Very unlikely - doubt with some probability
-            double doubtChance = (0.30 - analysis.confidence) * 1.5; // Scale to 0-0.45 max
+        } else if (analysis.confidence < 0.45) {
+            // Moderately unlikely - doubt with scaled probability
+            double doubtChance = (0.45 - analysis.confidence) * 2.0; // Scale to 0-0.9 max
             if (Math.random() < doubtChance) {
-                System.out.println("🧠 Low confidence bid is false - DOUBTING (chance=" + String.format("%.2f", doubtChance) + ")");
+                System.out.println("🧠 Bid unlikely (confidence " + String.format("%.0f%%", analysis.confidence * 100) + ") - DOUBTING");
                 return new AIAction("doubt");
             }
         }
         
-        // Bid is likely true or uncertain - raise the bid
+        // Consider if we should switch to a better alternative or raise
+        AIAction alternativeAction = considerAlternative(currentBid, myDice, analysis, activePlayers);
+        if (alternativeAction != null) {
+            return alternativeAction;
+        }
+        
+        // Default: raise the bid conservatively
         return makeEducatedRaise(currentBid, myDice, analysis, activePlayers);
     }
     
@@ -183,6 +189,58 @@ public class MediumAIService {
             maxCount, bestFace, bidQuantity, bestFace));
         
         return new AIAction("bid", bidQuantity, bestFace);
+    }
+    
+    /**
+     * Consider switching to a lower face value with higher quantity
+     * This is strategic when the current bid is on a high value (especially 6)
+     */
+    private AIAction considerAlternative(Bid currentBid, List<Integer> myDice, BidAnalysis analysis, int activePlayers) {
+        int currentQuantity = currentBid.getQuantity();
+        int currentFaceValue = currentBid.getFaceValue();
+        
+        // Count what we have in our hand
+        int[] myCounts = new int[7];
+        for (int die : myDice) {
+            myCounts[die]++;
+        }
+        
+        // Find our best alternative face value
+        int bestFace = 0;
+        int bestCount = 0;
+        for (int face = 1; face <= 6; face++) {
+            if (myCounts[face] > bestCount) {
+                bestCount = myCounts[face];
+                bestFace = face;
+            }
+        }
+        
+        // Strategy: If current bid is high value (5-6) and we have 0 of it but 3+ of something else
+        // Consider switching to that lower value with quantity+1
+        if (currentFaceValue >= 5 && analysis.diceInMyHand == 0 && bestCount >= 3) {
+            int totalDice = activePlayers * 5;
+            int newQuantity = currentQuantity + 1;
+            
+            // Calculate expected count for our alternative
+            double expectedAlternative = bestCount + ((totalDice - myDice.size()) / 6.0);
+            
+            // If our alternative is more realistic, switch to it
+            if (expectedAlternative >= newQuantity - 0.5) {
+                System.out.println(String.format("🧠 Strategic switch: from %d %ds to %d %ds (have %d, expected %.2f)",
+                    currentQuantity, currentFaceValue, newQuantity, bestFace, bestCount, expectedAlternative));
+                return new AIAction("bid", newQuantity, bestFace);
+            }
+        }
+        
+        // Strategy: For 6s specifically, strongly consider switching down
+        if (currentFaceValue == 6 && bestFace < 6 && bestCount >= 2) {
+            int newQuantity = currentQuantity + (bestCount >= 3 ? 1 : 2);
+            System.out.println(String.format("🧠 Switching from 6s: %d of %ds (have %d)",
+                newQuantity, bestFace, bestCount));
+            return new AIAction("bid", newQuantity, bestFace);
+        }
+        
+        return null; // No good alternative found
     }
     
     /**
@@ -288,9 +346,21 @@ public class MediumAIService {
         // Negative Z = above expected (more likely), Positive Z = below expected (less likely)
         analysis.probabilityTrue = Math.max(0.05, Math.min(0.95, 0.5 - (zScore * 0.15)));
         
-        // Confidence is based on how close the bid is to expected value
+        // More critical confidence calculation - penalize high quantities and high face values more
         double deviation = Math.abs(targetQuantity - analysis.expectedCount);
-        analysis.confidence = Math.max(0.1, Math.min(0.9, 1.0 - (deviation / (analysis.expectedCount + 1))));
+        double baseConfidence = 1.0 - (deviation / (analysis.expectedCount + 1));
+        
+        // Extra penalty for high face values (5, 6) when we have none
+        if (targetFace >= 5 && analysis.diceInMyHand == 0) {
+            baseConfidence *= 0.8; // 20% penalty for high values with none in hand
+        }
+        
+        // Extra penalty when quantity is much higher than expected
+        if (targetQuantity > analysis.expectedCount * 1.5) {
+            baseConfidence *= 0.7; // 30% penalty for quantity significantly above expected
+        }
+        
+        analysis.confidence = Math.max(0.05, Math.min(0.95, baseConfidence));
         
         return analysis;
     }

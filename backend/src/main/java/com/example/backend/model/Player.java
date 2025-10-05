@@ -44,6 +44,7 @@ public class Player {
 
     public void eliminate() {
         this.isEliminated = true;
+        this.dice.clear(); // Clear dice when eliminated
     }
 
     public void reset() {

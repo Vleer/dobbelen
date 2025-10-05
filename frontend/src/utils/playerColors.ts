@@ -31,6 +31,18 @@ export const PLAYER_HEX_COLORS = [
   '#ca8a04', '#9333ea', '#db2777', '#4f46e5', '#ea580c'
 ];
 
+// Map backend color strings to hex colors
+export const COLOR_STRING_TO_HEX: { [key: string]: string } = {
+  'blue': '#1d4ed8',   // dark blue
+  'red': '#b91c1c',    // dark red
+  'green': '#15803d',  // dark green
+  'yellow': '#ca8a04', // yellow
+  'brown': '#92400e',  // brown
+  'cyan': '#0891b2',   // cyan
+  'purple': '#9333ea', // purple (fallback)
+  'pink': '#db2777',   // pink (fallback)
+};
+
 export function getPlayerColor(playerIndex: number, type: 'bg' | 'border' | 'text' = 'bg'): string {
   const colors = type === 'bg' ? PLAYER_COLORS : type === 'border' ? PLAYER_BORDER_COLORS : PLAYER_TEXT_COLORS;
   return colors[playerIndex % colors.length];
@@ -38,4 +50,8 @@ export function getPlayerColor(playerIndex: number, type: 'bg' | 'border' | 'tex
 
 export function getPlayerHexColor(playerIndex: number): string {
   return PLAYER_HEX_COLORS[playerIndex % PLAYER_HEX_COLORS.length];
+}
+
+export function getPlayerColorFromString(colorString: string): string {
+  return COLOR_STRING_TO_HEX[colorString.toLowerCase()] || '#1d4ed8'; // default to blue
 }
