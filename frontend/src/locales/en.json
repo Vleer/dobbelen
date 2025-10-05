@@ -81,6 +81,7 @@
   "game.history.stats": "Stats",
   "game.history.action": "Action",
   "game.history.bid": "Bid",
+  "game.history.bidPossessive": "'s bid:",
   "game.history.actualCount": "Actual Count",
   "game.history.playerDice": "Player Dice",
   "game.history.noData": "No previous hand data available",

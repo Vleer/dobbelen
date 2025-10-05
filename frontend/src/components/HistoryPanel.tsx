@@ -147,24 +147,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
   return (
     <div className="bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg shadow-2xl border-2 border-amber-700 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-amber-700">
-          <h2 className="text-xl font-bold text-amber-400">
-            {t('game.history.title')}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-
         {/* Tabs */}
         <div className="flex border-b border-amber-700">
           <button
             onClick={() => setActiveTab('lastHand')}
-            className={`flex-1 py-3 px-4 font-semibold transition-colors ${
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'lastHand'
                 ? 'bg-amber-700 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -174,7 +161,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 py-3 px-4 font-semibold transition-colors ${
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'stats'
                 ? 'bg-amber-700 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
@@ -192,15 +179,44 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                 <>
                   {/* Action Description */}
                   <div className="mb-4 p-3 bg-amber-900 bg-opacity-50 rounded-lg border border-amber-700">
-                    <div className="text-amber-300 font-semibold mb-1">
-                      {t('game.history.action')}:
-                    </div>
                     <div className="text-white">
                       {getActionDescription()}
                     </div>
                     {game.lastBidQuantity !== undefined && game.lastBidFaceValue && (
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-gray-300 text-sm">{t('game.history.bid')}:</span>
+                        <span className="text-gray-300 text-sm">
+                          {(() => {
+                            // The bid was made by someone - try multiple sources
+                            // 1. Check previousBid first (most likely to have the right player)
+                            // 2. If action was RAISE, use lastActionPlayerId (they made the bid)
+                            // 3. Otherwise try currentBid
+                            let bidPlayerId = game.previousBid?.playerId;
+                            
+                            if (!bidPlayerId && game.lastActionType === 'RAISE') {
+                              bidPlayerId = game.lastActionPlayerId;
+                            }
+                            
+                            if (!bidPlayerId) {
+                              bidPlayerId = game.currentBid?.playerId;
+                            }
+
+                            // Try to find in current players first, then in previousRoundPlayers
+                            let bidPlayer = bidPlayerId ? game.players.find(p => p.id === bidPlayerId) : null;
+                            if (!bidPlayer && bidPlayerId) {
+                              bidPlayer = lastHandPlayers.find(p => p.id === bidPlayerId);
+                            }
+                            
+                            const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                            return (
+                              <>
+                                <span style={{ color: bidPlayer?.color || '#fff', fontWeight: 'bold' }}>
+                                  {bidPlayerName}
+                                </span>
+                                {t('game.history.bidPossessive')}
+                              </>
+                            );
+                          })()}
+                        </span>
                         <div className="flex items-center gap-1 flex-wrap justify-end">
                           {Array.from({ length: game.lastBidQuantity }).map((_, index) => (
                             <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
@@ -222,10 +238,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                   </div>
 
                   {/* Players and Their Dice */}
-                  <div className="space-y-3">
-                    <h3 className="text-amber-400 font-semibold mb-2">
-                      {t('game.history.playerDice')}:
-                    </h3>
+                  <div className="space-y-2">
                     {lastHandPlayers.map((player) => {
                       // Find current player to get color
                       const currentPlayer = game.players.find(p => p.id === player.id);
@@ -233,32 +246,22 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                       return (
                         <div
                           key={player.id}
-                          className="p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+                          className="flex items-center gap-2 p-2 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: currentPlayer?.color || '#888' }}
-                              />
-                              <span 
-                                className="font-semibold"
-                                style={{ color: currentPlayer?.color || '#fff' }}
-                              >
-                                {player.name}
-                              </span>
-                            </div>
-                            <span className="text-gray-400 text-sm">
-                              {player.dice.length} {t('game.dice')}
-                            </span>
-                          </div>
-                          
-                          {/* Display dice */}
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: currentPlayer?.color || '#888' }}
+                          />
+                          <span 
+                            className="font-semibold flex-shrink-0"
+                            style={{ color: currentPlayer?.color || '#fff' }}
+                          >
+                            {player.name}
+                          </span>
+                          {/* Display dice inline */}
                           <div className="flex flex-wrap gap-1">
                             {player.dice.map((diceValue, index) => (
-                              <div key={index} className="inline-block">
-                                <DiceSVG value={diceValue} size="sm" />
-                              </div>
+                              <DiceSVG key={index} value={diceValue} size="sm" />
                             ))}
                           </div>
                         </div>
@@ -268,9 +271,6 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
                   {/* Dice Analysis Chart */}
                   <div className="mt-4">
-                    <h3 className="text-amber-400 font-semibold mb-2">
-                      {t('game.history.diceAnalysis')}:
-                    </h3>
                     <DiceAnalysisChart players={lastHandPlayers} />
                   </div>
                 </>

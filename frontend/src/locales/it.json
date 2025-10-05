@@ -81,6 +81,7 @@
   "game.history.stats": "Statistiche",
   "game.history.action": "Azione",
   "game.history.bid": "Offerta",
+  "game.history.bidPossessive": " offerta:",
   "game.history.actualCount": "Conteggio Effettivo",
   "game.history.playerDice": "Dadi dei Giocatori",
   "game.history.noData": "Nessun dato della mano precedente disponibile",

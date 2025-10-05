@@ -81,6 +81,7 @@
   "game.history.stats": "Statistieken",
   "game.history.action": "Actie",
   "game.history.bid": "Bod",
+  "game.history.bidPossessive": "'s bod:",
   "game.history.actualCount": "Werkelijk Aantal",
   "game.history.playerDice": "Speler Dobbelstenen",
   "game.history.noData": "Geen gegevens van vorige hand beschikbaar",

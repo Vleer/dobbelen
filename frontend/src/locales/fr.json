@@ -81,6 +81,7 @@
   "game.history.stats": "Statistiques",
   "game.history.action": "Action",
   "game.history.bid": "Enchère",
+  "game.history.bidPossessive": " enchère:",
   "game.history.actualCount": "Compte Réel",
   "game.history.playerDice": "Dés des Joueurs",
   "game.history.noData": "Aucune donnée de main précédente disponible",

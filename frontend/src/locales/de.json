@@ -81,6 +81,7 @@
   "game.history.stats": "Statistiken",
   "game.history.action": "Aktion",
   "game.history.bid": "Gebot",
+  "game.history.bidPossessive": "s Gebot:",
   "game.history.actualCount": "Tatsächliche Anzahl",
   "game.history.playerDice": "Spielerwürfel",
   "game.history.noData": "Keine Daten zur vorherigen Hand verfügbar",
