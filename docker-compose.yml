@@ -7,9 +7,17 @@ services:
       dockerfile: Dockerfile
     container_name: dobbelen-backend
     # No external port exposure - only accessible through frontend proxy
+    expose:
+      - "8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_ADDRESS=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - dobbelen-network
 
