@@ -94,5 +94,6 @@
   "game.history.correct": "Correct",
   "game.history.wrong": "Faux",
   "game.history.noActions": "aucune action encore",
-  "game.history.noStatsYet": "Aucune statistique disponible pour le moment"
+  "game.history.noStatsYet": "Aucune statistique disponible pour le moment",
+  "game.history.diceAnalysis": "Analyse des Dés"
 }

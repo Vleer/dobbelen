@@ -94,5 +94,6 @@
   "game.history.correct": "Corretto",
   "game.history.wrong": "Sbagliato",
   "game.history.noActions": "nessuna azione ancora",
-  "game.history.noStatsYet": "Nessuna statistica ancora disponibile"
+  "game.history.noStatsYet": "Nessuna statistica ancora disponibile",
+  "game.history.diceAnalysis": "Analisi dei Dadi"
 }

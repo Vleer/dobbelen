@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Game } from '../types/game';
 import DiceSVG from './DiceSVG';
+import DiceAnalysisChart from './DiceAnalysisChart';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface HistoryPanelProps {
@@ -263,6 +264,14 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Dice Analysis Chart */}
+                  <div className="mt-4">
+                    <h3 className="text-amber-400 font-semibold mb-2">
+                      {t('game.history.diceAnalysis')}:
+                    </h3>
+                    <DiceAnalysisChart players={lastHandPlayers} />
                   </div>
                 </>
               ) : (

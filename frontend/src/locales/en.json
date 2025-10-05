@@ -94,5 +94,6 @@
   "game.history.correct": "Correct",
   "game.history.wrong": "Wrong",
   "game.history.noActions": "no actions yet",
-  "game.history.noStatsYet": "No statistics available yet"
+  "game.history.noStatsYet": "No statistics available yet",
+  "game.history.diceAnalysis": "Dice Analysis"
 }

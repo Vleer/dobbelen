@@ -94,5 +94,6 @@
   "game.history.correct": "Richtig",
   "game.history.wrong": "Falsch",
   "game.history.noActions": "noch keine Aktionen",
-  "game.history.noStatsYet": "Noch keine Statistiken verfügbar"
+  "game.history.noStatsYet": "Noch keine Statistiken verfügbar",
+  "game.history.diceAnalysis": "Würfel Analyse"
 }
