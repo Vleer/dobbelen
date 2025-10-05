@@ -30,6 +30,20 @@ Then open http://localhost:3000 in your browser.
 
 For detailed Docker setup instructions, see [DOCKER_README.md](DOCKER_README.md).
 
+### 🌐 Single Port Setup (ngrok Compatible)
+
+This project is configured to run on a single port, making it compatible with free ngrok tier:
+
+```bash
+# Start the application
+docker-compose up -d
+
+# In another terminal, expose with ngrok
+ngrok http 3000
+```
+
+The frontend acts as a reverse proxy for the backend, so all traffic (API, WebSocket, static files) flows through one port. See [SINGLE_PORT_SETUP.md](SINGLE_PORT_SETUP.md) for details.
+
 ## 🏗️ Architecture & Technology Stack
 
 ### Backend
