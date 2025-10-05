@@ -83,29 +83,37 @@ const GameTable: React.FC<GameTableProps> = ({
     // But don't play if there's a winner (win sound takes priority)
     if (game.lastActionType && game.lastActionPlayerId) {
       const currentActionKey = `${game.lastActionPlayerId}-${game.lastActionType}`;
-      console.log('Action detected:', {
+      console.log("Action detected:", {
         currentActionKey,
         previousActionKey,
         lastActionType: game.lastActionType,
         lastActionPlayerId: game.lastActionPlayerId,
         winner: game.winner,
         gameWinner: game.gameWinner,
-        isNewAction: currentActionKey !== previousActionKey
+        isNewAction: currentActionKey !== previousActionKey,
       });
-      
+
       if (currentActionKey !== previousActionKey) {
         // Don't play doubt/spot-on sound if someone won (win sound takes priority)
         const hasWinner = game.winner || game.gameWinner;
         if (!hasWinner) {
-          if (game.lastActionType === 'DOUBT') {
-            console.log('Playing doubt sound for player:', game.lastActionPlayerId);
+          if (game.lastActionType === "DOUBT") {
+            console.log(
+              "Playing doubt sound for player:",
+              game.lastActionPlayerId
+            );
             audioService.playDoubt();
-          } else if (game.lastActionType === 'SPOT_ON') {
-            console.log('Playing spot-on sound for player:', game.lastActionPlayerId);
+          } else if (game.lastActionType === "SPOT_ON") {
+            console.log(
+              "Playing spot-on sound for player:",
+              game.lastActionPlayerId
+            );
             audioService.playSpotOn();
           }
         } else {
-          console.log('Skipping doubt/spot-on sound - winner detected, win sound will play');
+          console.log(
+            "Skipping doubt/spot-on sound - winner detected, win sound will play"
+          );
         }
         setPreviousActionKey(currentActionKey);
       }
