@@ -77,5 +77,10 @@ export const gameApi = {
   startMultiplayerGame: async (gameId: string): Promise<GameResponse> => {
     const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/start`);
     return response.data;
+  },
+
+  removePlayer: async (gameId: string, playerId: string): Promise<GameResponse> => {
+    const response = await axiosInstance.delete<GameResponse>(`/api/games/multiplayer/${gameId}/players/${playerId}`);
+    return response.data;
   }
 };

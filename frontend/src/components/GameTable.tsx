@@ -894,7 +894,10 @@ const GameTable: React.FC<GameTableProps> = ({
           <div className="flex items-center space-x-2 md:space-x-4">
             {/* History Button - Always visible */}
             <button
-              onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+              onClick={() => {
+                audioService.playRaise();
+                setIsHistoryOpen(!isHistoryOpen);
+              }}
               className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
             >
               {t("game.history.title")}

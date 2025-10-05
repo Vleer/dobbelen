@@ -72,6 +72,7 @@
 
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",
+  "errors.failedToRemove": "Failed to remove AI player",
 
   "common.playAgain": "Play Again",
   "common.state": "State",

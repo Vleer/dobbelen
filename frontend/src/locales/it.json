@@ -72,6 +72,7 @@
 
   "errors.failedToAddPlayer": "Aggiunta giocatore IA fallita",
   "errors.failedToStart": "Avvio partita fallito",
+  "errors.failedToRemove": "Rimozione giocatore IA fallita",
 
   "common.playAgain": "Gioca di nuovo",
   "common.state": "Stato",

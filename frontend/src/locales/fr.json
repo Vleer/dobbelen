@@ -72,6 +72,7 @@
 
   "errors.failedToAddPlayer": "Échec de l'ajout du joueur IA",
   "errors.failedToStart": "Échec du démarrage de la partie",
+  "errors.failedToRemove": "Échec de la suppression du joueur IA",
 
   "common.playAgain": "Rejouer",
   "common.state": "État",

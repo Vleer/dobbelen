@@ -597,6 +597,35 @@ public class GameService {
         joinGame(gameId, playerName);
     }
 
+    public Game removePlayer(String gameId, String playerId) {
+        System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", PlayerId=" + playerId + ", Timestamp="
+                + System.currentTimeMillis());
+
+        Game game = getGame(gameId);
+        if (game == null) {
+            System.out.println("REMOVE FAILED: Game not found for ID=" + gameId);
+            throw new IllegalArgumentException("Game not found");
+        }
+
+        // Only allow removing players before game starts
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            System.out.println("REMOVE FAILED: Game already started, state=" + game.getState());
+            throw new IllegalArgumentException("Cannot remove player after game has started");
+        }
+
+        // Find and remove the player
+        boolean removed = game.getPlayers().removeIf(p -> p.getId().equals(playerId));
+
+        if (!removed) {
+            System.out.println("REMOVE FAILED: Player not found with ID=" + playerId);
+            throw new IllegalArgumentException("Player not found");
+        }
+
+        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players=" + game.getPlayers().size());
+
+        return game;
+    }
+
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {

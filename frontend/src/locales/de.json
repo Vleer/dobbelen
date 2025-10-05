@@ -72,6 +72,7 @@
 
   "errors.failedToAddPlayer": "KI-Spieler konnte nicht hinzugefügt werden",
   "errors.failedToStart": "Spiel konnte nicht gestartet werden",
+  "errors.failedToRemove": "KI-Spieler konnte nicht entfernt werden",
 
   "common.playAgain": "Nochmal spielen",
   "common.state": "Status",

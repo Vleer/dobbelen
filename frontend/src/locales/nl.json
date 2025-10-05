@@ -72,6 +72,7 @@
 
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",
   "errors.failedToStart": "Spel starten mislukt",
+  "errors.failedToRemove": "AI speler verwijderen mislukt",
 
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
