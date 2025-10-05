@@ -192,28 +192,58 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                     const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
                     const bidPlayerColor = bidPlayer?.color || '#fff';
                     
+                    // Determine action type
+                    const isRaise = !bid.type || bid.type === 'RAISE';
+                    const isDoubt = bid.type === 'DOUBT';
+                    const isSpotOn = bid.type === 'SPOT_ON';
+                    
                     return (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+                        className="p-3 rounded-lg border border-gray-700"
+                        style={{ 
+                          backgroundColor: `${bidPlayerColor}20`, // 20 is hex for ~12% opacity
+                          borderColor: `${bidPlayerColor}80` // 80 is hex for ~50% opacity
+                        }}
                       >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: bidPlayerColor }}
-                          />
-                          <span 
-                            className="font-semibold"
-                            style={{ color: bidPlayerColor }}
-                          >
-                            {bidPlayerName}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap justify-end">
-                          {Array.from({ length: bid.quantity }).map((_, diceIndex) => (
-                            <DiceSVG key={diceIndex} value={bid.faceValue} size="sm" />
-                          ))}
-                        </div>
+                        {isRaise ? (
+                          // Display RAISE action (bid with dice)
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: bidPlayerColor }}
+                              />
+                              <span 
+                                className="font-semibold"
+                                style={{ color: bidPlayerColor }}
+                              >
+                                {bidPlayerName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-wrap justify-end">
+                              {Array.from({ length: bid.quantity }).map((_, diceIndex) => (
+                                <DiceSVG key={diceIndex} value={bid.faceValue} size="sm" />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          // Display DOUBT or SPOT_ON action (text only)
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: bidPlayerColor }}
+                            />
+                            <span 
+                              className="font-semibold"
+                              style={{ color: bidPlayerColor }}
+                            >
+                              {isDoubt ? t('game.action.doubt', { playerName: bidPlayerName }) : 
+                               isSpotOn ? t('game.action.spotOn', { playerName: bidPlayerName }) : 
+                               bidPlayerName}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

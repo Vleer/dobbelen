@@ -330,6 +330,11 @@ public class Game {
     }
 
     public List<Bid> getCurrentHandBidHistory() {
+        if (currentHandBidHistory == null) {
+            System.out.println("⚠️ WARNING: getCurrentHandBidHistory() returning null!");
+            return new ArrayList<>();
+        }
+        System.out.println("📊 getCurrentHandBidHistory() called. Size: " + currentHandBidHistory.size());
         return currentHandBidHistory;
     }
 
@@ -340,8 +345,11 @@ public class Game {
     public void addBidToCurrentHand(Bid bid) {
         if (this.currentHandBidHistory == null) {
             this.currentHandBidHistory = new ArrayList<>();
+            System.out.println("⚠️ WARNING: currentHandBidHistory was null, created new ArrayList");
         }
         this.currentHandBidHistory.add(bid);
+        System.out.println("✅ Added bid to history. Type: " + (bid.getType() != null ? bid.getType() : "null") + 
+                          ", PlayerId: " + bid.getPlayerId() + ", Total history size: " + this.currentHandBidHistory.size());
     }
 
     public void clearCurrentHandBidHistory() {

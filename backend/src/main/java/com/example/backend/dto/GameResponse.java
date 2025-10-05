@@ -30,6 +30,7 @@ public class GameResponse {
     private boolean canContinue;
     private String lastActionPlayerId;
     private String lastActionType;
+    private List<BidInfo> currentHandBidHistory;
 
     public GameResponse() {}
 
@@ -61,6 +62,9 @@ public class GameResponse {
         this.canContinue = game.isCanContinue();
     this.lastActionPlayerId = game.getLastActionPlayerId();
     this.lastActionType = game.getLastActionType() != null ? game.getLastActionType().name() : null;
+        this.currentHandBidHistory = game.getCurrentHandBidHistory() != null 
+            ? game.getCurrentHandBidHistory().stream().map(BidInfo::new).toList()
+            : new ArrayList<>();
     }
 
     // Getters and Setters
@@ -206,6 +210,14 @@ public class GameResponse {
 
     public void setLastActionType(String lastActionType) {
         this.lastActionType = lastActionType;
+    }
+
+    public List<BidInfo> getCurrentHandBidHistory() {
+        return currentHandBidHistory;
+    }
+
+    public void setCurrentHandBidHistory(List<BidInfo> currentHandBidHistory) {
+        this.currentHandBidHistory = currentHandBidHistory;
     }
 
     public static class PlayerInfo {

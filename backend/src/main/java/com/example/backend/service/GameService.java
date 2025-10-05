@@ -178,6 +178,11 @@ public class GameService {
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
     game.setLastActionPlayerId(doubtingPlayerId);
     game.setLastActionType(BidType.DOUBT);
+    
+        // Add the DOUBT action to current hand history
+        Bid doubtAction = new Bid(doubtingPlayerId, 0, 0, BidType.DOUBT);
+        game.addBidToCurrentHand(doubtAction);
+        System.out.println("📝 Added DOUBT action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
         // Show all dice for 15 seconds
         System.out
@@ -305,6 +310,11 @@ public class GameService {
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
+            
+            // Add the SPOT_ON action to current hand history
+            Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
+            game.addBidToCurrentHand(spotOnAction);
+            System.out.println("📝 Added SPOT_ON (correct) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_CORRECT: Setting showAllDice=true for game " + gameId + " at "
@@ -353,6 +363,11 @@ public class GameService {
             game.setLastEliminatedPlayerId(spotOnPlayerId);
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
+            
+            // Add the SPOT_ON action to current hand history
+            Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
+            game.addBidToCurrentHand(spotOnAction);
+            System.out.println("📝 Added SPOT_ON (wrong) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_WRONG: Setting showAllDice=true for game " + gameId + " at "
@@ -476,6 +491,7 @@ public class GameService {
         
         // Add the bid to the current hand history
         game.addBidToCurrentHand(newBid);
+        System.out.println("📝 Added RAISE action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
         // Move to next player
         int oldPlayerIndex = game.getCurrentPlayerIndex();
@@ -699,6 +715,10 @@ public class GameService {
                 + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null") + ", canContinue="
                 + (game != null ? game.isCanContinue() : "null"));
         if (game != null && game.isShowAllDice() && game.isCanContinue()) {
+            // Clear the bid history for the new hand
+            game.clearCurrentHandBidHistory();
+            System.out.println("🔄 CONTINUE: Cleared current hand bid history for new hand");
+            
             // Reroll dice for all remaining active players
             for (Player player : game.getActivePlayers()) {
                 player.rollDice();
