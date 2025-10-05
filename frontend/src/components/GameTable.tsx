@@ -101,8 +101,10 @@ const GameTable: React.FC<GameTableProps> = ({
         if (!hasWinner) {
           if (game.lastActionType === "DOUBT") {
             console.log(
-              "Playing doubt sound for player:",
-              game.lastActionPlayerId
+              "Playing doubt sound - player doubted:",
+              game.lastActionPlayerId,
+              "isOpponent:",
+              game.lastActionPlayerId !== localPlayerId
             );
             audioService.playDoubt();
           } else if (game.lastActionType === "SPOT_ON") {
@@ -127,7 +129,7 @@ const GameTable: React.FC<GameTableProps> = ({
     }
 
     // Play raise sound when a new bid is placed (currentBid changes)
-    // Don't play if it's the local player's bid (already played immediately in handleAction)
+    // Play for all players when bid is confirmed by the server
     if (game.currentBid) {
       const currentBidKey = `${game.currentBid.playerId}-${game.currentBid.quantity}-${game.currentBid.faceValue}`;
       console.log('Bid detected:', {
@@ -138,13 +140,9 @@ const GameTable: React.FC<GameTableProps> = ({
       });
       
       if (currentBidKey !== previousBidKey) {
-        // Only play sound if it's NOT the local player (they already heard it immediately)
-        if (game.currentBid.playerId !== localPlayerId) {
-          console.log('Playing raise sound - new bid placed by other player:', game.currentBid);
-          audioService.playRaise();
-        } else {
-          console.log('Skipping raise sound - local player already heard it immediately');
-        }
+        // Play sound for all players (including local player) after server confirms bid
+        console.log('Playing raise sound - new bid confirmed:', game.currentBid);
+        audioService.playRaise();
       }
       setPreviousBidKey(currentBidKey);
     }
@@ -422,13 +420,6 @@ const GameTable: React.FC<GameTableProps> = ({
     setError("");
 
     try {
-      // Play sound immediately for local player bid action
-      // Note: Don't play doubt/spot-on immediately - wait for game state update
-      // to check if it resulted in a win (win sound takes priority)
-      if (action === "bid") {
-        audioService.playRaise();
-      }
-
       // Use WebSocket for all games (all games are multiplayer)
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
