@@ -77,6 +77,7 @@
   "common.unknownPlayer": "Joueur inconnu",
 
   "game.history.title": "Historique",
+  "game.history.currentHand": "Main Actuelle",
   "game.history.lastHand": "Dernière Main",
   "game.history.stats": "Statistiques",
   "game.history.action": "Action",
@@ -96,5 +97,6 @@
   "game.history.wrong": "Faux",
   "game.history.noActions": "aucune action encore",
   "game.history.noStatsYet": "Aucune statistique disponible pour le moment",
-  "game.history.diceAnalysis": "Analyse des Dés"
+  "game.history.diceAnalysis": "Analyse des Dés",
+  "game.history.noBidsYet": "Aucune enchère encore dans cette main"
 }

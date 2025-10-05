@@ -77,6 +77,7 @@
   "common.unknownPlayer": "Unknown Player",
 
   "game.history.title": "History",
+  "game.history.currentHand": "Current Hand",
   "game.history.lastHand": "Last Hand",
   "game.history.stats": "Stats",
   "game.history.action": "Action",
@@ -96,5 +97,6 @@
   "game.history.wrong": "Wrong",
   "game.history.noActions": "no actions yet",
   "game.history.noStatsYet": "No statistics available yet",
-  "game.history.diceAnalysis": "Dice Analysis"
+  "game.history.diceAnalysis": "Dice Analysis",
+  "game.history.noBidsYet": "No bids made yet in this hand"
 }

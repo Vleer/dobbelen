@@ -77,6 +77,7 @@
   "common.unknownPlayer": "Giocatore Sconosciuto",
 
   "game.history.title": "Cronologia",
+  "game.history.currentHand": "Mano Attuale",
   "game.history.lastHand": "Ultima Mano",
   "game.history.stats": "Statistiche",
   "game.history.action": "Azione",
@@ -96,5 +97,6 @@
   "game.history.wrong": "Sbagliato",
   "game.history.noActions": "nessuna azione ancora",
   "game.history.noStatsYet": "Nessuna statistica ancora disponibile",
-  "game.history.diceAnalysis": "Analisi dei Dadi"
+  "game.history.diceAnalysis": "Analisi dei Dadi",
+  "game.history.noBidsYet": "Nessuna offerta ancora in questa mano"
 }

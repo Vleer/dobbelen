@@ -39,6 +39,7 @@ export interface Game {
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
+  currentHandBidHistory?: Bid[];
 }
 
 export interface CreateGameRequest {
@@ -94,4 +95,5 @@ export interface GameResponse {
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
+  currentHandBidHistory?: Bid[];
 }

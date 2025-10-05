@@ -37,6 +37,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
+  const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
+  const [previousRoundNumber, setPreviousRoundNumber] = useState<number>(1);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -172,33 +174,83 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game?.id, localPlayerId, game]);
 
-  // Track action result when round ends
+  // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
     if (!pendingAction || !game) return;
     
     // Check if we have the result (round ended with elimination data)
     if (game.lastEliminatedPlayerId && game.lastActionPlayerId === pendingAction.playerId) {
-      const player = game.players.find(p => p.id === pendingAction.playerId);
-      if (!player) return;
-
-      // Determine if action was correct
-      // For DOUBT: correct if someone OTHER than the doubter was eliminated
-      // For SPOT_ON: correct if someone OTHER than the caller was eliminated
-      const wasCorrect = game.lastEliminatedPlayerId !== pendingAction.playerId;
-
-      // Track the action with the result
-      trackPlayerAction(
-        game.id,
-        pendingAction.playerId,
-        player.name,
-        pendingAction.actionType,
-        wasCorrect
-      );
-
-      // Clear the pending action
+      // Clear the pending action (tracking is handled by the all-actions useEffect below)
       setPendingAction(null);
     }
   }, [pendingAction, game, game?.lastEliminatedPlayerId, game?.lastActionPlayerId]);
+
+  // Track round number changes but DON'T clear the action tracker
+  // (We need to keep the tracker so we don't re-track the same action in the new round)
+  useEffect(() => {
+    if (!game) return;
+    
+    // Just update the previous round number for logging purposes
+    if (game.roundNumber !== previousRoundNumber) {
+      console.log('🔄 Round changed from', previousRoundNumber, 'to', game.roundNumber);
+      setPreviousRoundNumber(game.roundNumber);
+    }
+  }, [game?.roundNumber, previousRoundNumber, game]);
+
+  // Track all actions (including AI) when they occur
+  useEffect(() => {
+    if (!game || !game.lastActionPlayerId || !game.lastEliminatedPlayerId) return;
+    
+    // Only track DOUBT and SPOT_ON actions (not RAISE)
+    if (game.lastActionType !== 'DOUBT' && game.lastActionType !== 'SPOT_ON') return;
+
+    // Create a unique identifier for this action WITHOUT round number
+    // This prevents re-tracking the same action when transitioning to a new round
+    const actionId = `${game.id}-${game.lastActionPlayerId}-${game.lastActionType}-E${game.lastEliminatedPlayerId}`;
+    
+    console.log('🔍 Action tracking check:', {
+      actionId,
+      lastTracked: lastTrackedAction,
+      willTrack: lastTrackedAction !== actionId,
+      gameState: game.state,
+      showAllDice: game.showAllDice,
+      canContinue: game.canContinue,
+      roundNumber: game.roundNumber
+    });
+    
+    // Skip if we've already tracked this exact action
+    if (lastTrackedAction === actionId) {
+      console.log('⏭️ Skipping - already tracked this action');
+      return;
+    }
+
+    const player = game.players.find(p => p.id === game.lastActionPlayerId);
+    if (!player) return;
+
+    // Determine if action was correct
+    const wasCorrect = game.lastEliminatedPlayerId !== game.lastActionPlayerId;
+
+    console.log('📊 TRACKING ACTION:', {
+      actionId,
+      player: player.name,
+      type: game.lastActionType,
+      wasCorrect,
+      roundNumber: game.roundNumber,
+      timestamp: new Date().toISOString()
+    });
+
+    // Track the action
+    trackPlayerAction(
+      game.id,
+      game.lastActionPlayerId,
+      player.name,
+      game.lastActionType as 'DOUBT' | 'SPOT_ON',
+      wasCorrect
+    );
+
+    // Mark this action as tracked
+    setLastTrackedAction(actionId);
+  }, [game, lastTrackedAction]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {
     setIsLoading(true);

@@ -56,7 +56,7 @@ interface PlayerStats {
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'lastHand' | 'stats'>('lastHand');
+  const [activeTab, setActiveTab] = useState<'currentHand' | 'lastHand' | 'stats'>('currentHand');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
   // Load stats from storage and refresh when panel opens or game changes
@@ -150,6 +150,16 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
         {/* Tabs */}
         <div className="flex border-b border-amber-700">
           <button
+            onClick={() => setActiveTab('currentHand')}
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+              activeTab === 'currentHand'
+                ? 'bg-amber-700 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            {t('game.history.currentHand')}
+          </button>
+          <button
             onClick={() => setActiveTab('lastHand')}
             className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'lastHand'
@@ -173,6 +183,49 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
         {/* Tab Content */}
         <div className="p-4">
+          {activeTab === 'currentHand' && (
+            <div>
+              {game.currentHandBidHistory && game.currentHandBidHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {game.currentHandBidHistory.map((bid, index) => {
+                    const bidPlayer = game.players.find(p => p.id === bid.playerId);
+                    const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                    const bidPlayerColor = bidPlayer?.color || '#fff';
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: bidPlayerColor }}
+                          />
+                          <span 
+                            className="font-semibold"
+                            style={{ color: bidPlayerColor }}
+                          >
+                            {bidPlayerName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          {Array.from({ length: bid.quantity }).map((_, diceIndex) => (
+                            <DiceSVG key={diceIndex} value={bid.faceValue} size="sm" />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-gray-400 py-8">
+                  {t('game.history.noBidsYet')}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'lastHand' && (
             <div>
               {hasLastHandData ? (
@@ -271,7 +324,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
                   {/* Dice Analysis Chart */}
                   <div className="mt-4">
-                    <DiceAnalysisChart players={lastHandPlayers} />
+                    <DiceAnalysisChart game={game} players={lastHandPlayers} />
                   </div>
                 </>
               ) : (

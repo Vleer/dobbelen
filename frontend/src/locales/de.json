@@ -77,6 +77,7 @@
   "common.unknownPlayer": "Unbekannter Spieler",
 
   "game.history.title": "Verlauf",
+  "game.history.currentHand": "Aktuelle Hand",
   "game.history.lastHand": "Letzte Hand",
   "game.history.stats": "Statistiken",
   "game.history.action": "Aktion",
@@ -96,5 +97,6 @@
   "game.history.wrong": "Falsch",
   "game.history.noActions": "noch keine Aktionen",
   "game.history.noStatsYet": "Noch keine Statistiken verfügbar",
-  "game.history.diceAnalysis": "Würfel Analyse"
+  "game.history.diceAnalysis": "Würfel Analyse",
+  "game.history.noBidsYet": "Noch keine Gebote in dieser Hand"
 }

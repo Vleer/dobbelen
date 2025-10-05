@@ -32,6 +32,7 @@ public class Game {
         state = GameState.IN_PROGRESS;
         roundNumber++;
         twoPlayerRoundStartIndex = null;
+        clearCurrentHandBidHistory();
     }
 
     // Pass dealer button to winner
@@ -93,6 +94,8 @@ public class Game {
     // Track the starting player index when the round transitions to 2 active
     // players
     private Integer twoPlayerRoundStartIndex;
+    // Track all bids made in the current hand
+    private List<Bid> currentHandBidHistory;
 
     public Game() {
         this.id = generateShortGameId();
@@ -115,6 +118,7 @@ public class Game {
         this.lastActionPlayerId = null;
         this.lastActionType = null;
         this.twoPlayerRoundStartIndex = null;
+        this.currentHandBidHistory = new ArrayList<>();
     }
 
     private String generateShortGameId() {
@@ -323,5 +327,28 @@ public class Game {
 
     public void setTwoPlayerRoundStartIndex(Integer twoPlayerRoundStartIndex) {
         this.twoPlayerRoundStartIndex = twoPlayerRoundStartIndex;
+    }
+
+    public List<Bid> getCurrentHandBidHistory() {
+        return currentHandBidHistory;
+    }
+
+    public void setCurrentHandBidHistory(List<Bid> currentHandBidHistory) {
+        this.currentHandBidHistory = currentHandBidHistory;
+    }
+
+    public void addBidToCurrentHand(Bid bid) {
+        if (this.currentHandBidHistory == null) {
+            this.currentHandBidHistory = new ArrayList<>();
+        }
+        this.currentHandBidHistory.add(bid);
+    }
+
+    public void clearCurrentHandBidHistory() {
+        if (this.currentHandBidHistory == null) {
+            this.currentHandBidHistory = new ArrayList<>();
+        } else {
+            this.currentHandBidHistory.clear();
+        }
     }
 }

@@ -473,6 +473,9 @@ public class GameService {
         // Store the current bid as previous before setting the new one
         game.setPreviousBid(game.getCurrentBid());
         game.setCurrentBid(newBid);
+        
+        // Add the bid to the current hand history
+        game.addBidToCurrentHand(newBid);
 
         // Move to next player
         int oldPlayerIndex = game.getCurrentPlayerIndex();

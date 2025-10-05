@@ -77,6 +77,7 @@
   "common.unknownPlayer": "Onbekende Speler",
 
   "game.history.title": "Geschiedenis",
+  "game.history.currentHand": "Huidige Hand",
   "game.history.lastHand": "Laatste Hand",
   "game.history.stats": "Statistieken",
   "game.history.action": "Actie",
@@ -96,5 +97,6 @@
   "game.history.wrong": "Fout",
   "game.history.noActions": "nog geen acties",
   "game.history.noStatsYet": "Nog geen statistieken beschikbaar",
-  "game.history.diceAnalysis": "Dobbelstenen Analyse"
+  "game.history.diceAnalysis": "Dobbelstenen Analyse",
+  "game.history.noBidsYet": "Nog geen biedingen in deze hand"
 }
