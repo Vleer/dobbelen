@@ -30,6 +30,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const [flashTimer, setFlashTimer] = useState<NodeJS.Timeout | null>(null);
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchHandledRef = useRef(false);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -241,18 +242,30 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                 {!showDice && (
                   <button
                     type="button"
-                    onTouchStart={(e) => {
-                      console.log("MOBILE BUTTON TOUCH START!", e);
+                    onTouchEnd={(e) => {
+                      console.log("MOBILE BUTTON TOUCH END!", e);
                       console.log(
                         "isDiceVisible before toggle:",
                         isDiceVisible
                       );
                       e.preventDefault();
                       e.stopPropagation();
+                      touchHandledRef.current = true;
                       handleToggleDiceVisibility();
+                      // Reset flag after a short delay to allow click event to be blocked
+                      setTimeout(() => {
+                        touchHandledRef.current = false;
+                      }, 300);
                     }}
                     onClick={(e) => {
                       console.log("MOBILE BUTTON CLICKED!", e);
+                      // Prevent click if touch was already handled
+                      if (touchHandledRef.current) {
+                        console.log("Click blocked - touch already handled");
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
                       console.log(
                         "isDiceVisible before toggle:",
                         isDiceVisible
