@@ -135,7 +135,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
         // Register AI players when game is updated
         updatedGame.players.forEach((player) => {
-          if (player.name.startsWith("AI ")) {
+          if (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ")) {
             aiService.registerAIPlayer(player.id, player.name);
             console.log("Registered AI player:", player.name, player.id);
           }
@@ -251,23 +251,27 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     }
   };
 
-  const addAIPlayer = async () => {
+  const addAIPlayer = async (difficulty: 'easy' | 'medium' = 'easy') => {
     if (!game || !isHost) return;
 
     try {
       // Get all existing AI player names to avoid duplicates
       const existingAINames = game.players
-        .filter((p) => p.name.startsWith("AI "))
-        .map((p) => p.name.replace("AI ", ""));
+        .filter((p) => p.name.startsWith("AI ") || p.name.startsWith("MediumAI ") || p.name.startsWith("Medium AI "))
+        .map((p) => p.name.replace(/^(AI |MediumAI |Medium AI )/, ""));
 
       let aiName;
+      let baseName;
       do {
-        aiName = `AI ${getRandomDutchName()}`;
-      } while (existingAINames.includes(aiName.replace("AI ", "")));
+        baseName = getRandomDutchName();
+      } while (existingAINames.includes(baseName));
+      
+      const prefix = difficulty === 'medium' ? 'MediumAI ' : 'AI ';
+      aiName = `${prefix}${baseName}`;
 
       const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
       setGame(updatedGame);
-      console.log("Added AI player:", aiName);
+      console.log("Added AI player:", aiName, "(difficulty:", difficulty, ")");
     } catch (err: any) {
       console.error("Error adding AI player:", err);
       setError(t("errors.failedToAddPlayer"));
@@ -280,7 +284,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     try {
       // Only allow removing AI players
       const player = game.players.find((p) => p.id === playerId);
-      if (!player || !player.name.startsWith("AI ")) {
+      const isAI = player && (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI "));
+      if (!player || !isAI) {
         console.warn("Cannot remove non-AI player");
         return;
       }
@@ -437,9 +442,21 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                         {index + 1}
                       </span>
                       <span className="font-medium text-sm md:text-base flex-1">
-                        {player.name}
+                        {player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ") ? (
+                          <span>
+                            {player.name.replace(/^(MediumAI |Medium AI )/, "")}
+                            <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">🧠 Medium</span>
+                          </span>
+                        ) : player.name.startsWith("AI ") ? (
+                          <span>
+                            {player.name.replace("AI ", "")}
+                            <span className="ml-1 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">🎲 Easy</span>
+                          </span>
+                        ) : (
+                          player.name
+                        )}
                       </span>
-                      {isHost && player.name.startsWith("AI ") && (
+                      {isHost && (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ")) && (
                         <button
                           onClick={() => removeAIPlayer(player.id)}
                           className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
@@ -462,13 +479,23 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 >
                   📋 {t("lobby.copy")} {t("lobby.shareLink")}
                 </button>
-                <button
-                  onClick={addAIPlayer}
-                  className="w-full py-2 md:py-3 px-3 md:px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-sm md:text-base"
-                  disabled={game.players.length >= 6}
-                >
-                  🤖 {t("lobby.addAiPlayer")} ({game.players.length}/6)
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => addAIPlayer('easy')}
+                    className="flex-1 py-2 md:py-3 px-2 md:px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xs md:text-sm"
+                    disabled={game.players.length >= 6}
+                  >
+                    🎲 Easy AI
+                  </button>
+                  <button
+                    onClick={() => addAIPlayer('medium')}
+                    className="flex-1 py-2 md:py-3 px-2 md:px-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-xs md:text-sm"
+                    disabled={game.players.length >= 6}
+                  >
+                    🧠 Medium AI
+                  </button>
+                </div>
+                <p className="text-xs text-center text-gray-600">({game.players.length}/6 players)</p>
                 <button
                   onClick={async () => {
                     const player = game.players.find(

@@ -11,7 +11,7 @@ public class Player {
     private boolean isEliminated;
     private int winTokens;
     private String color; // Player color
-    private String aiType; // null for human, "EASY_AI" for AI players
+    private String aiType; // null for human, "EASY_AI" or "MEDIUM_AI" for AI players
 
     public Player() {
         this.id = UUID.randomUUID().toString();

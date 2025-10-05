@@ -23,6 +23,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Henk', 'AI Jan']);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [aiCount, setAiCount] = useState(2);
+  const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium'>('easy');
 
   // Get a random Dutch name
   const getRandomDutchName = () => {
@@ -54,10 +55,23 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
           name = getRandomDutchName();
         } while (usedNames.has(name));
         usedNames.add(name);
-        newPlayerNames.push(`AI ${name}`);
+        const prefix = aiDifficulty === 'medium' ? 'MediumAI ' : 'AI ';
+        newPlayerNames.push(`${prefix}${name}`);
       }
       setPlayerNames(newPlayerNames);
     }
+  };
+
+  // Update existing AI player names when difficulty changes
+  const updateAiDifficulty = (difficulty: 'easy' | 'medium') => {
+    setAiDifficulty(difficulty);
+    const newPlayerNames = playerNames.map(name => {
+      // Extract the base name without AI prefix
+      const baseName = name.replace(/^(AI |MediumAI |Medium AI )/, '');
+      const prefix = difficulty === 'medium' ? 'MediumAI ' : 'AI ';
+      return `${prefix}${baseName}`;
+    });
+    setPlayerNames(newPlayerNames);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -90,6 +104,39 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
               className="w-full p-2 border rounded"
               required
             />
+          </div>
+
+          {/* AI Difficulty Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              AI Difficulty
+            </label>
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => updateAiDifficulty('easy')}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  aiDifficulty === 'easy'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <div className="text-lg">🎲 Easy AI</div>
+                <div className="text-xs mt-1 opacity-80">Random decisions</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => updateAiDifficulty('medium')}
+                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  aiDifficulty === 'medium'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <div className="text-lg">🧠 Medium AI</div>
+                <div className="text-xs mt-1 opacity-80">Strategic thinking</div>
+              </button>
+            </div>
           </div>
 
           <div>
