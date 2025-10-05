@@ -4,31 +4,64 @@ import com.example.backend.model.*;
 import com.example.backend.dto.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
+    private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI turns
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private EasyAIService easyAIService;
 
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
             throw new IllegalArgumentException("Game requires at least 3 players");
         }
 
-
         List<Player> players = new ArrayList<>();
         for (int i = 0; i < playerNames.size(); i++) {
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
-            System.out.println("Creating player " + playerNames.get(i) + " with color " + color);
-            players.add(new Player(playerNames.get(i), color));
+            String name = playerNames.get(i);
+            // Check if player name starts with "AI " to mark as AI
+            String aiType = name.startsWith("AI ") ? "EASY_AI" : null;
+            System.out.println("Creating player " + name + " with color " + color + " (AI: " + (aiType != null) + ")");
+            players.add(new Player(name, color, aiType));
+        }
+
+        Game game = new Game(players);
+        
+        // Roll initial dice for all players
+        for (Player player : game.getPlayers()) {
+            player.rollDice();
+        }
+
+        games.put(game.getId(), game);
+        return game;
+    }
+
+    public Game createGame(List<CreateGameRequest.PlayerInfo> playerInfos, boolean usePlayerInfo) {
+        if (playerInfos == null || playerInfos.size() < 3) {
+            throw new IllegalArgumentException("Game requires at least 3 players");
+        }
+
+        List<Player> players = new ArrayList<>();
+        for (int i = 0; i < playerInfos.size(); i++) {
+            CreateGameRequest.PlayerInfo info = playerInfos.get(i);
+            String color = COLOR_ORDER[i % COLOR_ORDER.length];
+            System.out.println("Creating player " + info.getName() + " with color " + color + 
+                " (AI: " + info.isAI() + ", type: " + info.getAiType() + ")");
+            players.add(new Player(info.getName(), color, info.getAiType()));
         }
 
         Game game = new Game(players);
@@ -513,12 +546,14 @@ public class GameService {
         }
 
         String color = getNextColor(game);
-        System.out.println("Assigning color " + color + " to player " + playerName);
+        // Check if player name starts with "AI " to mark as AI
+        String aiType = playerName.startsWith("AI ") ? "EASY_AI" : null;
+        System.out.println("Assigning color " + color + " to player " + playerName + " (AI: " + (aiType != null) + ")");
         
-        Player player = new Player(playerName, color);
+        Player player = new Player(playerName, color, aiType);
         game.getPlayers().add(player);
 
-        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size());
+        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size() + ", isAI=" + (aiType != null));
 
         // Don't auto-start the game - let the host control when to start
         // The game will remain in WAITING_FOR_PLAYERS state until manually started
@@ -662,6 +697,129 @@ public class GameService {
             System.out.println("🔄 CONTINUE: Broadcasted game update with showAllDice=false for game " + gameId);
         } else {
             System.out.println("🔄 CONTINUE: Cannot continue game " + gameId + " - conditions not met");
+        }
+    }
+
+    /**
+     * Scheduled task to process AI turns
+     * Runs every 500ms to check if any AI player needs to make a move
+     */
+    @Scheduled(fixedDelay = 500)
+    public void processAITurns() {
+        if (games.isEmpty()) {
+            return; // No games to process
+        }
+        
+        for (Game game : games.values()) {
+            // Skip if game is not in progress
+            if (game.getState() != GameState.IN_PROGRESS) {
+                continue;
+            }
+
+            // Skip if showing all dice (round ended)
+            if (game.isShowAllDice()) {
+                continue;
+            }
+
+            // Skip if already processing this game's AI turn
+            String gameId = game.getId();
+            if (processingAITurns.contains(gameId)) {
+                continue;
+            }
+
+            // Check if current player is AI
+            Player currentPlayer = game.getCurrentPlayer();
+            if (currentPlayer == null) {
+                continue;
+            }
+            
+            if (!currentPlayer.isAI()) {
+                continue;
+            }
+
+            System.out.println("🤖 AI DETECTION: Found AI player " + currentPlayer.getName() + 
+                " (ID: " + currentPlayer.getId() + ", aiType: " + currentPlayer.getAiType() + 
+                ") in game " + gameId);
+
+            // Check if AI can act
+            if (!easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId())) {
+                System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " already acted this turn");
+                continue;
+            }
+
+            // Check if delay after round end has passed
+            if (!easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice())) {
+                System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " waiting for round end delay");
+                continue;
+            }
+
+            // Mark as processing to prevent concurrent execution
+            processingAITurns.add(gameId);
+
+            System.out.println("🤖 AI START: Starting AI turn for " + currentPlayer.getName());
+
+            // Process AI turn asynchronously
+            new Thread(() -> {
+                try {
+                    executeAITurn(game, currentPlayer);
+                } catch (Exception e) {
+                    System.err.println("Error processing AI turn for game " + gameId + ": " + e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    processingAITurns.remove(gameId);
+                }
+            }).start();
+        }
+    }
+
+    /**
+     * Execute an AI player's turn
+     */
+    private void executeAITurn(Game game, Player aiPlayer) {
+        String gameId = game.getId();
+        System.out.println("🤖 AI " + aiPlayer.getName() + " is thinking...");
+
+        // Mark that AI is acting
+        easyAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+
+        try {
+            // Simulate thinking delay
+            Thread.sleep(easyAIService.getThinkingDelay());
+
+            // Generate AI action
+            EasyAIService.AIAction action = easyAIService.generateRandomAction(
+                game.getCurrentBid(),
+                game.getPlayers().size(),
+                game.getRoundNumber()
+            );
+
+            System.out.println("🤖 AI " + aiPlayer.getName() + " chooses: " + action.getAction());
+
+            // Execute the action
+            switch (action.getAction()) {
+                case "bid":
+                    processBid(gameId, aiPlayer.getId(), action.getQuantity(), action.getFaceValue());
+                    broadcastGameUpdate(gameId);
+                    break;
+                case "doubt":
+                    processDoubt(gameId, aiPlayer.getId());
+                    broadcastGameUpdate(gameId);
+                    break;
+                case "spotOn":
+                    processSpotOn(gameId, aiPlayer.getId());
+                    broadcastGameUpdate(gameId);
+                    break;
+                default:
+                    System.err.println("Unknown AI action: " + action.getAction());
+            }
+            
+            System.out.println("🤖 AI DONE: " + aiPlayer.getName() + " completed " + action.getAction());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("AI turn interrupted for " + aiPlayer.getName());
+        } catch (Exception e) {
+            System.err.println("Error executing AI turn: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

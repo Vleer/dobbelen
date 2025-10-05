@@ -21,7 +21,13 @@ public class GameController {
     @PostMapping
     public ResponseEntity<GameResponse> createGame(@RequestBody CreateGameRequest request) {
         try {
-            Game game = gameService.createGame(request.getPlayerNames());
+            Game game;
+            // Support both old format (playerNames) and new format (players with AI info)
+            if (request.getPlayers() != null && !request.getPlayers().isEmpty()) {
+                game = gameService.createGame(request.getPlayers(), true);
+            } else {
+                game = gameService.createGame(request.getPlayerNames());
+            }
             GameResponse response = new GameResponse(game);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {

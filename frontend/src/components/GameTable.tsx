@@ -95,13 +95,21 @@ const GameTable: React.FC<GameTableProps> = ({
       const timer = setTimeout(() => {
         setShowBidDisplay(true);
         setBettingDisabled(false);
+        // Clear round tracking when the delay ends and new round starts
+        if (game) {
+          aiService.clearRoundTracking(game.id);
+        }
       }, 6000); // 6 second delay
       return () => clearTimeout(timer);
     } else {
       setShowBidDisplay(true);
       setBettingDisabled(false);
+      // Also clear round tracking when showAllDice becomes false (new round started)
+      if (game) {
+        aiService.clearRoundTracking(game.id);
+      }
     }
-  }, [game?.state, game?.showAllDice]);
+  }, [game]);
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
@@ -163,17 +171,6 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   }, [game?.id, localPlayerId, game]);
-
-  // Handle bid display delay when round ends or showAllDice changes
-  useEffect(() => {
-    if (game?.state === 'ROUND_ENDED' || game?.showAllDice) {
-      setShowBidDisplay(false);
-      const timer = setTimeout(() => {
-        setShowBidDisplay(true);
-      }, 6000); // 6 second delay
-      return () => clearTimeout(timer);
-    }
-  }, [game?.state, game?.showAllDice]);
 
   // Track action result when round ends
   useEffect(() => {
@@ -309,90 +306,7 @@ const GameTable: React.FC<GameTableProps> = ({
     return reorderedPlayers;
   };
 
-  const isAITurn = useCallback((): boolean => {
-    return game?.currentPlayerId
-      ? aiService.isAIPlayer(game.currentPlayerId)
-      : false;
-  }, [game?.currentPlayerId]);
-
-  // Handle AI turns
-  useEffect(() => {
-    console.log("Game state check:", {
-      game: game?.id,
-      state: game?.state,
-      currentPlayerId: game?.currentPlayerId,
-      isAITurn: isAITurn(),
-      isLoading,
-      gameWinner: game?.gameWinner,
-      showAllDice: game?.showAllDice,
-      registeredAIPlayers: Array.from(aiService.registeredPlayers),
-    });
-
-    if (
-      game &&
-      isAITurn() &&
-      !isLoading &&
-      game.state === "IN_PROGRESS" &&
-      !game.showAllDice
-    ) {
-      const handleAITurn = async () => {
-        try {
-          setIsLoading(true);
-          await aiService.simulateThinking();
-
-          const aiAction = aiService.generateRandomAction(
-            game.currentBid,
-            game.players.length
-          );
-          const currentPlayer = game.players.find(
-            (p) => p.id === game.currentPlayerId
-          );
-          console.log(`AI ${currentPlayer?.name} chooses:`, aiAction);
-          console.log("Current bid:", game.currentBid);
-          console.log("AI action data:", aiAction.data);
-
-          // Use WebSocket for AI actions (all games are multiplayer)
-          switch (aiAction.action) {
-            case "bid":
-              webSocketService.sendAction(
-                "BID",
-                aiAction.data,
-                game.currentPlayerId
-              );
-              break;
-            case "doubt":
-              webSocketService.sendAction("DOUBT", {}, game.currentPlayerId);
-              break;
-            case "spotOn":
-              webSocketService.sendAction("SPOT_ON", {}, game.currentPlayerId);
-              break;
-            default:
-              throw new Error("Unknown AI action");
-          }
-        } catch (err: any) {
-          console.error("AI action failed:", err);
-          console.error("Error details:", err.response?.data);
-          const errorMessage =
-            err.response?.data?.message || err.message || "AI action failed";
-          setError(errorMessage);
-
-          // Refresh game state on AI error
-          refreshGame();
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      handleAITurn();
-    }
-  }, [
-    game?.currentPlayerId,
-    game?.state,
-    isLoading,
-    game,
-    isAITurn,
-    refreshGame,
-  ]);
+  // AI logic is now handled by the backend - no frontend AI turn handler needed
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;

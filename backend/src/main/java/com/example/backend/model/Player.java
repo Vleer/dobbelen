@@ -11,6 +11,7 @@ public class Player {
     private boolean isEliminated;
     private int winTokens;
     private String color; // Player color
+    private String aiType; // null for human, "EASY_AI" for AI players
 
     public Player() {
         this.id = UUID.randomUUID().toString();
@@ -18,12 +19,20 @@ public class Player {
         this.isEliminated = false;
         this.winTokens = 0;
         this.color = "blue";  // Default color
+        this.aiType = null; // Default to human
     }
 
     public Player(String name, String color) {
         this();
         this.name = name;
         this.color = color;
+    }
+
+    public Player(String name, String color, String aiType) {
+        this();
+        this.name = name;
+        this.color = color;
+        this.aiType = aiType;
     }
 
     public void rollDice() {
@@ -68,5 +77,17 @@ public class Player {
 
     public void setWinTokens(int winTokens) {
         this.winTokens = winTokens;
+    }
+
+    public String getAiType() {
+        return aiType;
+    }
+
+    public void setAiType(String aiType) {
+        this.aiType = aiType;
+    }
+
+    public boolean isAI() {
+        return aiType != null && !aiType.isEmpty();
     }
 }
