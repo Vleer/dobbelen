@@ -55,7 +55,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
           name = getRandomDutchName();
         } while (usedNames.has(name));
         usedNames.add(name);
-        const prefix = aiDifficulty === 'medium' ? 'MediumAI ' : 'AI ';
+        const prefix = aiDifficulty === 'medium' ? '🧠AI ' : 'AI ';
         newPlayerNames.push(`${prefix}${name}`);
       }
       setPlayerNames(newPlayerNames);
@@ -67,8 +67,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
     setAiDifficulty(difficulty);
     const newPlayerNames = playerNames.map(name => {
       // Extract the base name without AI prefix
-      const baseName = name.replace(/^(AI |MediumAI |Medium AI )/, '');
-      const prefix = difficulty === 'medium' ? 'MediumAI ' : 'AI ';
+      const baseName = name.replace(/^(AI |🧠AI )/, '');
+      const prefix = difficulty === 'medium' ? '🧠AI ' : 'AI ';
       return `${prefix}${baseName}`;
     });
     setPlayerNames(newPlayerNames);

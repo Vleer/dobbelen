@@ -36,9 +36,9 @@ public class GameService {
         for (int i = 0; i < playerNames.size(); i++) {
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
             String name = playerNames.get(i);
-            // Check if player name starts with "AI " for easy AI or "MediumAI " for medium AI
+            // Check if player name starts with "AI " for easy AI or "🧠AI " for medium AI
             String aiType = null;
-            if (name.startsWith("MediumAI ") || name.startsWith("Medium AI ")) {
+            if (name.startsWith("🧠AI ")) {
                 aiType = "MEDIUM_AI";
             } else if (name.startsWith("AI ")) {
                 aiType = "EASY_AI";
@@ -573,9 +573,9 @@ public class GameService {
         }
 
         String color = getNextColor(game);
-        // Check if player name starts with "MediumAI " or "Medium AI " for medium AI, or "AI " for easy AI
+        // Check if player name starts with "🧠AI " for medium AI, or "AI " for easy AI
         String aiType = null;
-        if (playerName.startsWith("MediumAI ") || playerName.startsWith("Medium AI ")) {
+        if (playerName.startsWith("🧠AI ")) {
             aiType = "MEDIUM_AI";
         } else if (playerName.startsWith("AI ")) {
             aiType = "EASY_AI";

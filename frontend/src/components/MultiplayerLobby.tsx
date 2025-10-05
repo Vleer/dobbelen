@@ -135,7 +135,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
         // Register AI players when game is updated
         updatedGame.players.forEach((player) => {
-          if (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ")) {
+          if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
             aiService.registerAIPlayer(player.id, player.name);
             console.log("Registered AI player:", player.name, player.id);
           }
@@ -257,8 +257,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     try {
       // Get all existing AI player names to avoid duplicates
       const existingAINames = game.players
-        .filter((p) => p.name.startsWith("AI ") || p.name.startsWith("MediumAI ") || p.name.startsWith("Medium AI "))
-        .map((p) => p.name.replace(/^(AI |MediumAI |Medium AI )/, ""));
+        .filter((p) => p.name.startsWith("AI ") || p.name.startsWith("🧠AI "))
+        .map((p) => p.name.replace(/^(AI |🧠AI )/, ""));
 
       let aiName;
       let baseName;
@@ -266,7 +266,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         baseName = getRandomDutchName();
       } while (existingAINames.includes(baseName));
       
-      const prefix = difficulty === 'medium' ? 'MediumAI ' : 'AI ';
+      const prefix = difficulty === 'medium' ? '🧠AI ' : 'AI ';
       aiName = `${prefix}${baseName}`;
 
       const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
@@ -284,7 +284,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     try {
       // Only allow removing AI players
       const player = game.players.find((p) => p.id === playerId);
-      const isAI = player && (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI "));
+      const isAI = player && (player.name.startsWith("AI ") || player.name.startsWith("🧠AI "));
       if (!player || !isAI) {
         console.warn("Cannot remove non-AI player");
         return;
@@ -442,9 +442,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                         {index + 1}
                       </span>
                       <span className="font-medium text-sm md:text-base flex-1">
-                        {player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ") ? (
+                        {player.name.startsWith("🧠AI ") ? (
                           <span>
-                            {player.name.replace(/^(MediumAI |Medium AI )/, "")}
+                            {player.name.replace(/^🧠AI /, "")}
                             <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">🧠 Medium</span>
                           </span>
                         ) : player.name.startsWith("AI ") ? (
@@ -456,7 +456,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                           player.name
                         )}
                       </span>
-                      {isHost && (player.name.startsWith("AI ") || player.name.startsWith("MediumAI ") || player.name.startsWith("Medium AI ")) && (
+                      {isHost && (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) && (
                         <button
                           onClick={() => removeAIPlayer(player.id)}
                           className="ml-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"

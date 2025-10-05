@@ -131,7 +131,7 @@ public class MediumAIService {
             analysis.expectedCount, analysis.probabilityTrue * 100, analysis.confidence * 100, analysis.diceInMyHand));
         
         // More critical decision logic - be skeptical of unlikely bids
-        if (analysis.confidence < 0.20) {
+        if (analysis.confidence < 0.30) {
             // Very unlikely based on statistics - always doubt
             System.out.println("🧠 Bid is statistically very unlikely - DOUBTING");
             return new AIAction("doubt");
@@ -139,9 +139,9 @@ public class MediumAIService {
             // Extremely confident it's true - rare spot on attempt
             System.out.println("🧠 Extremely high confidence - attempting SPOT ON");
             return new AIAction("spotOn");
-        } else if (analysis.confidence < 0.45) {
-            // Moderately unlikely - doubt with scaled probability
-            double doubtChance = (0.45 - analysis.confidence) * 2.0; // Scale to 0-0.9 max
+        } else if (analysis.confidence < 0.55) {
+            // Moderately unlikely - doubt with higher probability
+            double doubtChance = (0.55 - analysis.confidence) * 2.2; // More aggressive doubting
             if (Math.random() < doubtChance) {
                 System.out.println("🧠 Bid unlikely (confidence " + String.format("%.0f%%", analysis.confidence * 100) + ") - DOUBTING");
                 return new AIAction("doubt");
@@ -178,10 +178,10 @@ public class MediumAIService {
             }
         }
         
-        // Start very conservatively: bid what we actually have, don't overbid
+        // Start conservatively: bid what we actually have or at most 1 more
         int bidQuantity = maxCount;
-        // Only bid higher if we have 4+ of a kind (very strong hand)
-        if (maxCount >= 4 && activePlayers >= 3) {
+        // Only bid 1 higher if we have 3+ of a kind
+        if (maxCount >= 3 && activePlayers >= 3) {
             bidQuantity = maxCount + 1;
         }
         
@@ -232,9 +232,9 @@ public class MediumAIService {
             }
         }
         
-        // Strategy: For 6s specifically, strongly consider switching down
+        // Strategy: For 6s specifically, strongly consider switching down (only raise by 1)
         if (currentFaceValue == 6 && bestFace < 6 && bestCount >= 2) {
-            int newQuantity = currentQuantity + (bestCount >= 3 ? 1 : 2);
+            int newQuantity = currentQuantity + 1;
             System.out.println(String.format("🧠 Switching from 6s: %d of %ds (have %d)",
                 newQuantity, bestFace, bestCount));
             return new AIAction("bid", newQuantity, bestFace);
@@ -268,35 +268,56 @@ public class MediumAIService {
             }
         }
         
-        // Strategy 1: If we have many of a higher face value, switch to that (conservative)
+        // Strategy 1: If we have many of a higher face value, switch to that (only if realistic)
         if (bestAlternateFace > currentFaceValue && bestAlternateCount >= 3) {
-            System.out.println(String.format("🧠 Switching to better hand: %d of %ds (have %d)", 
-                currentQuantity, bestAlternateFace, bestAlternateCount));
-            return new AIAction("bid", currentQuantity, bestAlternateFace);
+            // Check if this is statistically sound
+            double expectedTotal = bestAlternateCount + ((activePlayers - 1) * 5) / 6.0;
+            if (currentQuantity <= expectedTotal) {
+                System.out.println(String.format("🧠 Switching to better hand: %d of %ds (have %d, expected %.1f)", 
+                    currentQuantity, bestAlternateFace, bestAlternateCount, expectedTotal));
+                return new AIAction("bid", currentQuantity, bestAlternateFace);
+            }
         }
         
-        // Strategy 2: If we have many of a lower face value, increase quantity (conservative)
+        // Strategy 2: If we have many of a lower face value, increase quantity by only 1
         if (bestAlternateCount >= 4 && bestAlternateFace < currentFaceValue) {
-            int newQuantity = currentQuantity + (bestAlternateCount - myCountOfCurrentFace);
-            System.out.println(String.format("🧠 Increasing quantity for lower face: %d of %ds (have %d)", 
-                newQuantity, bestAlternateFace, bestAlternateCount));
-            return new AIAction("bid", newQuantity, bestAlternateFace);
+            int newQuantity = currentQuantity + 1;
+            double expectedTotal = bestAlternateCount + ((activePlayers - 1) * 5) / 6.0;
+            // Only bid if statistically sound
+            if (newQuantity <= expectedTotal + 1) {
+                System.out.println(String.format("🧠 Increasing quantity by 1 for lower face: %d of %ds (have %d, expected %.1f)", 
+                    newQuantity, bestAlternateFace, bestAlternateCount, expectedTotal));
+                return new AIAction("bid", newQuantity, bestAlternateFace);
+            }
         }
         
-        // Strategy 3: Conservative raise - increase face value if we have at least 2
+        // Strategy 3: Conservative raise - increase face value only if we have at least 2 and it's statistically sound
         if (currentFaceValue < 6) {
             int myCountOfNextFace = myCounts[currentFaceValue + 1];
-            if (myCountOfNextFace >= 2 || (myCountOfNextFace >= 1 && analysis.confidence > 0.7)) {
-                System.out.println(String.format("🧠 Conservative raise: %d of %ds (have %d)", 
-                    currentQuantity, currentFaceValue + 1, myCountOfNextFace));
+            double expectedTotal = myCountOfNextFace + ((activePlayers - 1) * 5) / 6.0;
+            // Be more demanding: need at least 2 in hand AND statistical support
+            if (myCountOfNextFace >= 2 && currentQuantity <= expectedTotal) {
+                System.out.println(String.format("🧠 Conservative raise: %d of %ds (have %d, expected %.1f)", 
+                    currentQuantity, currentFaceValue + 1, myCountOfNextFace, expectedTotal));
                 return new AIAction("bid", currentQuantity, currentFaceValue + 1);
             }
         }
         
-        // Strategy 4: Increase quantity by 1 (safe default)
-        System.out.println(String.format("🧠 Safe raise: %d of %ds", 
-            currentQuantity + 1, currentFaceValue));
-        return new AIAction("bid", currentQuantity + 1, currentFaceValue);
+        // Strategy 4: Increase quantity by 1 only if statistically reasonable
+        int myCountOfCurrentFaceForCheck = myCounts[currentFaceValue];
+        double expectedTotal = myCountOfCurrentFaceForCheck + ((activePlayers - 1) * 5) / 6.0;
+        int newQuantity = currentQuantity + 1;
+        
+        // If the new quantity is way beyond expected, be very reluctant
+        if (newQuantity > expectedTotal + 2) {
+            System.out.println(String.format("🧠 Bid too high (want %d but expected %.1f) - DOUBTING instead", 
+                newQuantity, expectedTotal));
+            return new AIAction("doubt");
+        }
+        
+        System.out.println(String.format("🧠 Safe raise by 1: %d of %ds (have %d, expected %.1f)", 
+            newQuantity, currentFaceValue, myCountOfCurrentFaceForCheck, expectedTotal));
+        return new AIAction("bid", newQuantity, currentFaceValue);
     }
     
     /**
@@ -346,18 +367,33 @@ public class MediumAIService {
         // Negative Z = above expected (more likely), Positive Z = below expected (less likely)
         analysis.probabilityTrue = Math.max(0.05, Math.min(0.95, 0.5 - (zScore * 0.15)));
         
-        // More critical confidence calculation - penalize high quantities and high face values more
+        // More critical confidence calculation - heavily penalize unrealistic bids
         double deviation = Math.abs(targetQuantity - analysis.expectedCount);
         double baseConfidence = 1.0 - (deviation / (analysis.expectedCount + 1));
         
-        // Extra penalty for high face values (5, 6) when we have none
-        if (targetFace >= 5 && analysis.diceInMyHand == 0) {
-            baseConfidence *= 0.8; // 20% penalty for high values with none in hand
+        // Extra penalty for high face values (5, 6) when we have few or none
+        if (targetFace >= 5) {
+            if (analysis.diceInMyHand == 0) {
+                baseConfidence *= 0.7; // 30% penalty for high values with none in hand
+            } else if (analysis.diceInMyHand == 1) {
+                baseConfidence *= 0.85; // 15% penalty for high values with only 1
+            }
         }
         
-        // Extra penalty when quantity is much higher than expected
-        if (targetQuantity > analysis.expectedCount * 1.5) {
-            baseConfidence *= 0.7; // 30% penalty for quantity significantly above expected
+        // Strong penalty when quantity is higher than expected
+        if (targetQuantity > analysis.expectedCount * 1.3) {
+            baseConfidence *= 0.6; // 40% penalty for quantity significantly above expected
+        } else if (targetQuantity > analysis.expectedCount * 1.5) {
+            baseConfidence *= 0.4; // 60% penalty for quantity way above expected
+        }
+        
+        // Critical check: if someone bids way more than what we have + reasonable expectation
+        // Example: we have 2 of a value, bid is 7+ of that value
+        double maxReasonable = analysis.diceInMyHand + ((otherPlayersDice / 6.0) * 1.5);
+        if (targetQuantity > maxReasonable) {
+            baseConfidence *= 0.5; // 50% penalty for statistically improbable bids
+            System.out.println(String.format("🧠 Bid exceeds reasonable max (bid=%d, maxReasonable=%.1f)", 
+                targetQuantity, maxReasonable));
         }
         
         analysis.confidence = Math.max(0.05, Math.min(0.95, baseConfidence));
