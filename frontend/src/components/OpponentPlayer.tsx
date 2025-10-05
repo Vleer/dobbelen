@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Player } from "../types/game";
 import { useLanguage } from "../contexts/LanguageContext";
-import DiceHand from "./DiceHand";
 import DiceHandSVG from "./DiceHandSVG";
 import DiceSVG from "./DiceSVG";
-import { getPlayerColor } from "../utils/playerColors";
 
 interface OpponentPlayerProps {
   player: Player;
@@ -81,17 +79,32 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     });
   }, [player.name, player.color, player.id, playerIndex]);
 
-  // Map backend color to Tailwind class
-  const colorClassMap: Record<string, string> = {
-    blue: "bg-blue-700 border-blue-400",
-    red: "bg-red-700 border-red-400",
-    green: "bg-green-700 border-green-400",
-    yellow: "bg-yellow-600 border-yellow-400",
-    brown: "bg-amber-900 border-amber-900", // more distinct brown
-    cyan: "bg-cyan-600 border-cyan-400",
+  // Map backend color to border and text colors - darker, classy jewel tones for poker table
+  const colorBorderMap: Record<string, string> = {
+    blue: "border-indigo-500",
+    red: "border-rose-500",
+    green: "border-emerald-500",
+    yellow: "border-amber-500",
+    brown: "border-amber-600", // rich cognac brown
+    cyan: "border-cyan-500",
+    purple: "border-purple-500",
+    pink: "border-pink-500",
   };
+  
+  const colorTextMap: Record<string, string> = {
+    blue: "text-indigo-500",
+    red: "text-rose-500",
+    green: "text-emerald-500",
+    yellow: "text-amber-500",
+    brown: "text-amber-600", // rich cognac brown
+    cyan: "text-cyan-500",
+    purple: "text-purple-500",
+    pink: "text-pink-500",
+  };
+  
   const playerColor = player.color || "blue";
-  const playerColorClass = colorClassMap[playerColor] || colorClassMap["blue"];
+  const playerColorClass = colorBorderMap[playerColor] || colorBorderMap["blue"];
+  const playerTextClass = colorTextMap[playerColor] || colorTextMap["blue"];
 
   // Debug logging
   console.log(`OpponentPlayer ${player.name}:`, {
@@ -178,16 +191,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   if (isMobile) {
     return (
       <div
-        className={`${
-          playerColorClass.split(" ")[0]
-        } rounded-lg shadow-lg border-2 select-none ${
-          isMyTurn ? "border-green-300" : playerColorClass.split(" ")[1]
+        className={`bg-green-950 rounded-lg shadow-lg border-2 select-none ${
+          isMyTurn ? "border-green-300" : playerColorClass
         } ${player.eliminated ? "opacity-50" : ""} p-2 min-w-0 flex-shrink-0`}
       >
         {/* Username with Dealer Button and Win Tokens */}
         <div className="text-center mb-1">
           <div className="flex items-center justify-center space-x-1">
-            <span className="font-bold text-xs text-white">{player.name}</span>
+            <span className={`font-bold text-xs ${playerTextClass}`}>{player.name}</span>
             {/* Dealer Button */}
             {isDealer && (
               <div className="inline-flex items-center justify-center w-4 h-4 bg-white border-2 border-black rounded-full">
@@ -239,15 +250,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           : {}
       }
     >
-      {/* Player Container - Rounded Rectangle with Dark Red Background */}
+      {/* Player Container - Rounded Rectangle with Green Background */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 ${
-          playerColorClass.split(" ")[0]
-        } rounded-2xl shadow-lg border-4 select-none ${
-          isMyTurn ? "border-green-300" : playerColorClass.split(" ")[1]
-        } ${player.eliminated ? "opacity-50" : ""} ${
+        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg border-4 select-none ${playerColorClass} ${
+          player.eliminated ? "opacity-50" : ""
+        } ${
           position === 0
             ? "transform -rotate-90"
             : position === 1
@@ -268,7 +277,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           {/* Username with Dealer Button and Win Tokens */}
           <div className="text-center mb-2">
             <div className="flex items-center justify-center space-x-1">
-              <span className="font-bold text-sm text-white break-words">
+              <span className={`font-bold text-sm ${playerTextClass} break-words`}>
                 {player.name}
               </span>
               {/* Dealer Button */}

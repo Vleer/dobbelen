@@ -479,7 +479,7 @@ const GameTable: React.FC<GameTableProps> = ({
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
             <div className="px-3 py-2">
-              <div className="bg-amber-900 border-4 border-amber-700 rounded-2xl p-3 shadow-2xl">
+              <div className="rounded-2xl p-3 shadow-2xl border-4" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
                 {/* Compact Header - Action and Who */}
                 <div className="text-center mb-2">
                   <div className="text-base font-bold text-amber-200">
@@ -515,15 +515,15 @@ const GameTable: React.FC<GameTableProps> = ({
                     <div
                       className={`text-center mb-2 p-2 rounded-lg ${
                         game.lastActualCount >= game.lastBidQuantity
-                          ? "bg-green-800 border-2 border-green-400"
-                          : "bg-red-800 border-2 border-red-400"
+                          ? "bg-green-950 border-2 border-green-700"
+                          : "bg-red-950 border-2 border-red-800"
                       }`}
                     >
                       <div
                         className={`text-lg font-bold ${
                           game.lastActualCount >= game.lastBidQuantity
-                            ? "text-green-200"
-                            : "text-red-200"
+                            ? "text-green-400"
+                            : "text-red-400"
                         }`}
                       >
                         {game.lastActualCount >= game.lastBidQuantity
@@ -541,8 +541,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Winner - Prominent */}
                 {game.winner && (
-                  <div className="text-center mb-2 p-2 bg-green-700 rounded-lg border-2 border-green-300">
-                    <div className="text-xl font-bold text-green-100">
+                  <div className="text-center mb-2 p-2 bg-green-950 rounded-lg border-2 border-green-700">
+                    <div className="text-xl font-bold text-green-400">
                       🏆{" "}
                       {t("game.result.winsRound", {
                         playerName:
@@ -555,8 +555,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Eliminated Player - Very Prominent */}
                 {game.lastEliminatedPlayerId && (
-                  <div className="text-center mb-2 p-2 bg-red-700 rounded-lg border-2 border-red-300">
-                    <div className="text-lg font-bold text-red-100">
+                  <div className="text-center mb-2 p-2 bg-red-950 rounded-lg border-2 border-red-800">
+                    <div className="text-lg font-bold text-red-900">
                       💀{" "}
                       {t("game.result.isEliminated", {
                         playerName:

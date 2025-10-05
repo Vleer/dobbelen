@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import DiceHandSVG from './DiceHandSVG';
-import { getPlayerColor } from '../utils/playerColors';
 
 interface LocalPlayerProps {
   player: Player;
@@ -25,9 +24,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     const saved = localStorage.getItem('localPlayerPosition');
     return saved ? JSON.parse(saved) : { x: 0, y: 0 };
   });
-  const [isFlashing, setIsFlashing] = useState(false);
-  const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
-  const [flashTimer, setFlashTimer] = useState<NodeJS.Timeout | null>(null);
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
@@ -83,97 +79,32 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     console.log('shouldShowDice is now:', shouldShowDice);
   }, [isDiceVisible, shouldShowDice]);
 
-  // Map backend color to Tailwind class
-  const colorClassMap: Record<string, string> = {
-    blue: 'bg-blue-700 border-blue-400',
-    red: 'bg-red-700 border-red-400',
-    green: 'bg-green-700 border-green-400',
-    yellow: 'bg-yellow-600 border-yellow-400',
-    brown: 'bg-amber-900 border-amber-900', // more distinct brown
-    cyan: 'bg-cyan-600 border-cyan-400',
+  // Map backend color to border and text colors - darker, classy jewel tones for poker table
+  const colorBorderMap: Record<string, string> = {
+    blue: 'border-indigo-500',
+    red: 'border-rose-500',
+    green: 'border-emerald-500',
+    yellow: 'border-amber-500',
+    brown: 'border-amber-600', // rich cognac brown
+    cyan: 'border-cyan-500',
+    purple: 'border-purple-500',
+    pink: 'border-pink-500',
   };
+  
+  const colorTextMap: Record<string, string> = {
+    blue: 'text-indigo-500',
+    red: 'text-rose-500',
+    green: 'text-emerald-500',
+    yellow: 'text-amber-500',
+    brown: 'text-amber-600', // rich cognac brown
+    cyan: 'text-cyan-500',
+    purple: 'text-purple-500',
+    pink: 'text-pink-500',
+  };
+  
   const playerColor = player.color || 'blue';
-  const playerColorClass = colorClassMap[playerColor] || colorClassMap['blue'];
-
-  // Inactivity tracking and flashing
-  const startInactivityTimer = () => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-    
-    const timer = setTimeout(() => {
-      // Start flashing after 10 seconds of inactivity
-      setIsFlashing(true);
-      
-      // Flash for 1 second
-      const flashTimer = setTimeout(() => {
-        setIsFlashing(false);
-        // Restart the cycle
-        startInactivityTimer();
-      }, 1000);
-      
-      setFlashTimer(flashTimer);
-    }, 10000);
-    
-    setInactivityTimer(timer);
-  };
-
-  const resetInactivityTimer = () => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-    }
-    if (flashTimer) {
-      clearTimeout(flashTimer);
-    }
-    setIsFlashing(false);
-    startInactivityTimer();
-  };
-
-  // Start inactivity timer when component mounts or when it's the player's turn
-  useEffect(() => {
-    if (isMyTurn && !disabled) {
-      startInactivityTimer();
-    } else {
-      // Clear timers when it's not the player's turn or when disabled
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-      if (flashTimer) {
-        clearTimeout(flashTimer);
-      }
-      setIsFlashing(false);
-    }
-
-    return () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
-      if (flashTimer) {
-        clearTimeout(flashTimer);
-      }
-    };
-  }, [isMyTurn, disabled]);
-
-  // Global activity listener to reset timer on any user interaction
-  useEffect(() => {
-    const handleGlobalActivity = () => {
-      if (isMyTurn && !disabled) {
-        resetInactivityTimer();
-      }
-    };
-
-    if (isMyTurn && !disabled) {
-      document.addEventListener('mousedown', handleGlobalActivity);
-      document.addEventListener('keydown', handleGlobalActivity);
-      document.addEventListener('touchstart', handleGlobalActivity);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleGlobalActivity);
-      document.removeEventListener('keydown', handleGlobalActivity);
-      document.removeEventListener('touchstart', handleGlobalActivity);
-    };
-  }, [isMyTurn, disabled]);
+  const playerColorClass = colorBorderMap[playerColor] || colorBorderMap['blue'];
+  const playerTextClass = colorTextMap[playerColor] || colorTextMap['blue'];
 
   // Drag functionality (desktop only)
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -202,10 +133,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    // Reset inactivity timer on any interaction
-    if (isMyTurn && !disabled) {
-      resetInactivityTimer();
-    }
   };
 
   useEffect(() => {
@@ -222,11 +149,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   if (isMobile) {
     return (
       <div
-        className={`w-full ${getPlayerColor(
-          0,
-          "bg"
-        )} p-3 shadow-2xl border-t-4 select-none ${
-          isMyTurn ? "border-green-300" : getPlayerColor(0, "border")
+        className={`w-full bg-green-950 p-3 shadow-2xl border-t-4 select-none ${
+          isMyTurn ? "border-green-300" : playerColorClass
         } ${player.eliminated ? "opacity-70" : ""}`}
       >
         {/* Mobile Layout - Horizontal */}
@@ -235,7 +159,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           <div className="flex items-center space-x-2">
             <div className="flex flex-col items-start">
               <div className="flex items-center space-x-2">
-                <div className="font-bold text-lg text-white">
+                <div className={`font-bold text-lg ${playerTextClass}`}>
                   {player.name}
                 </div>
                 {/* Eye toggle button - next to name */}
@@ -343,24 +267,14 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        onClick={() => {
-          // Reset inactivity timer on click
-          if (isMyTurn && !disabled) {
-            resetInactivityTimer();
-          }
-        }}
-        className={`${playerColorClass} p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${
-          isFlashing
-            ? "border-yellow-400 animate-pulse"
-            : isMyTurn
-            ? "border-green-300"
-            : playerColorClass.split(" ")[1]
-        } ${player.eliminated ? "opacity-50" : ""}`}
+        className={`bg-green-950 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
+          player.eliminated ? "opacity-50" : ""
+        }`}
       >
         {/* Username with Dealer Button, Win Tokens, and Eye Toggle */}
         <div className="text-center mb-4">
           <div className="flex items-center justify-center space-x-2">
-            <span className="font-bold text-xl text-white">{player.name}</span>
+            <span className={`font-bold text-xl ${playerTextClass}`}>{player.name}</span>
             {/* Dealer Button */}
             {isDealer && (
               <div className="inline-flex items-center justify-center w-6 h-6 bg-white border-2 border-black rounded-full">

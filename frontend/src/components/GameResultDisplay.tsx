@@ -151,7 +151,8 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className="bg-amber-900 border-4 border-amber-700 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none"
+        className="border-4 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none"
+        style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
       >
         {/* Result Status */}
         <div className="text-2xl font-bold text-amber-200 mb-4">
@@ -163,14 +164,14 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
 
         {/* Winner Message */}
         {getWinnerMessage() && (
-          <div className="text-3xl font-bold text-green-300 mb-4">
+          <div className="text-3xl font-bold text-green-400 mb-4">
             {getWinnerMessage()}
           </div>
         )}
 
         {/* Eliminated Player - hidden in mobile mode */}
         {!isMobile && game.lastEliminatedPlayerId && (
-          <div className="text-xl font-bold text-red-300 mb-4">
+          <div className="text-xl font-bold text-red-900 mb-4">
             {t("game.result.isEliminated", {
               playerName:
                 game.players.find((p) => p.id === game.lastEliminatedPlayerId)

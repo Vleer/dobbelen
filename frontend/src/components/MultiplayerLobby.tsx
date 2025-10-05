@@ -424,17 +424,19 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 {game.players.map((player, index) => {
                   console.log("MultiplayerLobby player color:", player.color);
                   const colorClassMap: Record<string, string> = {
-                    blue: "bg-blue-700",
-                    red: "bg-red-700",
-                    green: "bg-green-700",
-                    yellow: "bg-yellow-600",
-                    brown: "bg-amber-900", // more distinct brown
+                    blue: "bg-indigo-600",
+                    red: "bg-rose-600",
+                    green: "bg-emerald-600",
+                    yellow: "bg-amber-600",
+                    brown: "bg-amber-700", // rich cognac brown
                     cyan: "bg-cyan-600",
+                    purple: "bg-purple-600",
+                    pink: "bg-pink-600",
                   };
                   let playerColorClass = colorClassMap[player.color];
                   if (!playerColorClass) {
                     console.warn("Unknown player color:", player.color);
-                    playerColorClass = "bg-red-900"; // fallback to red for visibility
+                    playerColorClass = "bg-rose-700"; // fallback to rose for visibility
                   }
                   return (
                     <div

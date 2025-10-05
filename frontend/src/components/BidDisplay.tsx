@@ -81,7 +81,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
+      <div className="border-2 rounded-xl px-4 py-3 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
         <div className="flex items-center justify-center space-x-3">
           <div className="text-lg font-bold text-white">{bidderName}</div>
 
@@ -97,8 +97,10 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   return (
     <div
       ref={containerRef}
-      className="bg-amber-900 border-2 border-amber-700 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
+      className="border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
       style={{
+        backgroundColor: '#3d1f0d',
+        borderColor: '#78350f',
         position: "fixed",
         left: position.x,
         top: position.y,

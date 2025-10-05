@@ -81,7 +81,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
   const columnHeight = Math.max(maxDiceCount * 30, 80); // 30px per die (28px + 2px gap), min 80px
 
   return (
-    <div className="mt-2 p-2 bg-green-800 border-2 border-black rounded-xl">
+    <div className="mt-2 p-2 bg-green-950 border-2 border-green-700 rounded-xl">
       {/* Bar chart with dice stacked vertically - Compact version */}
       <div className="grid grid-cols-6 gap-1.5">
         {[1, 2, 3, 4, 5, 6].map((faceValue) => {
@@ -104,7 +104,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
                 {faceValue}
               </div>
               <div
-                className="flex flex-col justify-end w-8 bg-green-700 rounded border border-black p-0.5"
+                className="flex flex-col justify-end w-8 bg-green-900 rounded border border-green-700 p-0.5"
                 style={{ height: `${columnHeight}px` }}
               >
                 {/* Stack dice vertically */}

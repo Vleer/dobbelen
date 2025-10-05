@@ -3,6 +3,7 @@ import { Game } from '../types/game';
 import DiceSVG from './DiceSVG';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getPlayerColorFromString } from '../utils/playerColors';
 
 interface HistoryPanelProps {
   game: Game;
@@ -98,7 +99,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
     const actionPlayer = game.players.find(p => p.id === game.lastActionPlayerId);
     const actionPlayerName = actionPlayer?.name || t('common.unknownPlayer');
-    const playerColor = actionPlayer?.color || '#fff';
+    const playerColor = getPlayerColorFromString(actionPlayer?.color || 'blue');
 
     const renderColoredPlayerName = (text: string) => {
       // Replace the {{playerName}} placeholder with colored version
@@ -146,16 +147,17 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
   };
 
   return (
-    <div className="bg-gray-900 bg-opacity-95 backdrop-blur-sm rounded-lg shadow-2xl border-2 border-amber-700 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto">
+    <div className="rounded-lg shadow-2xl border-2 border-amber-950 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#3d1f0d', backdropFilter: 'blur(4px)' }}>
         {/* Tabs */}
-        <div className="flex border-b border-amber-700">
+        <div className="flex border-b" style={{ borderColor: '#3d1f0d' }}>
           <button
             onClick={() => setActiveTab('currentHand')}
             className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'currentHand'
-                ? 'bg-amber-700 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
             }`}
+            style={{ backgroundColor: activeTab === 'currentHand' ? '#78350f' : '#5a2810' }}
           >
             {t('game.history.currentHand')}
           </button>
@@ -163,9 +165,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
             onClick={() => setActiveTab('lastHand')}
             className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'lastHand'
-                ? 'bg-amber-700 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
             }`}
+            style={{ backgroundColor: activeTab === 'lastHand' ? '#78350f' : '#5a2810' }}
           >
             {t('game.history.lastHand')}
           </button>
@@ -173,9 +176,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
             onClick={() => setActiveTab('stats')}
             className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
               activeTab === 'stats'
-                ? 'bg-amber-700 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
             }`}
+            style={{ backgroundColor: activeTab === 'stats' ? '#78350f' : '#5a2810' }}
           >
             {t('game.history.stats')}
           </button>
@@ -190,7 +194,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                   {game.currentHandBidHistory.map((bid, index) => {
                     const bidPlayer = game.players.find(p => p.id === bid.playerId);
                     const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
-                    const bidPlayerColor = bidPlayer?.color || '#fff';
+                    const bidPlayerColor = getPlayerColorFromString(bidPlayer?.color || 'blue');
                     
                     // Determine action type
                     const isRaise = !bid.type || bid.type === 'RAISE';
@@ -200,10 +204,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                     return (
                       <div
                         key={index}
-                        className="p-3 rounded-lg border border-gray-700"
+                        className="p-3 rounded-lg border-2"
                         style={{ 
-                          backgroundColor: `${bidPlayerColor}20`, // 20 is hex for ~12% opacity
-                          borderColor: `${bidPlayerColor}80` // 80 is hex for ~50% opacity
+                          backgroundColor: '#14532d', // green-950 for poker felt
+                          borderColor: `${bidPlayerColor}` // Player's color for border
                         }}
                       >
                         {isRaise ? (
@@ -249,7 +253,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                   })}
                 </div>
               ) : (
-                <div className="text-center text-gray-400 py-8">
+                <div className="text-center text-green-400 py-8">
                   {t('game.history.noBidsYet')}
                 </div>
               )}
@@ -261,13 +265,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
               {hasLastHandData ? (
                 <>
                   {/* Action Description */}
-                  <div className="mb-4 p-3 bg-amber-900 bg-opacity-50 rounded-lg border border-amber-700">
+                  <div className="mb-4 p-3 bg-green-950 rounded-lg border-2 border-green-700">
                     <div className="text-white">
                       {getActionDescription()}
                     </div>
                     {game.lastBidQuantity !== undefined && game.lastBidFaceValue && (
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-gray-300 text-sm">
+                        <span className="text-green-200 text-sm">
                           {(() => {
                             // The bid was made by someone - try multiple sources
                             // 1. Check previousBid first (most likely to have the right player)
@@ -290,9 +294,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                             }
                             
                             const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                            const bidPlayerColor = getPlayerColorFromString(bidPlayer?.color || 'blue');
                             return (
                               <>
-                                <span style={{ color: bidPlayer?.color || '#fff', fontWeight: 'bold' }}>
+                                <span style={{ color: bidPlayerColor, fontWeight: 'bold' }}>
                                   {bidPlayerName}
                                 </span>
                                 {t('game.history.bidPossessive')}
@@ -309,7 +314,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                     )}
                     {game.lastActualCount !== undefined && game.lastBidFaceValue && (
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-gray-300 text-sm">{t('game.history.actualCount')}:</span>
+                        <span className="text-green-200 text-sm">{t('game.history.actualCount')}:</span>
                         <div className="flex items-center gap-1 flex-wrap justify-end">
                           {Array.from({ length: game.lastActualCount }).map((_, index) => (
                             <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
@@ -325,19 +330,20 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                     {lastHandPlayers.map((player) => {
                       // Find current player to get color
                       const currentPlayer = game.players.find(p => p.id === player.id);
+                      const playerHexColor = getPlayerColorFromString(currentPlayer?.color || 'blue');
                       
                       return (
                         <div
                           key={player.id}
-                          className="flex items-center gap-2 p-2 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+                          className="flex items-center gap-2 p-2 bg-green-950 rounded-lg border-2 border-green-700"
                         >
                           <div
                             className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: currentPlayer?.color || '#888' }}
+                            style={{ backgroundColor: playerHexColor }}
                           />
                           <span 
                             className="font-semibold flex-shrink-0"
-                            style={{ color: currentPlayer?.color || '#fff' }}
+                            style={{ color: playerHexColor }}
                           >
                             {player.name}
                           </span>
@@ -358,7 +364,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                   </div>
                 </>
               ) : (
-                <div className="text-center text-gray-400 py-8">
+                <div className="text-center text-green-400 py-8">
                   {t('game.history.noData')}
                 </div>
               )}
@@ -367,7 +373,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
           {activeTab === 'stats' && (
             <div>
-              <h3 className="text-amber-400 font-semibold mb-3">
+              <h3 className="text-green-300 font-semibold mb-3">
                 {t('game.history.playerActions')}
               </h3>
               <div className="space-y-3">
@@ -382,25 +388,26 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                   };
                   
                   const totalActions = stats.correctDoubts + stats.wrongDoubts + stats.correctSpotOns + stats.wrongSpotOns;
+                  const playerHexColor = getPlayerColorFromString(player.color || 'blue');
                   
                   return (
                     <div
                       key={player.id}
-                      className="p-3 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+                      className="p-3 bg-green-950 rounded-lg border-2 border-green-700"
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <div
                           className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: player.color }}
+                          style={{ backgroundColor: playerHexColor }}
                         />
                         <span 
                           className="font-semibold"
-                          style={{ color: player.color }}
+                          style={{ color: playerHexColor }}
                         >
                           {player.name}
                         </span>
                         {totalActions === 0 && (
-                          <span className="text-xs text-gray-500 ml-auto">
+                          <span className="text-xs text-green-500 ml-auto">
                             ({t('game.history.noActions')})
                           </span>
                         )}
@@ -411,13 +418,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                           {/* Doubts Section */}
                           {(stats.correctDoubts > 0 || stats.wrongDoubts > 0) && (
                             <div>
-                              <div className="text-gray-300 font-semibold mb-1">{t('game.history.doubts')}:</div>
+                              <div className="text-green-200 font-semibold mb-1">{t('game.history.doubts')}:</div>
                               <div className="flex justify-between pl-2">
-                                <span className="text-gray-400">{t('game.history.correct')}:</span>
+                                <span className="text-green-300">{t('game.history.correct')}:</span>
                                 <span className="text-green-400 font-semibold">{stats.correctDoubts}</span>
                               </div>
                               <div className="flex justify-between pl-2">
-                                <span className="text-gray-400">{t('game.history.wrong')}:</span>
+                                <span className="text-green-300">{t('game.history.wrong')}:</span>
                                 <span className="text-red-400 font-semibold">{stats.wrongDoubts}</span>
                               </div>
                             </div>
@@ -426,13 +433,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
                           {/* Spot Ons Section */}
                           {(stats.correctSpotOns > 0 || stats.wrongSpotOns > 0) && (
                             <div>
-                              <div className="text-gray-300 font-semibold mb-1">{t('game.history.spotOns')}:</div>
+                              <div className="text-green-200 font-semibold mb-1">{t('game.history.spotOns')}:</div>
                               <div className="flex justify-between pl-2">
-                                <span className="text-gray-400">{t('game.history.correct')}:</span>
+                                <span className="text-green-300">{t('game.history.correct')}:</span>
                                 <span className="text-green-400 font-semibold">{stats.correctSpotOns}</span>
                               </div>
                               <div className="flex justify-between pl-2">
-                                <span className="text-gray-400">{t('game.history.wrong')}:</span>
+                                <span className="text-green-300">{t('game.history.wrong')}:</span>
                                 <span className="text-red-400 font-semibold">{stats.wrongSpotOns}</span>
                               </div>
                             </div>

@@ -92,12 +92,12 @@
   "game.history.unknownAction": "Onbekende actie",
   "game.history.playerEliminated": "{{playerName}} ligt eruit",
   "game.history.playerActions": "Speler Acties",
-  "game.history.doubts": "Opgetild:",
-  "game.history.spotOns": "Spot Ons:",
+  "game.history.doubts": "Opgetild",
+  "game.history.spotOns": "Spot Ons",
   "game.history.correct": "Correct",
   "game.history.wrong": "Fout",
   "game.history.noActions": "nog geen acties",
   "game.history.noStatsYet": "Nog geen statistieken beschikbaar",
-  "game.history.diceAnalysis": "Dobbelstenen Analyse",
+  "game.history.diceAnalysis": "Analyse",
   "game.history.noBidsYet": "Nog geen biedingen in deze hand"
 }
