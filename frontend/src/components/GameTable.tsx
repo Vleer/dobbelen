@@ -33,7 +33,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
-  const [isGameInfoMinimized, setIsGameInfoMinimized] = useState(true); // Auto-collapse on mobile
+  const [isMuted, setIsMuted] = useState(false); // Audio mute state (functionality to be implemented)
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
@@ -748,19 +748,18 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
       <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
         <div className="flex items-center justify-between">
-          {/* Left side - Back Button */}
+          {/* Left side - Audio Button */}
           <div>
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
-              >
-                ← Back
-              </button>
-            )}
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? "🔇" : "🔊"}
+            </button>
           </div>
 
-          {/* Right side - History Button, Game Info and Language Selector */}
+          {/* Right side - History Button and Language Selector */}
           <div className="flex items-center space-x-2 md:space-x-4">
             {/* History Button - Always visible */}
             <button
@@ -769,32 +768,6 @@ const GameTable: React.FC<GameTableProps> = ({
             >
               {t("game.history.title")}
             </button>
-
-            {/* Game Info - Desktop only */}
-            <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
-              <div className="flex items-center justify-between p-2">
-                <button
-                  onClick={() => setIsGameInfoMinimized(!isGameInfoMinimized)}
-                  className="text-white hover:text-gray-300 mr-2 text-sm"
-                >
-                  {isGameInfoMinimized ? "▶" : "▼"}
-                </button>
-                <span className="text-sm font-bold">Game Info</span>
-              </div>
-              {!isGameInfoMinimized && (
-                <div className="px-2 pb-2 text-sm">
-                  <div>
-                    {t("lobby.gameId")}: {game.id}
-                  </div>
-                  <div>
-                    {t("game.round", { roundNumber: game.roundNumber })}
-                  </div>
-                  <div>
-                    {t("common.state")}: {game.state}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Language Selector - Desktop only */}
             <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
