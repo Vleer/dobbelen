@@ -77,6 +77,8 @@ const GameTable: React.FC<GameTableProps> = ({
       setPreviousRoundNumber(game.roundNumber);
       // Reset round winner tracking so win sound can play for next round
       setPreviousRoundWinner('');
+      // Reset bid tracking so raise sound can play for first bid of new round
+      setPreviousBidKey('');
     }
 
     // Play doubt/spot-on sound when action happens (using unique key with player ID and action type)
@@ -115,6 +117,11 @@ const GameTable: React.FC<GameTableProps> = ({
             "Skipping doubt/spot-on sound - winner detected, win sound will play"
           );
         }
+        // Always reset bid tracking after doubt/spot-on so next bid will trigger raise sound
+        if (game.lastActionType === "DOUBT" || game.lastActionType === "SPOT_ON") {
+          console.log('Resetting bid tracking after doubt/spot-on action');
+          setPreviousBidKey('');
+        }
         setPreviousActionKey(currentActionKey);
       }
     }
@@ -123,11 +130,20 @@ const GameTable: React.FC<GameTableProps> = ({
     // Don't play if it's the local player's bid (already played immediately in handleAction)
     if (game.currentBid) {
       const currentBidKey = `${game.currentBid.playerId}-${game.currentBid.quantity}-${game.currentBid.faceValue}`;
-      if (currentBidKey !== previousBidKey && previousBidKey !== '') {
+      console.log('Bid detected:', {
+        currentBidKey,
+        previousBidKey,
+        isLocalPlayer: game.currentBid.playerId === localPlayerId,
+        isNewBid: currentBidKey !== previousBidKey
+      });
+      
+      if (currentBidKey !== previousBidKey) {
         // Only play sound if it's NOT the local player (they already heard it immediately)
         if (game.currentBid.playerId !== localPlayerId) {
           console.log('Playing raise sound - new bid placed by other player:', game.currentBid);
           audioService.playRaise();
+        } else {
+          console.log('Skipping raise sound - local player already heard it immediately');
         }
       }
       setPreviousBidKey(currentBidKey);
