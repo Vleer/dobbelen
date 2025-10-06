@@ -25,6 +25,7 @@
   "lobby.maxPlayersReached": "Maximum von {{maxPlayers}} Spielern erreicht.",
   "lobby.startGame": "▶ Spiel starten",
   "lobby.waitingForHost": "Warten auf den Host, um das Spiel zu starten...",
+  "lobby.needAtLeastTwoPlayers": "Mindestens 2 Spieler zum Start erforderlich",
 
   "game.round": "Runde {{roundNumber}}",
   "game.currentBid": "Aktuelles Gebot",

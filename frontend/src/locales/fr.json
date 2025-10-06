@@ -25,6 +25,7 @@
   "lobby.maxPlayersReached": "Nombre maximum de {{maxPlayers}} joueurs atteint.",
   "lobby.startGame": "▶ Démarrer la partie",
   "lobby.waitingForHost": "En attente du démarrage de l'hôte...",
+  "lobby.needAtLeastTwoPlayers": "Au moins 2 joueurs requis pour démarrer",
 
   "game.round": "Manche {{roundNumber}}",
   "game.currentBid": "Enchère actuelle",

@@ -631,8 +631,9 @@ public class GameService {
         if (game == null) {
             throw new IllegalArgumentException("Game not found");
         }
-        if (game.getPlayers().size() < 1) {
-            throw new IllegalArgumentException("Not enough players to start game");
+        // Require at least 2 players to start a multiplayer game
+        if (game.getPlayers().size() < 2) {
+            throw new IllegalArgumentException("Not enough players to start game. Minimum 2 players required");
         }
 
         // Initialize all players

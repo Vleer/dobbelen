@@ -84,7 +84,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         setIsJoining(false);
       }
     },
-    [playerName, hasJoined]
+    [playerName, hasJoined, t]
   );
 
   // Initialize component - only run once
@@ -104,7 +104,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     }
 
     setIsInitialized(true);
-  }, [isInitialized]);
+  }, [isInitialized, handleAutoJoin]);
 
   // Auto-select text in the player name input on initial load only
   useEffect(() => {
@@ -576,10 +576,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       }
                     }
                   }}
-                  className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg md:text-xl"
+                  className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg md:text-xl disabled:opacity-50"
+                  disabled={game.players.length < 2}
                 >
                   🚀 {t("lobby.startGame")}
                 </button>
+                {game.players.length < 2 && (
+                  <p className="mt-1 text-xs text-center text-red-600">
+                    {t("lobby.needAtLeastTwoPlayers") || "At least 2 players required to start"}
+                  </p>
+                )}
               </div>
             )}
 

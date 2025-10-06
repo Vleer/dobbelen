@@ -25,6 +25,7 @@
   "lobby.maxPlayersReached": "Maximum van {{maxPlayers}} spelers bereikt.",
   "lobby.startGame": "▶ Spel Starten",
   "lobby.waitingForHost": "Wachten tot de host het spel start...",
+  "lobby.needAtLeastTwoPlayers": "Minimaal 2 spelers nodig om te starten",
 
   "game.round": "Ronde {{roundNumber}}",
   "game.currentBid": "Huidige Bod",
