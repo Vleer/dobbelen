@@ -359,12 +359,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     audioService.playRaise();
                     setPlayerName(getRandomDutchName());
                   }}
-                  className="px-3 md:px-4 py-2 md:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                  className="w-10 h-10 md:w-12 md:h-12 p-0 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium flex items-center justify-center"
+                  aria-label="Randomize name"
                 >
                   <img
                     src="/dobbelen.svg"
                     alt="Dobbelen Logo"
-                    style={{ height: "1.5em", verticalAlign: "middle" }}
+                    className="w-full h-full object-contain"
                   />
                 </button>
               </div>
