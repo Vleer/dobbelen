@@ -45,7 +45,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   // Separate function to join game with a specific ID
   const handleAutoJoin = useCallback(
-    async (gameIdToJoin: string) => {
+    async (gameIdToJoin: string, options?: { updateHistory?: boolean }) => {
       if (!playerName.trim() || hasJoined) {
         return;
       }
@@ -70,9 +70,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         setIsHost(false);
         setHasJoined(true);
 
-        // Update URL with game ID
-        const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
-        window.history.pushState({}, "", newUrl);
+        // Optionally update URL with game ID
+        if (options?.updateHistory !== false) {
+          const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
+          window.history.pushState({}, "", newUrl);
+        }
       } catch (err: any) {
         console.error("Error auto-joining game:", err);
         setError(
@@ -99,8 +101,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
       setGameId(urlGameId);
-      // Automatically try to join the game
-      handleAutoJoin(urlGameId);
+      // Automatically try to join the game but don't update history (we want to remove the query string)
+      handleAutoJoin(urlGameId, { updateHistory: false });
+
+      // Remove the query string from the visible URL while preserving state
+      const cleanedUrl = `${window.location.origin}${window.location.pathname}`;
+      // Use replaceState so back button behavior isn't affected
+      window.history.replaceState({}, "", cleanedUrl);
     }
 
     setIsInitialized(true);
