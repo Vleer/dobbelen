@@ -270,11 +270,23 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         className={`bg-green-950 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
         }`}
+        style={{
+          width: "340px", // fixed width
+          minHeight: "180px", // minimum height, allow to grow if needed
+          maxHeight: "95vh",
+          maxWidth: "95vw",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          overflowY: "auto",
+        }}
       >
         {/* Username with Dealer Button, Win Tokens, and Eye Toggle */}
         <div className="text-center mb-4">
           <div className="flex items-center justify-center space-x-2">
-            <span className={`font-bold text-xl ${playerTextClass}`}>{player.name}</span>
+            <span className={`font-bold text-xl ${playerTextClass}`}>
+              {player.name}
+            </span>
             {/* Dealer Button */}
             {isDealer && (
               <div className="inline-flex items-center justify-center w-6 h-6 bg-white border-2 border-black rounded-full">
@@ -313,12 +325,23 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           </div>
         </div>
 
-        {/* Dice Row - Fixed height container */}
-        <div className="mb-4 min-h-[80px] flex items-center justify-center">
+        {/* Dice Row - Flexible height container */}
+        <div
+          className="mb-4 flex items-center justify-center"
+          style={{ minHeight: "60px", width: "100%" }}
+        >
           {shouldShowDice ? (
             <DiceHandSVG diceValues={diceValues} size="lg" />
           ) : (
-            <div className="text-gray-300 text-lg italic">
+            <div
+              className="text-gray-300 text-lg italic w-full text-center"
+              style={{
+                minHeight: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               {t("game.diceHidden") || "Hidden"}
             </div>
           )}
