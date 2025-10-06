@@ -315,11 +315,37 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="p-1.5 rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
-                style={{ pointerEvents: "auto" }}
+                className="rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
+                style={{
+                  pointerEvents: "auto",
+                  padding: 0,
+                  minWidth: 36,
+                  minHeight: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
-                {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    minWidth: 36,
+                    minHeight: 36,
+                  }}
+                />
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </span>
               </button>
             )}
           </div>
