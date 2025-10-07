@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bid, Player } from '../types/game';
-import { useLanguage } from '../contexts/LanguageContext';
-import DiceHand from './DiceHand';
+import { useLanguage } from "../contexts/LanguageContext";
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
@@ -38,48 +37,35 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newPosition = {
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
-      };
-      setPosition(newPosition);
-      localStorage.setItem('bidDisplayPosition', JSON.stringify(newPosition));
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
   React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newPosition = {
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y,
+        };
+        setPosition(newPosition);
+        localStorage.setItem("bidDisplayPosition", JSON.stringify(newPosition));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [isDragging, dragOffset]);
-  
-  if (!currentBid) {
-    return (
-      <div className="text-center text-gray-500 italic">
-        {t('game.noCurrentBid')}
-      </div>
-    );
-  }
 
-  const faceValueNames = {
-    1: t('game.ones'),
-    2: t('game.twos'), 
-    3: t('game.threes'),
-    4: t('game.fours'),
-    5: t('game.fives'),
-    6: t('game.sixes')
-  };
+  if (!currentBid) {
+    return "";
+  }
 
   // Get the player name who made the bid
   const bidderName = playerName || (players && currentPlayerId ? 
@@ -91,15 +77,10 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className="bg-amber-900 border-2 border-amber-700 rounded-xl px-4 py-3 shadow-lg">
+      <div className="border-2 rounded-xl px-4 py-3 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
         <div className="flex items-center justify-center space-x-3">
-          <div className="text-lg font-bold text-white">
-            {bidderName} {t('game.bids')}
-          </div>
-          <div className="text-xl font-bold text-amber-200">
-            {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
-          </div>
-          
+          <div className="text-lg font-bold text-white">{bidderName}</div>
+
           {/* Dice Visualization */}
           <div className="flex items-center space-x-1">
             <DiceHandSVG diceValues={diceValues} size="sm" />
@@ -112,24 +93,21 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   return (
     <div
       ref={containerRef}
-      className="bg-amber-900 border-2 border-amber-700 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
+      className="border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
       style={{
-        position: 'fixed',
+        backgroundColor: '#3d1f0d',
+        borderColor: '#78350f',
+        position: "fixed",
         left: position.x,
         top: position.y,
         zIndex: 1000,
-        cursor: isDragging ? 'grabbing' : 'grab'
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center justify-center space-x-6 drag-handle">
-        <div className="text-xl font-bold text-white">
-          {bidderName} {t('game.bids')}
-        </div>
-        <div className="text-2xl font-bold text-amber-200">
-          {currentBid.quantity} {faceValueNames[currentBid.faceValue as keyof typeof faceValueNames]}
-        </div>
-        
+        <div className="text-xl font-bold text-white">{bidderName}</div>
+
         {/* Dice Visualization */}
         <div className="flex items-center space-x-2">
           <DiceHandSVG diceValues={diceValues} size="lg" />

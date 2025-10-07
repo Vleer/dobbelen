@@ -1,7 +1,7 @@
 {
-  "game.title": "🎲 Dobbelen 🎲",
+  "game.title": "Dobbelen",
   "game.subtitle": "Het klassieke bluffspel",
-  
+
   "lobby.createGame": "Nieuw Spel",
   "lobby.joinGame": "Deelnemen",
   "lobby.gameId": "Spel ID",
@@ -15,7 +15,7 @@
   "lobby.pleaseEnterUsername": "Voer je gebruikersnaam in.",
   "lobby.failedToCreateGame": "Spel aanmaken mislukt",
   "lobby.failedToJoinGame": "Deelnemen aan spel mislukt",
-  
+
   "lobby.shareLink": "Deel deze link",
   "lobby.copy": "Kopiëren",
   "lobby.players": "Spelers",
@@ -25,7 +25,8 @@
   "lobby.maxPlayersReached": "Maximum van {{maxPlayers}} spelers bereikt.",
   "lobby.startGame": "▶ Spel Starten",
   "lobby.waitingForHost": "Wachten tot de host het spel start...",
-  
+  "lobby.needAtLeastTwoPlayers": "Minimaal 2 spelers nodig om te starten",
+
   "game.round": "Ronde {{roundNumber}}",
   "game.currentBid": "Huidige Bod",
   "game.noCurrentBid": "Geen huidig bod",
@@ -36,12 +37,13 @@
   "game.fours": "4en",
   "game.fives": "5en",
   "game.sixes": "6en",
-  
+
   "game.makeYourBid": "Doe Je Bod",
   "game.waitingForTurn": "Wachten op je beurt...",
+  "game.waitingForNextRound": "Wachten op volgende ronde...",
   "game.doubt": "Optillen",
   "game.spotOn": "Spot On",
-  
+
   "game.dealer": "D",
   "game.dice": "dobbelstenen",
   "game.revealed": "Onthuld",
@@ -49,60 +51,55 @@
   "game.eliminated": "UIT",
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
   "game.winTokens": "🏆 {{count}}",
-  
+  "game.diceHidden": "Verborgen",
+
   "game.result.thereWere": "Er waren {{actualCount}} {{faceValue}}en",
   "game.result.bidWasCorrect": "(Bod was correct!)",
   "game.result.bidWasWrong": "(Bod was fout!)",
   "game.result.thereWereOnly": "Er waren slechts {{actualCount}} {{faceValue}}en",
   "game.result.winsRound": "{{playerName}} wint 🏆!",
   "game.result.roundEnded": "Ronde beëindigd!",
-  "game.result.isEliminated": "{{playerName}} ligt er uit!",
-  "game.result.collected7Tokens": "heeft 7 win tokens verzameld en is de ultieme",
-  "game.result.champion": "kampioen",
-  
-  "game.analysis.title": "Dobbelsteen Analyse ({{totalDice}} totaal)",
-  "game.analysis.show": "Analyse",
-  "game.analysis.hide": "Analyse",
+  "game.result.isEliminated": "{{playerName}} ligt er uit",
+  "game.result.collected7Tokens": "heeft 7 win tokens.",
+  "game.result.champion": "Dobbelkampioen!",
+  "game.action.doubt": "{{playerName}} tilt op",
+  "game.action.spotOn": "{{playerName}}: Spot on",
+  "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
+
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
-  
+
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
-  
+
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",
   "errors.failedToStart": "Spel starten mislukt",
-  
+  "errors.failedToRemove": "AI speler verwijderen mislukt",
+
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
   "common.unknownPlayer": "Onbekende Speler",
 
-  "statistics.title": "📊 Spelstatistieken",
-  "statistics.overview": "Overzicht",
-  "statistics.bidding": "Bieden",
-  "statistics.patterns": "Patronen",
-  "statistics.history": "Geschiedenis",
-  "statistics.reset": "Reset Statistieken",
-  
-  "statistics.totalWins": "Totaal Gewonnen",
-  "statistics.timesReachedLastRound": "Keer Laatste Ronde Bereikt",
-  "statistics.averageBidQuantity": "Gemiddelde Bod Hoeveelheid",
-  "statistics.averageBidFaceValue": "Gemiddelde Bod Waarde",
-  "statistics.doubtSuccessRate": "Twijfel Succespercentage",
-  "statistics.bidsExceedingProbability": "Biedingen Boven Kansberekening",
-  "statistics.aggressiveness": "Agressiviteitspercentage",
-  "statistics.overUnderAccuracy": "Over/Onder Nauwkeurigheid",
-  "statistics.diceFrequency": "Dobbelsteen Frequentie Verdeling",
-  "statistics.recentBidPattern": "Recent Bied Patroon",
-  "statistics.consecutiveHighBids": "Opeenvolgende Hoge Biedingen",
-  "statistics.consecutiveLowBids": "Opeenvolgende Lage Biedingen",
-  "statistics.bluffDetectionScore": "Bluf Detectie Score",
-  "statistics.bluffDetectionDescription": "Hogere scores duiden op meer consistent overbieden",
-  "statistics.recentBids": "Recente Biedingen",
-  "statistics.recentDoubts": "Recente Twijfels",
-  "statistics.doubts": "twijfels",
-  "statistics.bids": "biedingen",
-  "statistics.checked": "gecontroleerd",
-  "statistics.success": "Succes",
-  "statistics.failed": "Mislukt",
-  "statistics.doubtedBid": "Betwijfelde bieding",
-  "statistics.actualCount": "Werkelijk aantal"
+  "game.history.title": "Geschiedenis",
+  "game.history.currentHand": "Huidige Hand",
+  "game.history.lastHand": "Laatste Hand",
+  "game.history.stats": "Statistieken",
+  "game.history.action": "Actie",
+  "game.history.bid": "Bod",
+  "game.history.bidPossessive": "'s bod:",
+  "game.history.actualCount": "Werkelijk Aantal",
+  "game.history.playerDice": "Speler Dobbelstenen",
+  "game.history.noData": "Geen gegevens van vorige hand beschikbaar",
+  "game.history.comingSoon": "Binnenkort beschikbaar...",
+  "game.history.noAction": "Geen actie geregistreerd",
+  "game.history.unknownAction": "Onbekende actie",
+  "game.history.playerEliminated": "{{playerName}} ligt eruit",
+  "game.history.playerActions": "Speler Acties",
+  "game.history.doubts": "Opgetild",
+  "game.history.spotOns": "Spot Ons",
+  "game.history.correct": "Correct",
+  "game.history.wrong": "Fout",
+  "game.history.noActions": "nog geen acties",
+  "game.history.noStatsYet": "Nog geen statistieken beschikbaar",
+  "game.history.diceAnalysis": "Analyse",
+  "game.history.noBidsYet": "Nog geen biedingen in deze hand"
 }

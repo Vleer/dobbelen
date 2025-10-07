@@ -1,0 +1,460 @@
+import React, { useState, useEffect } from 'react';
+import { Game } from '../types/game';
+import DiceSVG from './DiceSVG';
+import DiceAnalysisChart from './DiceAnalysisChart';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getPlayerColorFromString } from '../utils/playerColors';
+
+interface HistoryPanelProps {
+  game: Game;
+  isOpen: boolean;
+  onClose: () => void;
+  onTrackAction?: (playerId: string, actionType: 'DOUBT' | 'SPOT_ON') => void;
+}
+
+// Export function to track actions - can be called from outside
+export const trackPlayerAction = (gameId: string, playerId: string, playerName: string, actionType: 'DOUBT' | 'SPOT_ON', wasCorrect: boolean) => {
+  const storageKey = `game_stats_${gameId}`;
+  const savedStats = localStorage.getItem(storageKey);
+  const stats: Record<string, PlayerStats> = savedStats ? JSON.parse(savedStats) : {};
+
+  if (!stats[playerId]) {
+    stats[playerId] = {
+      playerId,
+      playerName,
+      correctDoubts: 0,
+      wrongDoubts: 0,
+      correctSpotOns: 0,
+      wrongSpotOns: 0,
+    };
+  }
+
+  if (actionType === 'DOUBT') {
+    if (wasCorrect) {
+      stats[playerId].correctDoubts += 1;
+    } else {
+      stats[playerId].wrongDoubts += 1;
+    }
+  } else if (actionType === 'SPOT_ON') {
+    if (wasCorrect) {
+      stats[playerId].correctSpotOns += 1;
+    } else {
+      stats[playerId].wrongSpotOns += 1;
+    }
+  }
+
+  localStorage.setItem(storageKey, JSON.stringify(stats));
+};
+
+interface PlayerStats {
+  playerId: string;
+  playerName: string;
+  correctDoubts: number;
+  wrongDoubts: number;
+  correctSpotOns: number;
+  wrongSpotOns: number;
+}
+
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) => {
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'currentHand' | 'lastHand' | 'stats'>('currentHand');
+  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+
+  // Load stats from storage and refresh when panel opens or game changes
+  useEffect(() => {
+    const storageKey = `game_stats_${game.id}`;
+    
+    const savedStats = localStorage.getItem(storageKey);
+    const stats: Record<string, PlayerStats> = savedStats ? JSON.parse(savedStats) : {};
+
+    // Ensure all current players have entries
+    game.players.forEach(player => {
+      if (!stats[player.id]) {
+        stats[player.id] = {
+          playerId: player.id,
+          playerName: player.name,
+          correctDoubts: 0,
+          wrongDoubts: 0,
+          correctSpotOns: 0,
+          wrongSpotOns: 0,
+        };
+      } else {
+        // Update player name in case it changed
+        stats[player.id].playerName = player.name;
+      }
+    });
+
+    setPlayerStats(stats);
+  }, [game.id, game.players, isOpen]); // Refresh when panel opens
+
+  // Get the last hand data from previousRoundPlayers
+  const lastHandPlayers = game.previousRoundPlayers || [];
+  const hasLastHandData = lastHandPlayers.length > 0;
+
+  // Get action details with colored player name
+  const getActionDescription = () => {
+    if (!game.lastActionType || !game.lastActionPlayerId) {
+      return <span>{t('game.history.noAction')}</span>;
+    }
+
+    const actionPlayer = game.players.find(p => p.id === game.lastActionPlayerId);
+    const actionPlayerName = actionPlayer?.name || t('common.unknownPlayer');
+    const playerColor = getPlayerColorFromString(actionPlayer?.color || 'blue');
+
+    const renderColoredPlayerName = (text: string) => {
+      // Replace the {{playerName}} placeholder with colored version
+      const parts = text.split('{{playerName}}');
+      if (parts.length === 2) {
+        return (
+          <span>
+            {parts[0]}
+            <span style={{ color: playerColor, fontWeight: 'bold' }}>
+              {actionPlayerName}
+            </span>
+            {parts[1]}
+          </span>
+        );
+      }
+      // Fallback if translation doesn't have placeholder
+      return <span>{text}</span>;
+    };
+
+    switch (game.lastActionType) {
+      case 'DOUBT':
+        return renderColoredPlayerName(t('game.action.doubt', { playerName: '{{playerName}}' }));
+      case 'SPOT_ON':
+        return renderColoredPlayerName(t('game.action.spotOn', { playerName: '{{playerName}}' }));
+      case 'RAISE':
+        return renderColoredPlayerName(t('game.action.raise', { playerName: '{{playerName}}' }));
+      default:
+        return <span>{t('game.history.unknownAction')}</span>;
+    }
+  };
+
+  const getOutcomeDescription = () => {
+    if (!game.lastEliminatedPlayerId) {
+      return null;
+    }
+
+    const eliminatedPlayer = game.players.find(p => p.id === game.lastEliminatedPlayerId);
+    const eliminatedPlayerName = eliminatedPlayer?.name || t('common.unknownPlayer');
+
+    return (
+      <div className="mt-2 text-red-400 font-semibold">
+        {t('game.history.playerEliminated', { playerName: eliminatedPlayerName })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-lg shadow-2xl border-2 border-amber-950 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#3d1f0d', backdropFilter: 'blur(4px)' }}>
+        {/* Tabs */}
+        <div className="flex border-b" style={{ borderColor: '#3d1f0d' }}>
+          <button
+            onClick={() => setActiveTab('currentHand')}
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+              activeTab === 'currentHand'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
+            }`}
+            style={{ backgroundColor: activeTab === 'currentHand' ? '#78350f' : '#5a2810' }}
+          >
+            {t('game.history.currentHand')}
+          </button>
+          <button
+            onClick={() => setActiveTab('lastHand')}
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+              activeTab === 'lastHand'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
+            }`}
+            style={{ backgroundColor: activeTab === 'lastHand' ? '#78350f' : '#5a2810' }}
+          >
+            {t('game.history.lastHand')}
+          </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+              activeTab === 'stats'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
+            }`}
+            style={{ backgroundColor: activeTab === 'stats' ? '#78350f' : '#5a2810' }}
+          >
+            {t('game.history.stats')}
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-4">
+          {activeTab === 'currentHand' && (
+            <div>
+              {game.currentHandBidHistory && game.currentHandBidHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {game.currentHandBidHistory.map((bid, index) => {
+                    const bidPlayer = game.players.find(p => p.id === bid.playerId);
+                    const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                    const bidPlayerColor = getPlayerColorFromString(bidPlayer?.color || 'blue');
+                    
+                    // Determine action type
+                    const isRaise = !bid.type || bid.type === 'RAISE';
+                    const isDoubt = bid.type === 'DOUBT';
+                    const isSpotOn = bid.type === 'SPOT_ON';
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="p-3 rounded-lg border-2"
+                        style={{ 
+                          backgroundColor: '#14532d', // green-950 for poker felt
+                          borderColor: `${bidPlayerColor}` // Player's color for border
+                        }}
+                      >
+                        {isRaise ? (
+                          // Display RAISE action (bid with dice)
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: bidPlayerColor }}
+                              />
+                              <span 
+                                className="font-semibold"
+                                style={{ color: bidPlayerColor }}
+                              >
+                                {bidPlayerName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 flex-wrap justify-end">
+                              {Array.from({ length: bid.quantity }).map((_, diceIndex) => (
+                                <DiceSVG key={diceIndex} value={bid.faceValue} size="sm" />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          // Display DOUBT or SPOT_ON action (text only)
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: bidPlayerColor }}
+                            />
+                            <span 
+                              className="font-semibold"
+                              style={{ color: bidPlayerColor }}
+                            >
+                              {isDoubt ? t('game.action.doubt', { playerName: bidPlayerName }) : 
+                               isSpotOn ? t('game.action.spotOn', { playerName: bidPlayerName }) : 
+                               bidPlayerName}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center text-green-400 py-8">
+                  {t('game.history.noBidsYet')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'lastHand' && (
+            <div>
+              {hasLastHandData ? (
+                <>
+                  {/* Action Description */}
+                  <div className="mb-4 p-3 bg-green-950 rounded-lg border-2 border-green-700">
+                    <div className="text-white">
+                      {getActionDescription()}
+                    </div>
+                    {game.lastBidQuantity !== undefined && game.lastBidFaceValue && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-green-200 text-sm">
+                          {(() => {
+                            // The bid was made by someone - try multiple sources
+                            // 1. Check previousBid first (most likely to have the right player)
+                            // 2. If action was RAISE, use lastActionPlayerId (they made the bid)
+                            // 3. Otherwise try currentBid
+                            let bidPlayerId = game.previousBid?.playerId;
+                            
+                            if (!bidPlayerId && game.lastActionType === 'RAISE') {
+                              bidPlayerId = game.lastActionPlayerId;
+                            }
+                            
+                            if (!bidPlayerId) {
+                              bidPlayerId = game.currentBid?.playerId;
+                            }
+
+                            // Try to find in current players first, then in previousRoundPlayers
+                            let bidPlayer = bidPlayerId ? game.players.find(p => p.id === bidPlayerId) : null;
+                            if (!bidPlayer && bidPlayerId) {
+                              bidPlayer = lastHandPlayers.find(p => p.id === bidPlayerId);
+                            }
+                            
+                            const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                            const bidPlayerColor = getPlayerColorFromString(bidPlayer?.color || 'blue');
+                            return (
+                              <>
+                                <span style={{ color: bidPlayerColor, fontWeight: 'bold' }}>
+                                  {bidPlayerName}
+                                </span>
+                                {t('game.history.bidPossessive')}
+                              </>
+                            );
+                          })()}
+                        </span>
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          {Array.from({ length: game.lastBidQuantity }).map((_, index) => (
+                            <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {game.lastActualCount !== undefined && game.lastBidFaceValue && (
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-green-200 text-sm">{t('game.history.actualCount')}:</span>
+                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                          {Array.from({ length: game.lastActualCount }).map((_, index) => (
+                            <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {getOutcomeDescription()}
+                  </div>
+
+                  {/* Players and Their Dice */}
+                  <div className="space-y-2">
+                    {lastHandPlayers.map((player) => {
+                      // Find current player to get color
+                      const currentPlayer = game.players.find(p => p.id === player.id);
+                      const playerHexColor = getPlayerColorFromString(currentPlayer?.color || 'blue');
+                      
+                      return (
+                        <div
+                          key={player.id}
+                          className="flex items-center gap-2 p-2 bg-green-950 rounded-lg border-2 border-green-700"
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: playerHexColor }}
+                          />
+                          <span 
+                            className="font-semibold flex-shrink-0"
+                            style={{ color: playerHexColor }}
+                          >
+                            {player.name}
+                          </span>
+                          {/* Display dice inline */}
+                          <div className="flex flex-wrap gap-1 justify-end ml-auto">
+                            {player.dice.map((diceValue, index) => (
+                              <DiceSVG key={index} value={diceValue} size="sm" />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Dice Analysis Chart */}
+                  <div className="mt-4">
+                    <DiceAnalysisChart game={game} players={lastHandPlayers} />
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-green-400 py-8">
+                  {t('game.history.noData')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+            <div>
+              <h3 className="text-green-300 font-semibold mb-3">
+                {t('game.history.playerActions')}
+              </h3>
+              <div className="space-y-3">
+                {game.players.map((player) => {
+                  const stats = playerStats[player.id] || {
+                    playerId: player.id,
+                    playerName: player.name,
+                    correctDoubts: 0,
+                    wrongDoubts: 0,
+                    correctSpotOns: 0,
+                    wrongSpotOns: 0,
+                  };
+                  
+                  const totalActions = stats.correctDoubts + stats.wrongDoubts + stats.correctSpotOns + stats.wrongSpotOns;
+                  const playerHexColor = getPlayerColorFromString(player.color || 'blue');
+                  
+                  return (
+                    <div
+                      key={player.id}
+                      className="p-3 bg-green-950 rounded-lg border-2 border-green-700"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: playerHexColor }}
+                        />
+                        <span 
+                          className="font-semibold"
+                          style={{ color: playerHexColor }}
+                        >
+                          {player.name}
+                        </span>
+                        {totalActions === 0 && (
+                          <span className="text-xs text-green-500 ml-auto">
+                            ({t('game.history.noActions')})
+                          </span>
+                        )}
+                      </div>
+                      
+                      {totalActions > 0 && (
+                        <div className="space-y-2 text-sm">
+                          {/* Doubts Section */}
+                          {(stats.correctDoubts > 0 || stats.wrongDoubts > 0) && (
+                            <div>
+                              <div className="text-green-200 font-semibold mb-1">{t('game.history.doubts')}:</div>
+                              <div className="flex justify-between pl-2">
+                                <span className="text-green-300">{t('game.history.correct')}:</span>
+                                <span className="text-green-400 font-semibold">{stats.correctDoubts}</span>
+                              </div>
+                              <div className="flex justify-between pl-2">
+                                <span className="text-green-300">{t('game.history.wrong')}:</span>
+                                <span className="text-red-400 font-semibold">{stats.wrongDoubts}</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Spot Ons Section */}
+                          {(stats.correctSpotOns > 0 || stats.wrongSpotOns > 0) && (
+                            <div>
+                              <div className="text-green-200 font-semibold mb-1">{t('game.history.spotOns')}:</div>
+                              <div className="flex justify-between pl-2">
+                                <span className="text-green-300">{t('game.history.correct')}:</span>
+                                <span className="text-green-400 font-semibold">{stats.correctSpotOns}</span>
+                              </div>
+                              <div className="flex justify-between pl-2">
+                                <span className="text-green-300">{t('game.history.wrong')}:</span>
+                                <span className="text-red-400 font-semibold">{stats.wrongSpotOns}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+  );
+};
+
+export default HistoryPanel;

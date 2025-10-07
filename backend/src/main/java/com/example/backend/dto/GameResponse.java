@@ -28,6 +28,9 @@ public class GameResponse {
     private Integer lastBidFaceValue;
     private String lastEliminatedPlayerId;
     private boolean canContinue;
+    private String lastActionPlayerId;
+    private String lastActionType;
+    private List<BidInfo> currentHandBidHistory;
 
     public GameResponse() {}
 
@@ -57,6 +60,11 @@ public class GameResponse {
         this.lastBidFaceValue = game.getLastBidFaceValue();
         this.lastEliminatedPlayerId = game.getLastEliminatedPlayerId();
         this.canContinue = game.isCanContinue();
+    this.lastActionPlayerId = game.getLastActionPlayerId();
+    this.lastActionType = game.getLastActionType() != null ? game.getLastActionType().name() : null;
+        this.currentHandBidHistory = game.getCurrentHandBidHistory() != null 
+            ? game.getCurrentHandBidHistory().stream().map(BidInfo::new).toList()
+            : new ArrayList<>();
     }
 
     // Getters and Setters
@@ -188,13 +196,38 @@ public class GameResponse {
         this.canContinue = canContinue;
     }
 
+    public String getLastActionPlayerId() {
+        return lastActionPlayerId;
+    }
+
+    public void setLastActionPlayerId(String lastActionPlayerId) {
+        this.lastActionPlayerId = lastActionPlayerId;
+    }
+
+    public String getLastActionType() {
+        return lastActionType;
+    }
+
+    public void setLastActionType(String lastActionType) {
+        this.lastActionType = lastActionType;
+    }
+
+    public List<BidInfo> getCurrentHandBidHistory() {
+        return currentHandBidHistory;
+    }
+
+    public void setCurrentHandBidHistory(List<BidInfo> currentHandBidHistory) {
+        this.currentHandBidHistory = currentHandBidHistory;
+    }
+
     public static class PlayerInfo {
-        private String id;
-        private String name;
-        private int diceCount;
-        private boolean isEliminated;
-        private List<Integer> dice;
-        private int winTokens;
+    private String id;
+    private String name;
+    private int diceCount;
+    private boolean isEliminated;
+    private List<Integer> dice;
+    private int winTokens;
+    private String color;
 
         public PlayerInfo(Player player) {
             this.id = player.getId();
@@ -203,6 +236,7 @@ public class GameResponse {
             this.isEliminated = player.isEliminated();
             this.dice = new ArrayList<>(player.getDice());
             this.winTokens = player.getWinTokens();
+            this.color = player.getColor();
         }
 
         // Getters and Setters
@@ -211,6 +245,9 @@ public class GameResponse {
 
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 
         public int getDiceCount() { return diceCount; }
         public void setDiceCount(int diceCount) { this.diceCount = diceCount; }

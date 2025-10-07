@@ -5,6 +5,68 @@ import java.util.List;
 import java.util.Random;
 
 public class Game {
+    // Eliminate a player by ID
+    public void eliminatePlayer(String playerId) {
+        if (!eliminatedPlayers.contains(playerId)) {
+            eliminatedPlayers.add(playerId);
+            players.stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .ifPresent(Player::eliminate);
+        }
+    }
+
+    // Start a new round, resetting state but keeping win tokens
+    public void startNewRound() {
+        for (Player player : players) {
+            player.reset();
+            player.rollDice();
+        }
+        eliminatedPlayers.clear();
+        if (dealerIndex < players.size()) {
+            currentPlayerIndex = dealerIndex;
+        }
+        currentBid = null;
+        previousBid = null;
+        winner = null;
+        state = GameState.IN_PROGRESS;
+        roundNumber++;
+        twoPlayerRoundStartIndex = null;
+        clearCurrentHandBidHistory();
+    }
+
+    // Pass dealer button to winner
+    public void passDealerToWinner(String winnerId) {
+        int idx = -1;
+        for (int i = 0; i < players.size(); i++) {
+            if (players.get(i).getId().equals(winnerId)) {
+                idx = i;
+                break;
+            }
+        }
+        if (idx != -1) {
+            dealerIndex = idx;
+        }
+    }
+
+    // Add win token to round winner and check for game winner
+    public boolean addRoundWinner(String winnerId) {
+        Player winnerPlayer = players.stream()
+            .filter(p -> p.getId().equals(winnerId))
+            .findFirst()
+            .orElse(null);
+        if (winnerPlayer != null) {
+            winnerPlayer.addWinToken();
+            // Pass dealer button to the winner regardless of whether game is ending
+            passDealerToWinner(winnerId);
+            if (winnerPlayer.getWinTokens() >= 7) {
+                gameWinner = winnerId;
+                state = GameState.GAME_ENDED;
+                return true;
+            }
+        }
+        return false;
+    }
     private String id;
     private List<Player> players;
     private GameState state;
@@ -26,6 +88,14 @@ public class Game {
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
     private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
     private String lastEliminatedPlayerId; // Store eliminated player from last action
+    // Track the last action performer and type to display in UI
+    private String lastActionPlayerId;
+    private BidType lastActionType;
+    // Track the starting player index when the round transitions to 2 active
+    // players
+    private Integer twoPlayerRoundStartIndex;
+    // Track all bids made in the current hand
+    private List<Bid> currentHandBidHistory;
 
     public Game() {
         this.id = generateShortGameId();
@@ -45,6 +115,10 @@ public class Game {
         this.lastBidQuantity = null;
         this.lastBidFaceValue = null;
         this.lastEliminatedPlayerId = null;
+        this.lastActionPlayerId = null;
+        this.lastActionType = null;
+        this.twoPlayerRoundStartIndex = null;
+        this.currentHandBidHistory = new ArrayList<>();
     }
 
     private String generateShortGameId() {
@@ -62,9 +136,9 @@ public class Game {
         this.players = new ArrayList<>(players);
         this.state = GameState.IN_PROGRESS;
         this.isWaitingForPlayers = false;
-        // Randomize starting player and dealer
-        this.currentPlayerIndex = (int) (Math.random() * players.size());
-        this.dealerIndex = (int) (Math.random() * players.size());
+    // Randomize dealer, and always start with dealer as current player
+    this.dealerIndex = (int) (Math.random() * players.size());
+    this.currentPlayerIndex = this.dealerIndex;
     }
 
     // Getters and Setters
@@ -229,5 +303,60 @@ public class Game {
 
     public void setLastEliminatedPlayerId(String lastEliminatedPlayerId) {
         this.lastEliminatedPlayerId = lastEliminatedPlayerId;
+    }
+
+    public String getLastActionPlayerId() {
+        return lastActionPlayerId;
+    }
+
+    public void setLastActionPlayerId(String lastActionPlayerId) {
+        this.lastActionPlayerId = lastActionPlayerId;
+    }
+
+    public BidType getLastActionType() {
+        return lastActionType;
+    }
+
+    public void setLastActionType(BidType lastActionType) {
+        this.lastActionType = lastActionType;
+    }
+
+    public Integer getTwoPlayerRoundStartIndex() {
+        return twoPlayerRoundStartIndex;
+    }
+
+    public void setTwoPlayerRoundStartIndex(Integer twoPlayerRoundStartIndex) {
+        this.twoPlayerRoundStartIndex = twoPlayerRoundStartIndex;
+    }
+
+    public List<Bid> getCurrentHandBidHistory() {
+        if (currentHandBidHistory == null) {
+            System.out.println("⚠️ WARNING: getCurrentHandBidHistory() returning null!");
+            return new ArrayList<>();
+        }
+        System.out.println("📊 getCurrentHandBidHistory() called. Size: " + currentHandBidHistory.size());
+        return currentHandBidHistory;
+    }
+
+    public void setCurrentHandBidHistory(List<Bid> currentHandBidHistory) {
+        this.currentHandBidHistory = currentHandBidHistory;
+    }
+
+    public void addBidToCurrentHand(Bid bid) {
+        if (this.currentHandBidHistory == null) {
+            this.currentHandBidHistory = new ArrayList<>();
+            System.out.println("⚠️ WARNING: currentHandBidHistory was null, created new ArrayList");
+        }
+        this.currentHandBidHistory.add(bid);
+        System.out.println("✅ Added bid to history. Type: " + (bid.getType() != null ? bid.getType() : "null") + 
+                          ", PlayerId: " + bid.getPlayerId() + ", Total history size: " + this.currentHandBidHistory.size());
+    }
+
+    public void clearCurrentHandBidHistory() {
+        if (this.currentHandBidHistory == null) {
+            this.currentHandBidHistory = new ArrayList<>();
+        } else {
+            this.currentHandBidHistory.clear();
+        }
     }
 }

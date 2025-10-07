@@ -21,7 +21,13 @@ public class GameController {
     @PostMapping
     public ResponseEntity<GameResponse> createGame(@RequestBody CreateGameRequest request) {
         try {
-            Game game = gameService.createGame(request.getPlayerNames());
+            Game game;
+            // Support both old format (playerNames) and new format (players with AI info)
+            if (request.getPlayers() != null && !request.getPlayers().isEmpty()) {
+                game = gameService.createGame(request.getPlayers(), true);
+            } else {
+                game = gameService.createGame(request.getPlayerNames());
+            }
             GameResponse response = new GameResponse(game);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
@@ -148,6 +154,17 @@ public class GameController {
         try {
             gameService.startMultiplayerGame(gameId);
             GameResponse response = gameService.getGameResponse(gameId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/multiplayer/{gameId}/players/{playerId}")
+    public ResponseEntity<GameResponse> removePlayer(@PathVariable String gameId, @PathVariable String playerId) {
+        try {
+            Game game = gameService.removePlayer(gameId, playerId);
+            GameResponse response = new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

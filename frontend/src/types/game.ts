@@ -5,6 +5,7 @@ export interface Player {
   eliminated: boolean;
   dice: number[];
   winTokens: number;
+  color: string;
 }
 
 export interface Bid {
@@ -36,6 +37,9 @@ export interface Game {
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
   lastEliminatedPlayerId?: string;
+  lastActionPlayerId?: string;
+  lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
+  currentHandBidHistory?: Bid[];
 }
 
 export interface CreateGameRequest {
@@ -89,4 +93,7 @@ export interface GameResponse {
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
   lastEliminatedPlayerId?: string;
+  lastActionPlayerId?: string;
+  lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
+  currentHandBidHistory?: Bid[];
 }

@@ -1,12 +1,12 @@
 {
-  "game.title": "🎲 Liar's Dice",
+  "game.title": "Liar's Dice",
   "game.subtitle": "The classic bluffing game",
-  
-  "lobby.createGame": "🎮 Create New Game",
+
+  "lobby.createGame": "Create New Game",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
   "lobby.enterGameId": "Enter 3-character ID",
-  "lobby.username": "Your Username",
+  "lobby.username": "Name",
   "lobby.enterUsername": "Enter your username",
   "lobby.or": "OR",
   "lobby.creating": "Creating...",
@@ -15,7 +15,7 @@
   "lobby.pleaseEnterUsername": "Please enter your username.",
   "lobby.failedToCreateGame": "Failed to create game",
   "lobby.failedToJoinGame": "Failed to join game",
-  
+
   "lobby.shareLink": "Share this link to invite players:",
   "lobby.copy": "Copy",
   "lobby.players": "Players",
@@ -25,7 +25,8 @@
   "lobby.maxPlayersReached": "Maximum of {{maxPlayers}} players reached.",
   "lobby.startGame": "▶ Start Game",
   "lobby.waitingForHost": "Waiting for the host to start the game...",
-  
+  "lobby.needAtLeastTwoPlayers": "At least 2 players required to start",
+
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Current Bid",
   "game.noCurrentBid": "No current bid",
@@ -36,12 +37,13 @@
   "game.fours": "Fours",
   "game.fives": "Fives",
   "game.sixes": "Sixes",
-  
+
   "game.makeYourBid": "Make Your Bid",
   "game.waitingForTurn": "Waiting for your turn...",
+  "game.waitingForNextRound": "Waiting for next round...",
   "game.doubt": "Doubt",
   "game.spotOn": "Spot On",
-  
+
   "game.dealer": "D",
   "game.dice": "dice",
   "game.revealed": "REVEALED",
@@ -49,7 +51,8 @@
   "game.eliminated": "ELIMINATED",
   "game.previousBid": "Previous Bid: {{quantity}} of {{faceValue}}s",
   "game.winTokens": "🏆 {{count}}",
-  
+  "game.diceHidden": "Hidden",
+
   "game.result.thereWere": "There were {{actualCount}} {{faceValue}}s",
   "game.result.bidWasCorrect": "(Bid was correct!)",
   "game.result.bidWasWrong": "(Bid was wrong!)",
@@ -59,52 +62,44 @@
   "game.result.isEliminated": "{{playerName}} is eliminated!",
   "game.result.collected7Tokens": "collected 7 win tokens and is the ultimate",
   "game.result.champion": "champion",
-  
-  "game.analysis.title": "Dice Analysis ({{totalDice}} total dice)",
-  "game.analysis.show": "Show Analysis",
-  "game.analysis.hide": "Hide Analysis",
+  "game.action.doubt": "{{playerName}}: Doubts",
+  "game.action.spotOn": "{{playerName}}: spot on",
+  "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
+
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
-  
+
   "game.dobbelkoning": "Dobbelkoning 🎲👑",
-  
+
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",
-  
+  "errors.failedToRemove": "Failed to remove AI player",
+
   "common.playAgain": "Play Again",
   "common.state": "State",
   "common.unknownPlayer": "Unknown Player",
 
-  "statistics.title": "📊 Game Statistics",
-  "statistics.overview": "Overview",
-  "statistics.bidding": "Bidding",
-  "statistics.patterns": "Patterns",
-  "statistics.history": "History",
-  "statistics.reset": "Reset Statistics",
-  
-  "statistics.totalWins": "Total Wins",
-  "statistics.timesReachedLastRound": "Times Reached Last Round",
-  "statistics.averageBidQuantity": "Average Bid Quantity",
-  "statistics.averageBidFaceValue": "Average Bid Face Value",
-  "statistics.doubtSuccessRate": "Doubt Success Rate",
-  "statistics.bidsExceedingProbability": "Bids Exceeding Probability",
-  "statistics.aggressiveness": "Aggressiveness Rate",
-  "statistics.overUnderAccuracy": "Over/Under Accuracy",
-  "statistics.diceFrequency": "Dice Frequency Distribution",
-  "statistics.recentBidPattern": "Recent Bid Pattern",
-  "statistics.consecutiveHighBids": "Consecutive High Bids",
-  "statistics.consecutiveLowBids": "Consecutive Low Bids",
-  "statistics.bluffDetectionScore": "Bluff Detection Score",
-  "statistics.bluffDetectionDescription": "Higher scores indicate more consistent overbidding",
-  "statistics.recentBids": "Recent Bids",
-  "statistics.recentDoubts": "Recent Doubts",
-  "statistics.doubts": "doubts",
-  "statistics.bids": "bids",
-  "statistics.checked": "checked",
-  "statistics.success": "Success",
-  "statistics.failed": "Failed",
-  "statistics.doubtedBid": "Doubted bid",
-  "statistics.actualCount": "Actual count",
-  "statistics.dragToMove": "Drag header to move window",
-  "statistics.pressEscToClose": "Press ESC to close"
+  "game.history.title": "History",
+  "game.history.currentHand": "Current Hand",
+  "game.history.lastHand": "Last Hand",
+  "game.history.stats": "Stats",
+  "game.history.action": "Action",
+  "game.history.bid": "Bid",
+  "game.history.bidPossessive": "'s bid:",
+  "game.history.actualCount": "Actual Count",
+  "game.history.playerDice": "Player Dice",
+  "game.history.noData": "No previous hand data available",
+  "game.history.comingSoon": "Coming soon...",
+  "game.history.noAction": "No action recorded",
+  "game.history.unknownAction": "Unknown action",
+  "game.history.playerEliminated": "{{playerName}} was eliminated!",
+  "game.history.playerActions": "Player Actions",
+  "game.history.doubts": "Doubts",
+  "game.history.spotOns": "Spot Ons",
+  "game.history.correct": "Correct",
+  "game.history.wrong": "Wrong",
+  "game.history.noActions": "no actions yet",
+  "game.history.noStatsYet": "No statistics available yet",
+  "game.history.diceAnalysis": "Dice Analysis",
+  "game.history.noBidsYet": "No bids made yet in this hand"
 }

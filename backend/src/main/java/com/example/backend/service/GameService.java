@@ -4,28 +4,73 @@ import com.example.backend.model.*;
 import com.example.backend.dto.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
+    private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI turns
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private EasyAIService easyAIService;
+
+    @Autowired
+    private MediumAIService mediumAIService;
 
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
             throw new IllegalArgumentException("Game requires at least 3 players");
         }
 
-        List<Player> players = playerNames.stream()
-                .map(Player::new)
-                .toList();
+        List<Player> players = new ArrayList<>();
+        for (int i = 0; i < playerNames.size(); i++) {
+            String color = COLOR_ORDER[i % COLOR_ORDER.length];
+            String name = playerNames.get(i);
+            // Check if player name starts with "AI " for easy AI or "🧠AI " for medium AI
+            String aiType = null;
+            if (name.startsWith("🧠AI ")) {
+                aiType = "MEDIUM_AI";
+            } else if (name.startsWith("AI ")) {
+                aiType = "EASY_AI";
+            }
+            System.out.println("Creating player " + name + " with color " + color + " (AI: " + aiType + ")");
+            players.add(new Player(name, color, aiType));
+        }
+
+        Game game = new Game(players);
+        
+        // Roll initial dice for all players
+        for (Player player : game.getPlayers()) {
+            player.rollDice();
+        }
+
+        games.put(game.getId(), game);
+        return game;
+    }
+
+    public Game createGame(List<CreateGameRequest.PlayerInfo> playerInfos, boolean usePlayerInfo) {
+        if (playerInfos == null || playerInfos.size() < 3) {
+            throw new IllegalArgumentException("Game requires at least 3 players");
+        }
+
+        List<Player> players = new ArrayList<>();
+        for (int i = 0; i < playerInfos.size(); i++) {
+            CreateGameRequest.PlayerInfo info = playerInfos.get(i);
+            String color = COLOR_ORDER[i % COLOR_ORDER.length];
+            System.out.println("Creating player " + info.getName() + " with color " + color + 
+                " (AI: " + info.isAI() + ", type: " + info.getAiType() + ")");
+            players.add(new Player(info.getName(), color, info.getAiType()));
+        }
 
         Game game = new Game(players);
         
@@ -83,35 +128,13 @@ public class GameService {
         game.setWinner(null);
         game.setState(GameState.IN_PROGRESS);
         game.setRoundNumber(game.getRoundNumber() + 1);
+        game.setTwoPlayerRoundStartIndex(null);
 
         System.out.println("New round started. State: " + game.getState() + ", Current player: "
                 + game.getCurrentPlayer().getName());
     }
 
-    public int countDiceWithValue(List<Player> players, int faceValue, boolean wildOnes) {
-        int count = 0;
-        for (Player player : players) {
-            for (int die : player.getDice()) {
-                if (die == faceValue || (wildOnes && die == 1)) {
-                    count++;
-                }
-            }
-        }
-        return count;
-    }
-
-    public boolean isBidValid(Bid newBid, Bid previousBid) {
-        if (previousBid == null) {
-            return true; // First bid is always valid
-        }
-
-        // New bid must either:
-        // 1. Increase the quantity, OR
-        // 2. Increase the face value while maintaining or increasing quantity
-        return newBid.getQuantity() > previousBid.getQuantity() ||
-               (newBid.getFaceValue() > previousBid.getFaceValue() && 
-                newBid.getQuantity() >= previousBid.getQuantity());
-    }
+    // Use GameRules for bid validation and dice counting
 
     public GameResult processDoubt(String gameId, String doubtingPlayerId) {
         Game game = getGame(gameId);
@@ -123,7 +146,8 @@ public class GameService {
 
         List<Player> activePlayers = game.getActivePlayers();
         // No wild cards - only count exact face value matches
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
+        int actualCount = com.example.backend.model.GameRules.countDiceWithValue(activePlayers,
+                currentBid.getFaceValue(), false);
         
         System.out.println("DOUBT: Player " + doubtingPlayerId + " doubted " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
@@ -138,8 +162,7 @@ public class GameService {
             eliminatedPlayerId = currentBid.getPlayerId();
         }
 
-        // Store previous round players before rerolling (deep copy) - only active
-        // players
+        // Store previous round players before rerolling (deep copy) - only active players
         List<Player> previousPlayers = new ArrayList<>();
         for (Player player : activePlayers) {
             Player copy = new Player(player.getName());
@@ -151,11 +174,18 @@ public class GameService {
         }
         game.setPreviousRoundPlayers(previousPlayers);
 
-        // Store result data
+    // Store result data
         game.setLastActualCount(actualCount);
         game.setLastBidQuantity(currentBid.getQuantity());
         game.setLastBidFaceValue(currentBid.getFaceValue());
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
+    game.setLastActionPlayerId(doubtingPlayerId);
+    game.setLastActionType(BidType.DOUBT);
+    
+        // Add the DOUBT action to current hand history
+        Bid doubtAction = new Bid(doubtingPlayerId, 0, 0, BidType.DOUBT);
+        game.addBidToCurrentHand(doubtAction);
+        System.out.println("📝 Added DOUBT action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
         // Show all dice for 15 seconds
         System.out
@@ -166,11 +196,7 @@ public class GameService {
         System.out.println("🎲 DOUBT: Broadcasted game update with showAllDice=true for game " + gameId);
 
         // Eliminate the player
-        game.getEliminatedPlayers().add(eliminatedPlayerId);
-        game.getPlayers().stream()
-                .filter(p -> p.getId().equals(eliminatedPlayerId))
-                .findFirst()
-                .ifPresent(Player::eliminate);
+    game.eliminatePlayer(eliminatedPlayerId);
 
         // Schedule to enable continue button after 15 seconds
         scheduleEnableContinue(gameId);
@@ -178,12 +204,47 @@ public class GameService {
         // Reset the current bid after elimination
         game.setCurrentBid(null);
 
-        // Always adjust current player index to skip eliminated players
+        // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+        int dealerIndex = game.getDealerIndex();
         int attempts = 0;
-        while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+        int nextIndex = dealerIndex;
+        
+        // Find the next non-eliminated player starting from the dealer
+        while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                 && attempts < game.getPlayers().size()) {
-            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            nextIndex = (nextIndex + 1) % game.getPlayers().size();
             attempts++;
+        }
+        game.setCurrentPlayerIndex(nextIndex);
+
+        // If elimination resulted in 2 active players, set the start index for the
+        // 2-player phase
+        if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+            // If eliminated player had the dealer button, the next non-eliminated after
+            // them starts
+            int startIndex;
+            int eliminatedIndex = -1;
+            for (int i = 0; i < game.getPlayers().size(); i++) {
+                if (game.getPlayers().get(i).getId().equals(eliminatedPlayerId)) {
+                    eliminatedIndex = i;
+                    break;
+                }
+            }
+            if (eliminatedIndex == game.getDealerIndex()) {
+                // Find next non-eliminated player after the eliminated dealer
+                int idx = (eliminatedIndex + 1) % game.getPlayers().size();
+                int attempts2 = 0;
+                while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
+                        && attempts2 < game.getPlayers().size()) {
+                    idx = (idx + 1) % game.getPlayers().size();
+                    attempts2++;
+                }
+                startIndex = idx;
+            } else {
+                // Otherwise, keep the current player as the one to start the 2-player phase
+                startIndex = game.getCurrentPlayerIndex();
+            }
+            game.setTwoPlayerRoundStartIndex(startIndex);
         }
 
         // Check if round is over
@@ -191,20 +252,13 @@ public class GameService {
             if (game.getActivePlayers().size() == 1) {
                 Player roundWinner = game.getActivePlayers().get(0);
                 game.setWinner(roundWinner.getId());
-                roundWinner.addWinToken();
-
-                // Check if this player has won the entire game
-                if (roundWinner.getWinTokens() >= 7) {
-                    game.setGameWinner(roundWinner.getId());
-                    game.setState(GameState.GAME_ENDED);
+                boolean gameEnded = game.addRoundWinner(roundWinner.getId());
+                if (gameEnded) {
                     System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
                             + roundWinner.getWinTokens() + " tokens");
                 } else {
-                    // Pass dealer button to the winner
-                    game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                    game.passDealerToWinner(roundWinner.getId());
                     System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                    // Start new round automatically after a delay to allow result window to show
                     System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
                             + roundWinner.getWinTokens() + " tokens");
                     new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -212,7 +266,7 @@ public class GameService {
                         public void run() {
                             startNewRound(gameId);
                         }
-                    }, 15000); // Start new round after 15 seconds
+                    }, 6000); // Start new round after 15 seconds
                 }
             }
         }
@@ -232,15 +286,15 @@ public class GameService {
 
         List<Player> activePlayers = game.getActivePlayers();
         // No wild cards - only count exact face value matches
-        int actualCount = countDiceWithValue(activePlayers, currentBid.getFaceValue(), false);
+        int actualCount = com.example.backend.model.GameRules.countDiceWithValue(activePlayers,
+                currentBid.getFaceValue(), false);
         
         System.out.println("SPOT ON: Player " + spotOnPlayerId + " called spot on for " +
                 currentBid.getQuantity() + " " + currentBid.getFaceValue() + "s. " +
                 "Actual count: " + actualCount);
 
         if (actualCount == currentBid.getQuantity()) {
-            // Store previous round players before rerolling (deep copy) - only active
-            // players
+            // Store previous round players before rerolling (deep copy) - only active players
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
@@ -257,6 +311,13 @@ public class GameService {
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
+            game.setLastActionPlayerId(spotOnPlayerId);
+            game.setLastActionType(BidType.SPOT_ON);
+            
+            // Add the SPOT_ON action to current hand history
+            Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
+            game.addBidToCurrentHand(spotOnAction);
+            System.out.println("📝 Added SPOT_ON (correct) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_CORRECT: Setting showAllDice=true for game " + gameId + " at "
@@ -270,14 +331,23 @@ public class GameService {
             // Reset the current bid
             game.setCurrentBid(null);
 
-            // Move to next player
-            game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+            // After a correct spot-on, start with the dealer
+            int dealerIndex = game.getDealerIndex();
+            int attempts = 0;
+            int nextIndex = dealerIndex;
+            
+            // Find the next non-eliminated player starting from the dealer
+            while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
+                    && attempts < game.getPlayers().size()) {
+                nextIndex = (nextIndex + 1) % game.getPlayers().size();
+                attempts++;
+            }
+            game.setCurrentPlayerIndex(nextIndex);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
         } else {
-            // Store previous round players before rerolling (deep copy) - only active
-            // players
+            // Store previous round players before rerolling (deep copy) - only active players
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
@@ -294,6 +364,13 @@ public class GameService {
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
             game.setLastEliminatedPlayerId(spotOnPlayerId);
+            game.setLastActionPlayerId(spotOnPlayerId);
+            game.setLastActionType(BidType.SPOT_ON);
+            
+            // Add the SPOT_ON action to current hand history
+            Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
+            game.addBidToCurrentHand(spotOnAction);
+            System.out.println("📝 Added SPOT_ON (wrong) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_WRONG: Setting showAllDice=true for game " + gameId + " at "
@@ -304,11 +381,7 @@ public class GameService {
             System.out.println("🎲 SPOT_ON_WRONG: Broadcasted game update with showAllDice=true for game " + gameId);
 
             // Spot on is wrong - spot on player is eliminated
-            game.getEliminatedPlayers().add(spotOnPlayerId);
-            game.getPlayers().stream()
-                    .filter(p -> p.getId().equals(spotOnPlayerId))
-                    .findFirst()
-                    .ifPresent(Player::eliminate);
+        game.eliminatePlayer(spotOnPlayerId);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -316,12 +389,45 @@ public class GameService {
             // Reset the current bid after elimination
             game.setCurrentBid(null);
 
-            // Always adjust current player index to skip eliminated players
+            // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+            int dealerIndex = game.getDealerIndex();
             int attempts = 0;
-            while (game.getEliminatedPlayers().contains(game.getCurrentPlayer().getId())
+            int nextIndex = dealerIndex;
+            
+            // Find the next non-eliminated player starting from the dealer
+            while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                     && attempts < game.getPlayers().size()) {
-                game.setCurrentPlayerIndex((game.getCurrentPlayerIndex() + 1) % game.getPlayers().size());
+                nextIndex = (nextIndex + 1) % game.getPlayers().size();
                 attempts++;
+            }
+            game.setCurrentPlayerIndex(nextIndex);
+
+            // If elimination resulted in 2 active players, set the start index for the
+            // 2-player phase
+            if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+                int startIndex;
+                int eliminatedIndex = -1;
+                for (int i = 0; i < game.getPlayers().size(); i++) {
+                    if (game.getPlayers().get(i).getId().equals(spotOnPlayerId)) {
+                        eliminatedIndex = i;
+                        break;
+                    }
+                }
+                if (eliminatedIndex == game.getDealerIndex()) {
+                    // Find next non-eliminated player after the eliminated dealer
+                    int idx = (eliminatedIndex + 1) % game.getPlayers().size();
+                    int attempts2 = 0;
+                    while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
+                            && attempts2 < game.getPlayers().size()) {
+                        idx = (idx + 1) % game.getPlayers().size();
+                        attempts2++;
+                    }
+                    startIndex = idx;
+                } else {
+                    // Otherwise, keep the current player as the one to start the 2-player phase
+                    startIndex = game.getCurrentPlayerIndex();
+                }
+                game.setTwoPlayerRoundStartIndex(startIndex);
             }
 
             // Check if round is over
@@ -329,24 +435,18 @@ public class GameService {
                 if (game.getActivePlayers().size() == 1) {
                     Player roundWinner = game.getActivePlayers().get(0);
                     game.setWinner(roundWinner.getId());
-                    roundWinner.addWinToken();
-
-                    // Check if this player has won the entire game
-                    if (roundWinner.getWinTokens() >= 7) {
-                        game.setGameWinner(roundWinner.getId());
-                        game.setState(GameState.GAME_ENDED);
+                    boolean gameEnded = game.addRoundWinner(roundWinner.getId());
+                    if (gameEnded) {
+                        // Game ended, nothing more to do
                     } else {
-                        // Pass dealer button to the winner
-                        game.setDealerIndex(game.getPlayers().indexOf(roundWinner));
+                        game.passDealerToWinner(roundWinner.getId());
                         System.out.println("Dealer button passed to: " + roundWinner.getName());
-
-                        // Start new round automatically after a delay to allow result window to show
                         new java.util.Timer().schedule(new java.util.TimerTask() {
                             @Override
                             public void run() {
                                 startNewRound(gameId);
                             }
-                        }, 15000); // Start new round after 15 seconds
+                        }, 6000); // Start new round after 15 seconds
                     }
                 }
             }
@@ -380,7 +480,7 @@ public class GameService {
 
         Bid newBid = new Bid(playerId, quantity, faceValue, BidType.RAISE);
 
-        if (!isBidValid(newBid, game.getCurrentBid())) {
+        if (!com.example.backend.model.GameRules.isBidValid(newBid, game.getCurrentBid())) {
             String currentBidStr = game.getCurrentBid() != null
                     ? game.getCurrentBid().getQuantity() + " of " + game.getCurrentBid().getFaceValue()
                     : "none";
@@ -391,6 +491,10 @@ public class GameService {
         // Store the current bid as previous before setting the new one
         game.setPreviousBid(game.getCurrentBid());
         game.setCurrentBid(newBid);
+        
+        // Add the bid to the current hand history
+        game.addBidToCurrentHand(newBid);
+        System.out.println("📝 Added RAISE action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
 
         // Move to next player
         int oldPlayerIndex = game.getCurrentPlayerIndex();
@@ -440,6 +544,13 @@ public class GameService {
         return game;
     }
 
+    private static final String[] COLOR_ORDER = {"blue", "red", "green", "yellow", "brown", "cyan"};
+
+    private String getNextColor(Game game) {
+        int currentPlayerCount = game.getPlayers().size();
+        return COLOR_ORDER[currentPlayerCount % COLOR_ORDER.length];
+    }
+
     public Game joinGame(String gameId, String playerName) {
         System.out.println("JOIN ATTEMPT: GameId=" + gameId + ", PlayerName=" + playerName + ", Timestamp="
                 + System.currentTimeMillis());
@@ -464,10 +575,20 @@ public class GameService {
             throw new IllegalArgumentException("Player with name '" + playerName + "' already exists in this game");
         }
 
-        Player player = new Player(playerName);
+        String color = getNextColor(game);
+        // Check if player name starts with "🧠AI " for medium AI, or "AI " for easy AI
+        String aiType = null;
+        if (playerName.startsWith("🧠AI ")) {
+            aiType = "MEDIUM_AI";
+        } else if (playerName.startsWith("AI ")) {
+            aiType = "EASY_AI";
+        }
+        System.out.println("Assigning color " + color + " to player " + playerName + " (AI: " + aiType + ")");
+        
+        Player player = new Player(playerName, color, aiType);
         game.getPlayers().add(player);
 
-        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size());
+        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size() + ", isAI=" + (aiType != null));
 
         // Don't auto-start the game - let the host control when to start
         // The game will remain in WAITING_FOR_PLAYERS state until manually started
@@ -479,13 +600,43 @@ public class GameService {
         joinGame(gameId, playerName);
     }
 
+    public Game removePlayer(String gameId, String playerId) {
+        System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", PlayerId=" + playerId + ", Timestamp="
+                + System.currentTimeMillis());
+
+        Game game = getGame(gameId);
+        if (game == null) {
+            System.out.println("REMOVE FAILED: Game not found for ID=" + gameId);
+            throw new IllegalArgumentException("Game not found");
+        }
+
+        // Only allow removing players before game starts
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            System.out.println("REMOVE FAILED: Game already started, state=" + game.getState());
+            throw new IllegalArgumentException("Cannot remove player after game has started");
+        }
+
+        // Find and remove the player
+        boolean removed = game.getPlayers().removeIf(p -> p.getId().equals(playerId));
+
+        if (!removed) {
+            System.out.println("REMOVE FAILED: Player not found with ID=" + playerId);
+            throw new IllegalArgumentException("Player not found");
+        }
+
+        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players=" + game.getPlayers().size());
+
+        return game;
+    }
+
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {
             throw new IllegalArgumentException("Game not found");
         }
-        if (game.getPlayers().size() < 1) {
-            throw new IllegalArgumentException("Not enough players to start game");
+        // Require at least 2 players to start a multiplayer game
+        if (game.getPlayers().size() < 2) {
+            throw new IllegalArgumentException("Not enough players to start game. Minimum 2 players required");
         }
 
         // Initialize all players
@@ -494,9 +645,10 @@ public class GameService {
             player.rollDice();
         }
 
-        // Randomize starting player and dealer
-        game.setCurrentPlayerIndex((int) (Math.random() * game.getPlayers().size()));
-        game.setDealerIndex((int) (Math.random() * game.getPlayers().size()));
+        // Randomize dealer, and always start with dealer as current player
+        int dealerIdx = (int) (Math.random() * game.getPlayers().size());
+        game.setDealerIndex(dealerIdx);
+        game.setCurrentPlayerIndex(dealerIdx);
 
         game.setState(GameState.IN_PROGRESS);
         game.setWaitingForPlayers(false);
@@ -587,7 +739,7 @@ public class GameService {
                     continueGame(gameId);
                 }
             }
-        }, 15000); // 15 seconds
+        }, 6000); // 15 seconds
     }
 
     public void continueGame(String gameId) {
@@ -596,6 +748,10 @@ public class GameService {
                 + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null") + ", canContinue="
                 + (game != null ? game.isCanContinue() : "null"));
         if (game != null && game.isShowAllDice() && game.isCanContinue()) {
+            // Clear the bid history for the new hand
+            game.clearCurrentHandBidHistory();
+            System.out.println("🔄 CONTINUE: Cleared current hand bid history for new hand");
+            
             // Reroll dice for all remaining active players
             for (Player player : game.getActivePlayers()) {
                 player.rollDice();
@@ -610,6 +766,167 @@ public class GameService {
             System.out.println("🔄 CONTINUE: Broadcasted game update with showAllDice=false for game " + gameId);
         } else {
             System.out.println("🔄 CONTINUE: Cannot continue game " + gameId + " - conditions not met");
+        }
+    }
+
+    /**
+     * Scheduled task to process AI turns
+     * Runs every 500ms to check if any AI player needs to make a move
+     */
+    @Scheduled(fixedDelay = 500)
+    public void processAITurns() {
+        if (games.isEmpty()) {
+            return; // No games to process
+        }
+        
+        for (Game game : games.values()) {
+            // Skip if game is not in progress
+            if (game.getState() != GameState.IN_PROGRESS) {
+                continue;
+            }
+
+            // Skip if showing all dice (round ended)
+            if (game.isShowAllDice()) {
+                continue;
+            }
+
+            // Skip if already processing this game's AI turn
+            String gameId = game.getId();
+            if (processingAITurns.contains(gameId)) {
+                continue;
+            }
+
+            // Check if current player is AI
+            Player currentPlayer = game.getCurrentPlayer();
+            if (currentPlayer == null) {
+                continue;
+            }
+            
+            if (!currentPlayer.isAI()) {
+                continue;
+            }
+
+            System.out.println("🤖 AI DETECTION: Found AI player " + currentPlayer.getName() + 
+                " (ID: " + currentPlayer.getId() + ", aiType: " + currentPlayer.getAiType() + 
+                ") in game " + gameId);
+
+            // Check if AI can act (use appropriate service based on AI type)
+            boolean canAct = "MEDIUM_AI".equals(currentPlayer.getAiType())
+                ? mediumAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId())
+                : easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+            
+            if (!canAct) {
+                System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " already acted this turn");
+                continue;
+            }
+
+            // Check if delay after round end has passed
+            boolean canActAfterRound = "MEDIUM_AI".equals(currentPlayer.getAiType())
+                ? mediumAIService.canActAfterRoundEnd(gameId, game.isShowAllDice())
+                : easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+            
+            if (!canActAfterRound) {
+                System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " waiting for round end delay");
+                continue;
+            }
+
+            // Mark as processing to prevent concurrent execution
+            processingAITurns.add(gameId);
+
+            System.out.println("🤖 AI START: Starting AI turn for " + currentPlayer.getName());
+
+            // Process AI turn asynchronously
+            new Thread(() -> {
+                try {
+                    executeAITurn(game, currentPlayer);
+                } catch (Exception e) {
+                    System.err.println("Error processing AI turn for game " + gameId + ": " + e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    processingAITurns.remove(gameId);
+                }
+            }).start();
+        }
+    }
+
+    /**
+     * Execute an AI player's turn
+     */
+    private void executeAITurn(Game game, Player aiPlayer) {
+        String gameId = game.getId();
+        String aiType = aiPlayer.getAiType();
+        boolean isMediumAI = "MEDIUM_AI".equals(aiType);
+        
+        System.out.println("🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " is thinking...");
+
+        // Mark that AI is acting (use appropriate service)
+        if (isMediumAI) {
+            mediumAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+        } else {
+            easyAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+        }
+
+        try {
+            // Simulate thinking delay
+            long thinkingDelay = isMediumAI ? mediumAIService.getThinkingDelay() : easyAIService.getThinkingDelay();
+            Thread.sleep(thinkingDelay);
+
+            // Generate AI action (use appropriate service and method)
+            Object actionObj;
+            if (isMediumAI) {
+                actionObj = mediumAIService.generateEducatedAction(game, aiPlayer);
+            } else {
+                actionObj = easyAIService.generateRandomAction(
+                    game.getCurrentBid(),
+                    game.getPlayers().size(),
+                    game.getRoundNumber()
+                );
+            }
+            
+            // Both services use same AIAction class structure
+            String actionType;
+            Integer quantity = null;
+            Integer faceValue = null;
+            
+            if (isMediumAI) {
+                MediumAIService.AIAction medAction = (MediumAIService.AIAction) actionObj;
+                actionType = medAction.getAction();
+                quantity = medAction.getQuantity();
+                faceValue = medAction.getFaceValue();
+            } else {
+                EasyAIService.AIAction easyAction = (EasyAIService.AIAction) actionObj;
+                actionType = easyAction.getAction();
+                quantity = easyAction.getQuantity();
+                faceValue = easyAction.getFaceValue();
+            }
+
+            System.out.println("🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " chooses: " + actionType);
+
+            // Execute the action
+            switch (actionType) {
+                case "bid":
+                    processBid(gameId, aiPlayer.getId(), quantity, faceValue);
+                    broadcastGameUpdate(gameId);
+                    break;
+                case "doubt":
+                    processDoubt(gameId, aiPlayer.getId());
+                    broadcastGameUpdate(gameId);
+                    break;
+                case "spotOn":
+                    processSpotOn(gameId, aiPlayer.getId());
+                    broadcastGameUpdate(gameId);
+                    break;
+                default:
+                    System.err.println("Unknown AI action: " + actionType);
+            }
+            
+            System.out.println("🤖 AI DONE: " + aiPlayer.getName() + " completed " + actionType);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("AI turn interrupted for " + aiPlayer.getName());
+        } catch (Exception e) {
+            System.err.println("Error executing AI turn: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
