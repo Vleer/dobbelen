@@ -14,6 +14,7 @@ import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
+import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 
 interface GameTableProps {
@@ -39,6 +40,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
   const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
   const [previousRoundNumber, setPreviousRoundNumber] = useState<number>(1);

@@ -246,6 +246,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
               left: dragPosition.x,
               top: dragPosition.y,
               cursor: isDragging ? "grabbing" : "grab",
+              zIndex: isDragging ? 1000 : 60,
             }
           : {}
       }

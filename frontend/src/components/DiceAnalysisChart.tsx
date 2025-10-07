@@ -34,9 +34,9 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
 
   // Use previousRoundPlayers when showing results (contains dice state at time of doubt/spot-on)
   // Use current players as fallback for when results aren't being shown
-  const playersToAnalyze = game.showAllDice && game.previousRoundPlayers.length > 0 
-    ? game.previousRoundPlayers 
-    : game.players;
+  const playersToAnalyze = (game?.showAllDice && (game.previousRoundPlayers?.length || 0) > 0)
+    ? game!.previousRoundPlayers!
+    : game?.players || [];
 
   // Group dice by player and face value
   const diceByPlayer: {

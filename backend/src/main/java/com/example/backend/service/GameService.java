@@ -16,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameService {
     private final Map<String, Game> games = new ConcurrentHashMap<>();
-    private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI turns
+    private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI
+                                                                                 // turns
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -48,7 +49,7 @@ public class GameService {
         }
 
         Game game = new Game(players);
-        
+
         // Roll initial dice for all players
         for (Player player : game.getPlayers()) {
             player.rollDice();
@@ -67,8 +68,8 @@ public class GameService {
         for (int i = 0; i < playerInfos.size(); i++) {
             CreateGameRequest.PlayerInfo info = playerInfos.get(i);
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
-            System.out.println("Creating player " + info.getName() + " with color " + color + 
-                " (AI: " + info.isAI() + ", type: " + info.getAiType() + ")");
+            System.out.println("Creating player " + info.getName() + " with color " + color +
+                    " (AI: " + info.isAI() + ", type: " + info.getAiType() + ")");
             players.add(new Player(info.getName(), color, info.getAiType()));
         }
 
@@ -101,6 +102,10 @@ public class GameService {
                 + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
         
         // Check if game is already completed
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found: " + gameId);
+        }
+
         if (game.hasGameWinner()) {
             System.out.println("Game already has winner, not starting new round");
             return; // Don't start new round if game is over
@@ -162,7 +167,8 @@ public class GameService {
             eliminatedPlayerId = currentBid.getPlayerId();
         }
 
-        // Store previous round players before rerolling (deep copy) - only active players
+        // Store previous round players before rerolling (deep copy) - only active
+        // players
         List<Player> previousPlayers = new ArrayList<>();
         for (Player player : activePlayers) {
             Player copy = new Player(player.getName());
@@ -174,18 +180,19 @@ public class GameService {
         }
         game.setPreviousRoundPlayers(previousPlayers);
 
-    // Store result data
+        // Store result data
         game.setLastActualCount(actualCount);
         game.setLastBidQuantity(currentBid.getQuantity());
         game.setLastBidFaceValue(currentBid.getFaceValue());
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
-    game.setLastActionPlayerId(doubtingPlayerId);
-    game.setLastActionType(BidType.DOUBT);
-    
+        game.setLastActionPlayerId(doubtingPlayerId);
+        game.setLastActionType(BidType.DOUBT);
+
         // Add the DOUBT action to current hand history
         Bid doubtAction = new Bid(doubtingPlayerId, 0, 0, BidType.DOUBT);
         game.addBidToCurrentHand(doubtAction);
-        System.out.println("📝 Added DOUBT action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
+        System.out.println("📝 Added DOUBT action to history. Current hand history size: "
+                + game.getCurrentHandBidHistory().size());
 
         // Show all dice for 15 seconds
         System.out
@@ -196,7 +203,7 @@ public class GameService {
         System.out.println("🎲 DOUBT: Broadcasted game update with showAllDice=true for game " + gameId);
 
         // Eliminate the player
-    game.eliminatePlayer(eliminatedPlayerId);
+        game.eliminatePlayer(eliminatedPlayerId);
 
         // Schedule to enable continue button after 15 seconds
         scheduleEnableContinue(gameId);
@@ -204,11 +211,12 @@ public class GameService {
         // Reset the current bid after elimination
         game.setCurrentBid(null);
 
-        // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+        // After elimination, the turn should start with the dealer or next
+        // non-eliminated player after dealer
         int dealerIndex = game.getDealerIndex();
         int attempts = 0;
         int nextIndex = dealerIndex;
-        
+
         // Find the next non-eliminated player starting from the dealer
         while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                 && attempts < game.getPlayers().size()) {
@@ -294,7 +302,8 @@ public class GameService {
                 "Actual count: " + actualCount);
 
         if (actualCount == currentBid.getQuantity()) {
-            // Store previous round players before rerolling (deep copy) - only active players
+            // Store previous round players before rerolling (deep copy) - only active
+            // players
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
@@ -313,11 +322,12 @@ public class GameService {
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
-            
+
             // Add the SPOT_ON action to current hand history
             Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
             game.addBidToCurrentHand(spotOnAction);
-            System.out.println("📝 Added SPOT_ON (correct) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
+            System.out.println("📝 Added SPOT_ON (correct) action to history. Current hand history size: "
+                    + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_CORRECT: Setting showAllDice=true for game " + gameId + " at "
@@ -335,7 +345,7 @@ public class GameService {
             int dealerIndex = game.getDealerIndex();
             int attempts = 0;
             int nextIndex = dealerIndex;
-            
+
             // Find the next non-eliminated player starting from the dealer
             while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                     && attempts < game.getPlayers().size()) {
@@ -347,7 +357,8 @@ public class GameService {
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
         } else {
-            // Store previous round players before rerolling (deep copy) - only active players
+            // Store previous round players before rerolling (deep copy) - only active
+            // players
             List<Player> previousPlayers = new ArrayList<>();
             for (Player player : activePlayers) {
                 Player copy = new Player(player.getName());
@@ -366,11 +377,12 @@ public class GameService {
             game.setLastEliminatedPlayerId(spotOnPlayerId);
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
-            
+
             // Add the SPOT_ON action to current hand history
             Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
             game.addBidToCurrentHand(spotOnAction);
-            System.out.println("📝 Added SPOT_ON (wrong) action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
+            System.out.println("📝 Added SPOT_ON (wrong) action to history. Current hand history size: "
+                    + game.getCurrentHandBidHistory().size());
 
             // Show all dice for 15 seconds
             System.out.println("🎲 SPOT_ON_WRONG: Setting showAllDice=true for game " + gameId + " at "
@@ -381,7 +393,7 @@ public class GameService {
             System.out.println("🎲 SPOT_ON_WRONG: Broadcasted game update with showAllDice=true for game " + gameId);
 
             // Spot on is wrong - spot on player is eliminated
-        game.eliminatePlayer(spotOnPlayerId);
+            game.eliminatePlayer(spotOnPlayerId);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -389,11 +401,12 @@ public class GameService {
             // Reset the current bid after elimination
             game.setCurrentBid(null);
 
-            // After elimination, the turn should start with the dealer or next non-eliminated player after dealer
+            // After elimination, the turn should start with the dealer or next
+            // non-eliminated player after dealer
             int dealerIndex = game.getDealerIndex();
             int attempts = 0;
             int nextIndex = dealerIndex;
-            
+
             // Find the next non-eliminated player starting from the dealer
             while (game.getEliminatedPlayers().contains(game.getPlayers().get(nextIndex).getId())
                     && attempts < game.getPlayers().size()) {
@@ -491,10 +504,11 @@ public class GameService {
         // Store the current bid as previous before setting the new one
         game.setPreviousBid(game.getCurrentBid());
         game.setCurrentBid(newBid);
-        
+
         // Add the bid to the current hand history
         game.addBidToCurrentHand(newBid);
-        System.out.println("📝 Added RAISE action to history. Current hand history size: " + game.getCurrentHandBidHistory().size());
+        System.out.println("📝 Added RAISE action to history. Current hand history size: "
+                + game.getCurrentHandBidHistory().size());
 
         // Move to next player
         int oldPlayerIndex = game.getCurrentPlayerIndex();
@@ -544,7 +558,7 @@ public class GameService {
         return game;
     }
 
-    private static final String[] COLOR_ORDER = {"blue", "red", "green", "yellow", "brown", "cyan"};
+    private static final String[] COLOR_ORDER = { "blue", "red", "green", "yellow", "brown", "cyan" };
 
     private String getNextColor(Game game) {
         int currentPlayerCount = game.getPlayers().size();
@@ -584,11 +598,12 @@ public class GameService {
             aiType = "EASY_AI";
         }
         System.out.println("Assigning color " + color + " to player " + playerName + " (AI: " + aiType + ")");
-        
+
         Player player = new Player(playerName, color, aiType);
         game.getPlayers().add(player);
 
-        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size() + ", isAI=" + (aiType != null));
+        System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size()
+                + ", isAI=" + (aiType != null));
 
         // Don't auto-start the game - let the host control when to start
         // The game will remain in WAITING_FOR_PLAYERS state until manually started
@@ -624,7 +639,8 @@ public class GameService {
             throw new IllegalArgumentException("Player not found");
         }
 
-        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players=" + game.getPlayers().size());
+        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players="
+                + game.getPlayers().size());
 
         return game;
     }
@@ -751,7 +767,7 @@ public class GameService {
             // Clear the bid history for the new hand
             game.clearCurrentHandBidHistory();
             System.out.println("🔄 CONTINUE: Cleared current hand bid history for new hand");
-            
+
             // Reroll dice for all remaining active players
             for (Player player : game.getActivePlayers()) {
                 player.rollDice();
@@ -778,7 +794,7 @@ public class GameService {
         if (games.isEmpty()) {
             return; // No games to process
         }
-        
+
         for (Game game : games.values()) {
             // Skip if game is not in progress
             if (game.getState() != GameState.IN_PROGRESS) {
@@ -801,20 +817,20 @@ public class GameService {
             if (currentPlayer == null) {
                 continue;
             }
-            
+
             if (!currentPlayer.isAI()) {
                 continue;
             }
 
-            System.out.println("🤖 AI DETECTION: Found AI player " + currentPlayer.getName() + 
-                " (ID: " + currentPlayer.getId() + ", aiType: " + currentPlayer.getAiType() + 
-                ") in game " + gameId);
+            System.out.println("🤖 AI DETECTION: Found AI player " + currentPlayer.getName() +
+                    " (ID: " + currentPlayer.getId() + ", aiType: " + currentPlayer.getAiType() +
+                    ") in game " + gameId);
 
             // Check if AI can act (use appropriate service based on AI type)
             boolean canAct = "MEDIUM_AI".equals(currentPlayer.getAiType())
-                ? mediumAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId())
-                : easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
-            
+                    ? mediumAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId())
+                    : easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+
             if (!canAct) {
                 System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " already acted this turn");
                 continue;
@@ -822,9 +838,9 @@ public class GameService {
 
             // Check if delay after round end has passed
             boolean canActAfterRound = "MEDIUM_AI".equals(currentPlayer.getAiType())
-                ? mediumAIService.canActAfterRoundEnd(gameId, game.isShowAllDice())
-                : easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
-            
+                    ? mediumAIService.canActAfterRoundEnd(gameId, game.isShowAllDice())
+                    : easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+
             if (!canActAfterRound) {
                 System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " waiting for round end delay");
                 continue;
@@ -856,7 +872,7 @@ public class GameService {
         String gameId = game.getId();
         String aiType = aiPlayer.getAiType();
         boolean isMediumAI = "MEDIUM_AI".equals(aiType);
-        
+
         System.out.println("🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " is thinking...");
 
         // Mark that AI is acting (use appropriate service)
@@ -877,17 +893,16 @@ public class GameService {
                 actionObj = mediumAIService.generateEducatedAction(game, aiPlayer);
             } else {
                 actionObj = easyAIService.generateRandomAction(
-                    game.getCurrentBid(),
-                    game.getPlayers().size(),
-                    game.getRoundNumber()
-                );
+                        game.getCurrentBid(),
+                        game.getPlayers().size(),
+                        game.getRoundNumber());
             }
-            
+
             // Both services use same AIAction class structure
             String actionType;
             Integer quantity = null;
             Integer faceValue = null;
-            
+
             if (isMediumAI) {
                 MediumAIService.AIAction medAction = (MediumAIService.AIAction) actionObj;
                 actionType = medAction.getAction();
@@ -900,7 +915,8 @@ public class GameService {
                 faceValue = easyAction.getFaceValue();
             }
 
-            System.out.println("🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " chooses: " + actionType);
+            System.out.println(
+                    "🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " chooses: " + actionType);
 
             // Execute the action
             switch (actionType) {
@@ -919,7 +935,7 @@ public class GameService {
                 default:
                     System.err.println("Unknown AI action: " + actionType);
             }
-            
+
             System.out.println("🤖 AI DONE: " + aiPlayer.getName() + " completed " + actionType);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
