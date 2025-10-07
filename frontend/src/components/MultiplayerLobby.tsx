@@ -45,8 +45,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   // Separate function to join game with a specific ID
   const handleAutoJoin = useCallback(
-    async (gameIdToJoin: string, options?: { updateHistory?: boolean }) => {
-      if (!playerName.trim() || hasJoined) {
+    async (
+      gameIdToJoin: string,
+      options?: { updateHistory?: boolean; playerNameOverride?: string }
+    ) => {
+      // Allow passing an override player name to avoid race conditions
+      const nameToUse = options?.playerNameOverride ?? playerName;
+
+      if (!nameToUse?.trim() || hasJoined) {
         return;
       }
 
@@ -58,11 +64,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           "Auto-joining game with ID:",
           gameIdToJoin,
           "and name:",
-          playerName
+          nameToUse
         );
         const joinedGame = await gameApi.joinMultiplayerGame(
           gameIdToJoin,
-          playerName
+          nameToUse
         );
         console.log("Auto-joined game successfully:", joinedGame);
 
@@ -101,8 +107,43 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
       setGameId(urlGameId);
-      // Automatically try to join the game but don't update history (we want to remove the query string)
-      handleAutoJoin(urlGameId, { updateHistory: false });
+
+      // Determine navigation type. If the user refreshed the page (reload),
+      // we should NOT auto-join — instead just go to the home screen (remove query).
+      let navType: string | undefined;
+      try {
+        const navEntries = performance.getEntriesByType(
+          "navigation"
+        ) as PerformanceNavigationTiming[];
+        if (navEntries && navEntries.length > 0) {
+          navType = navEntries[0].type;
+        } else if ((performance as any).navigation) {
+          // Fallback (deprecated API)
+          const pnav = (performance as any).navigation;
+          navType = pnav.type === 1 ? "reload" : "navigate";
+        }
+      } catch (e) {
+        console.warn("Could not determine navigation type", e);
+      }
+
+      const randomName = getRandomDutchName();
+      setPlayerName(randomName);
+
+      const isReload = navType === "reload";
+
+      if (!isReload) {
+        // Automatically try to join the game but don't update history (we want to remove the query string)
+        // Pass the prefilled name as override to avoid race conditions
+        handleAutoJoin(urlGameId, {
+          updateHistory: false,
+          playerNameOverride: randomName,
+        });
+      } else {
+        // If this was a page refresh, don't attempt to auto-join — just show the home lobby.
+        console.log(
+          "Page navigation was a reload — skipping auto-join and returning to home screen"
+        );
+      }
 
       // Remove the query string from the visible URL while preserving state
       const cleanedUrl = `${window.location.origin}${window.location.pathname}`;

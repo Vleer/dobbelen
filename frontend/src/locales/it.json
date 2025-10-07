@@ -1,8 +1,8 @@
 {
-  "game.title": "🎲 Dadi del Menzognero",
+  "game.title": "Dadi del Menzognero",
   "game.subtitle": "Il classico gioco di bluff",
 
-  "lobby.createGame": "🎮 Crea Nuova Partita",
+  "lobby.createGame": "Crea Nuova Partita",
   "lobby.joinGame": "Unisciti alla Partita",
   "lobby.gameId": "ID Partita",
   "lobby.enterGameId": "Inserisci l'ID a 3 caratteri",
