@@ -83,11 +83,19 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         }
       } catch (err: any) {
         console.error("Error auto-joining game:", err);
-        setError(
-          err.response?.data?.message ||
-            err.message ||
-            t("lobby.failedToJoinGame")
-        );
+        // If join failed, try fetching the game to determine if it exists.
+        try {
+          await gameApi.getMultiplayerGame(gameIdToJoin);
+          // If the GET succeeded the game exists; show the server-provided message if present
+          setError(
+            err.response?.data?.message ||
+              err.message ||
+              t("lobby.failedToJoinGame")
+          );
+        } catch (getErr) {
+          // If GET failed, the game likely doesn't exist
+          setError("game not found");
+        }
       } finally {
         setIsJoining(false);
       }
@@ -299,11 +307,17 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     } catch (err: any) {
       console.error("Error joining game:", err);
       console.error("Error details:", err.response?.data);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          t("lobby.failedToJoinGame")
-      );
+      // Probe the game endpoint to decide whether the game code is missing
+      try {
+        await gameApi.getMultiplayerGame(gameId);
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            t("lobby.failedToJoinGame")
+        );
+      } catch (getErr) {
+        setError("Game not found");
+      }
     } finally {
       setIsJoining(false);
     }
