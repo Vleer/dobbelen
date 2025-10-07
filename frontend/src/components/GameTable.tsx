@@ -61,6 +61,16 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing game start sound');
       audioService.playGameStart();
       setHasPlayedGameStart(true);
+      // If we're on desktop, expand the history panel automatically
+      try {
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+        if (isDesktop) {
+          console.log('Desktop detected - opening history panel on game start');
+          setIsHistoryOpen(true);
+        }
+      } catch (e) {
+        // ignore
+      }
     }
     
     setPreviousGameState(game.state);
