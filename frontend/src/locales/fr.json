@@ -1,8 +1,8 @@
 {
-  "game.title": "🎲 Perudo",
+  "game.title": "Perudo",
   "game.subtitle": "Le jeu classique de bluff",
 
-  "lobby.createGame": "🎮 Créer une nouvelle partie",
+  "lobby.createGame": "Créer une nouvelle partie",
   "lobby.joinGame": "Rejoindre une partie",
   "lobby.gameId": "ID de la partie",
   "lobby.enterGameId": "Entrez l'ID à 3 caractères",

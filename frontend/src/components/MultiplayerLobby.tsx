@@ -45,8 +45,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
   // Separate function to join game with a specific ID
   const handleAutoJoin = useCallback(
-    async (gameIdToJoin: string) => {
-      if (!playerName.trim() || hasJoined) {
+    async (
+      gameIdToJoin: string,
+      options?: { updateHistory?: boolean; playerNameOverride?: string }
+    ) => {
+      // Allow passing an override player name to avoid race conditions
+      const nameToUse = options?.playerNameOverride ?? playerName;
+
+      if (!nameToUse?.trim() || hasJoined) {
         return;
       }
 
@@ -58,11 +64,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           "Auto-joining game with ID:",
           gameIdToJoin,
           "and name:",
-          playerName
+          nameToUse
         );
         const joinedGame = await gameApi.joinMultiplayerGame(
           gameIdToJoin,
-          playerName
+          nameToUse
         );
         console.log("Auto-joined game successfully:", joinedGame);
 
@@ -70,16 +76,26 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         setIsHost(false);
         setHasJoined(true);
 
-        // Update URL with game ID
-        const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
-        window.history.pushState({}, "", newUrl);
+        // Optionally update URL with game ID
+        if (options?.updateHistory !== false) {
+          const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameIdToJoin}`;
+          window.history.pushState({}, "", newUrl);
+        }
       } catch (err: any) {
         console.error("Error auto-joining game:", err);
-        setError(
-          err.response?.data?.message ||
-            err.message ||
-            t("lobby.failedToJoinGame")
-        );
+        // If join failed, try fetching the game to determine if it exists.
+        try {
+          await gameApi.getMultiplayerGame(gameIdToJoin);
+          // If the GET succeeded the game exists; show the server-provided message if present
+          setError(
+            err.response?.data?.message ||
+              err.message ||
+              t("lobby.failedToJoinGame")
+          );
+        } catch (getErr) {
+          // If GET failed, the game likely doesn't exist
+          setError("game not found");
+        }
       } finally {
         setIsJoining(false);
       }
@@ -99,8 +115,48 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
       setGameId(urlGameId);
-      // Automatically try to join the game
-      handleAutoJoin(urlGameId);
+
+      // Determine navigation type. If the user refreshed the page (reload),
+      // we should NOT auto-join — instead just go to the home screen (remove query).
+      let navType: string | undefined;
+      try {
+        const navEntries = performance.getEntriesByType(
+          "navigation"
+        ) as PerformanceNavigationTiming[];
+        if (navEntries && navEntries.length > 0) {
+          navType = navEntries[0].type;
+        } else if ((performance as any).navigation) {
+          // Fallback (deprecated API)
+          const pnav = (performance as any).navigation;
+          navType = pnav.type === 1 ? "reload" : "navigate";
+        }
+      } catch (e) {
+        console.warn("Could not determine navigation type", e);
+      }
+
+      const randomName = getRandomDutchName();
+      setPlayerName(randomName);
+
+      const isReload = navType === "reload";
+
+      if (!isReload) {
+        // Automatically try to join the game but don't update history (we want to remove the query string)
+        // Pass the prefilled name as override to avoid race conditions
+        handleAutoJoin(urlGameId, {
+          updateHistory: false,
+          playerNameOverride: randomName,
+        });
+      } else {
+        // If this was a page refresh, don't attempt to auto-join — just show the home lobby.
+        console.log(
+          "Page navigation was a reload — skipping auto-join and returning to home screen"
+        );
+      }
+
+      // Remove the query string from the visible URL while preserving state
+      const cleanedUrl = `${window.location.origin}${window.location.pathname}`;
+      // Use replaceState so back button behavior isn't affected
+      window.history.replaceState({}, "", cleanedUrl);
     }
 
     setIsInitialized(true);
@@ -251,11 +307,17 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     } catch (err: any) {
       console.error("Error joining game:", err);
       console.error("Error details:", err.response?.data);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          t("lobby.failedToJoinGame")
-      );
+      // Probe the game endpoint to decide whether the game code is missing
+      try {
+        await gameApi.getMultiplayerGame(gameId);
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            t("lobby.failedToJoinGame")
+        );
+      } catch (getErr) {
+        setError("Game not found");
+      }
     } finally {
       setIsJoining(false);
     }

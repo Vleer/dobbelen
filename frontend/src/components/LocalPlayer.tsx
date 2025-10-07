@@ -270,11 +270,23 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         className={`bg-green-950 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
         }`}
+        style={{
+          width: "340px", // fixed width
+          minHeight: "180px", // minimum height, allow to grow if needed
+          maxHeight: "95vh",
+          maxWidth: "95vw",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          overflowY: "auto",
+        }}
       >
         {/* Username with Dealer Button, Win Tokens, and Eye Toggle */}
         <div className="text-center mb-4">
           <div className="flex items-center justify-center space-x-2">
-            <span className={`font-bold text-xl ${playerTextClass}`}>{player.name}</span>
+            <span className={`font-bold text-xl ${playerTextClass}`}>
+              {player.name}
+            </span>
             {/* Dealer Button */}
             {isDealer && (
               <div className="inline-flex items-center justify-center w-6 h-6 bg-white border-2 border-black rounded-full">
@@ -303,22 +315,59 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="p-1.5 rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
-                style={{ pointerEvents: "auto" }}
+                className="rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
+                style={{
+                  pointerEvents: "auto",
+                  padding: 0,
+                  minWidth: 36,
+                  minHeight: 36,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
                 aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
-                {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    minWidth: 36,
+                    minHeight: 36,
+                  }}
+                />
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Dice Row - Fixed height container */}
-        <div className="mb-4 min-h-[80px] flex items-center justify-center">
+        {/* Dice Row - Flexible height container */}
+        <div
+          className="mb-4 flex items-center justify-center"
+          style={{ minHeight: "60px", width: "100%" }}
+        >
           {shouldShowDice ? (
             <DiceHandSVG diceValues={diceValues} size="lg" />
           ) : (
-            <div className="text-gray-300 text-lg italic">
+            <div
+              className="text-gray-300 text-lg italic w-full text-center"
+              style={{
+                minHeight: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               {t("game.diceHidden") || "Hidden"}
             </div>
           )}

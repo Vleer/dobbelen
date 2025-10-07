@@ -1,12 +1,12 @@
 {
-  "game.title": "🎲 Liar's Dice",
+  "game.title": "Liar's Dice",
   "game.subtitle": "The classic bluffing game",
 
-  "lobby.createGame": "🎮 Create New Game",
+  "lobby.createGame": "Create New Game",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
   "lobby.enterGameId": "Enter 3-character ID",
-  "lobby.username": "Your Username",
+  "lobby.username": "Name",
   "lobby.enterUsername": "Enter your username",
   "lobby.or": "OR",
   "lobby.creating": "Creating...",

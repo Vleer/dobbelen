@@ -1,8 +1,8 @@
 {
-  "game.title": "🎲 Lügenwürfel",
+  "game.title": "Lügenwürfel",
   "game.subtitle": "Das klassische Bluffspiel",
 
-  "lobby.createGame": "🎮 Neues Spiel erstellen",
+  "lobby.createGame": "Neues Spiel erstellen",
   "lobby.joinGame": "Spiel beitreten",
   "lobby.gameId": "Spiel-ID",
   "lobby.enterGameId": "3-stellige ID eingeben",
