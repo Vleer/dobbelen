@@ -58,14 +58,15 @@ const GameTable: React.FC<GameTableProps> = ({
     
     // Play game start sound when game enters IN_PROGRESS state for the first time
     if (game.state === 'IN_PROGRESS' && game.roundNumber === 1 && previousGameState !== 'IN_PROGRESS') {
-      console.log('Playing game start sound');
+      console.log("Playing game start sound");
       audioService.playGameStart();
       setHasPlayedGameStart(true);
       // If we're on desktop, expand the history panel automatically
       try {
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+        const isDesktop =
+          typeof window !== "undefined" && window.innerWidth >= 768;
         if (isDesktop) {
-          console.log('Desktop detected - opening history panel on game start');
+          console.log("Desktop detected - opening history panel on game start");
           setIsHistoryOpen(true);
         }
       } catch (e) {
