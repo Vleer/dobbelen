@@ -12,26 +12,26 @@ export class WebSocketService {
     this.gameId = gameId;
     this.onGameUpdate = onGameUpdate;
 
-    // Get the backend URL based on environment
-    const getBackendUrl = () => {
-      // Always use the hostname from the current window location
+    // Get the WebSocket URL based on environment
+    const getWebSocketUrl = () => {
       const hostname = window.location.hostname;
       
-      // If we're accessing from localhost, use the Docker internal URL
+      // If we're in development mode on localhost, use direct backend URL
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
         console.log('🔌 WebSocket using localhost backend URL:', url);
-        return url;
+        return `${url}/ws`;
       }
       
-      // For external access, use the same hostname as the frontend
-      const url = `http://${hostname}:8080`;
-      console.log('🔌 WebSocket using external backend URL:', url, 'for hostname:', hostname);
-      return url;
+      // For all external access (including ngrok), use relative path
+      // so the nginx proxy can handle routing to the backend
+      const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log('🔌 WebSocket using proxied URL for external access:', wsUrl, '(hostname:', hostname, ')');
+      return wsUrl;
     };
 
-    const backendUrl = getBackendUrl();
-    const wsUrl = `${backendUrl}/ws`;
+    const wsUrl = getWebSocketUrl();
 
     try {
       console.log('Creating SockJS connection to', wsUrl);
