@@ -5,6 +5,7 @@ import { aiService } from '../services/aiService';
 import { webSocketService } from '../services/websocketService';
 import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useStatistics } from '../contexts/StatisticsContext';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
@@ -13,6 +14,7 @@ import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
+import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 
 interface GameTableProps {
@@ -29,6 +31,7 @@ const GameTable: React.FC<GameTableProps> = ({
   onBack
 }) => {
   const { t } = useLanguage();
+  const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
   const [game, setGame] = useState<Game | null>(initialGame || null);
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +40,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
   const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
   const [previousRoundNumber, setPreviousRoundNumber] = useState<number>(1);
@@ -58,9 +62,20 @@ const GameTable: React.FC<GameTableProps> = ({
     
     // Play game start sound when game enters IN_PROGRESS state for the first time
     if (game.state === 'IN_PROGRESS' && game.roundNumber === 1 && previousGameState !== 'IN_PROGRESS') {
-      console.log('Playing game start sound');
+      console.log("Playing game start sound");
       audioService.playGameStart();
       setHasPlayedGameStart(true);
+      // If we're on desktop, expand the history panel automatically
+      try {
+        const isDesktop =
+          typeof window !== "undefined" && window.innerWidth >= 768;
+        if (isDesktop) {
+          console.log("Desktop detected - opening history panel on game start");
+          setIsHistoryOpen(true);
+        }
+      } catch (e) {
+        // ignore
+      }
     }
     
     setPreviousGameState(game.state);
@@ -420,6 +435,29 @@ const GameTable: React.FC<GameTableProps> = ({
     setError("");
 
     try {
+      // Track statistics for user actions
+      const localPlayer = getLocalPlayer();
+      if (localPlayer) {
+        if (action === 'bid' && data) {
+          // Track bid
+          const bid = {
+            playerId: localPlayerId,
+            quantity: data.quantity,
+            faceValue: data.faceValue,
+            type: 'RAISE'
+          };
+          trackBid(bid, game);
+        } else if (action === 'doubt' && game.currentBid) {
+          // We'll track the doubt result when we get the game update with the result
+          // Store the doubt info temporarily for when the result comes back
+          (window as any).pendingDoubtTrack = {
+            doubter: localPlayer,
+            targetBid: game.currentBid,
+            game: game
+          };
+        }
+      }
+
       // Use WebSocket for all games (all games are multiplayer)
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
       webSocketService.sendAction(actionName, data, localPlayerId);
@@ -484,6 +522,60 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const isMyTurn = (): boolean => {
     return game?.currentPlayerId === localPlayerId;
+  };
+
+  const trackGameStateChanges = (oldGame: Game | null, newGame: Game) => {
+    if (!oldGame || !localPlayerId) return;
+
+    // Track dice rolls when new round starts or dice are revealed
+    if (newGame.showAllDice && (!oldGame.showAllDice || newGame.roundNumber !== oldGame.roundNumber)) {
+      newGame.players.forEach(player => {
+        if (player.dice && player.dice.length > 0) {
+          trackDiceRoll(player, player.dice, newGame);
+        }
+      });
+    }
+
+    // Track round end when a winner is determined
+    if (newGame.winner && !oldGame.winner) {
+      const winner = newGame.players.find(p => p.id === newGame.winner);
+      if (winner) {
+        // Check if this was the last round (game ended)
+        const wasLastRound = newGame.gameWinner !== null;
+        trackRoundEnd(winner, newGame, wasLastRound);
+
+        if (wasLastRound) {
+          trackGameEnd(winner, newGame);
+        }
+      }
+    }
+
+    // Track doubt results when showAllDice becomes true after a doubt
+    if (newGame.showAllDice && !oldGame.showAllDice && (window as any).pendingDoubtTrack) {
+      const pendingDoubt = (window as any).pendingDoubtTrack;
+      const actualCount = newGame.lastActualCount;
+      const targetQuantity = newGame.lastBidQuantity;
+      
+      if (actualCount !== undefined && targetQuantity !== undefined) {
+        const success = actualCount < targetQuantity; // Doubt succeeds if actual count is less than bid
+        trackDoubt(pendingDoubt.doubter, pendingDoubt.targetBid, actualCount, success, newGame);
+      }
+      
+      // Clear the pending doubt tracking
+      delete (window as any).pendingDoubtTrack;
+    }
+
+    // Track all bids made by other players (AI or other humans)
+    if (newGame.currentBid && (!oldGame.currentBid || 
+        newGame.currentBid.playerId !== oldGame.currentBid.playerId ||
+        newGame.currentBid.quantity !== oldGame.currentBid.quantity ||
+        newGame.currentBid.faceValue !== oldGame.currentBid.faceValue)) {
+      
+      // Only track if it's not our own bid (we already tracked it in handleAction)
+      if (newGame.currentBid.playerId !== localPlayerId) {
+        trackBid(newGame.currentBid, newGame);
+      }
+    }
   };
 
   if (!game) {
@@ -912,6 +1004,12 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         )}
       </div>
+
+      {/* Statistics Display Modal */}
+      <StatisticsDisplay 
+        isOpen={showStatistics}
+        onClose={() => setShowStatistics(false)}
+      />
     </div>
   );
 };

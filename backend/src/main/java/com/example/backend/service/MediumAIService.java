@@ -154,6 +154,54 @@ public class MediumAIService {
             return alternativeAction;
         }
         
+        // Bluffing: chance to play a subtle deceptive bid. The chance decreases when
+        // our confidence in the current bid being true is higher. We bias bluffs toward
+        // small, believable raises (quantity +1, small face bump, or lower face with +1 qty).
+        double baseBluff = 0.35; // slightly more often than before
+        double bluffChance = baseBluff * (1.0 - analysis.confidence);
+        if (Math.random() < bluffChance) {
+            System.out.println(String.format("🧠 Attempting a BLUFF (chance %.2f) - confidence %.2f", bluffChance, analysis.confidence));
+
+            int currentQuantity = currentBid.getQuantity();
+            int currentFace = currentBid.getFaceValue();
+            int totalDice = activePlayers * 5;
+
+            int newQuantity = currentQuantity;
+            int newFace = currentFace;
+
+            double r = Math.random();
+            if (r < 0.45) {
+                // Most common bluff: increase quantity by 1, keep same face
+                newQuantity = Math.min(currentQuantity + 1, totalDice);
+                newFace = currentFace;
+            } else if (r < 0.75) {
+                // Second: keep quantity same but bump face slightly (by 1 or 2), if possible
+                int bump = 1 + (int) (Math.random() * 2); // 1 or 2
+                newFace = Math.min(6, currentFace + bump);
+                // ensure the bid is strictly higher
+                if (!(newQuantity > currentQuantity || (newQuantity == currentQuantity && newFace > currentFace))) {
+                    newQuantity = currentQuantity + 1;
+                }
+            } else {
+                // Third: switch to a lower face (more believable) but increase quantity by 1
+                int decrease = 1 + (int) (Math.random() * Math.min(2, Math.max(1, currentFace - 1)) );
+                newFace = Math.max(1, currentFace - decrease);
+                newQuantity = Math.min(currentQuantity + 1, totalDice);
+            }
+
+            // Defensive: ensure the proposed bid is a legal raise
+            if (!(newQuantity > currentQuantity || (newQuantity == currentQuantity && newFace > currentFace))) {
+                newQuantity = Math.min(currentQuantity + 1, totalDice);
+                if (newQuantity == currentQuantity + 1) newFace = currentFace;
+            }
+
+            // Final cap
+            if (newQuantity > totalDice) newQuantity = totalDice;
+
+            System.out.println(String.format("🧠 Bluff bid chosen: %d of %ds (was %d of %ds)", newQuantity, newFace, currentQuantity, currentFace));
+            return new AIAction("bid", newQuantity, newFace);
+        }
+        
         // Default: raise the bid conservatively
         return makeEducatedRaise(currentBid, myDice, analysis, activePlayers);
     }
@@ -162,33 +210,11 @@ public class MediumAIService {
      * Make an educated first bid based on our hand
      */
     private AIAction makeEducatedFirstBid(List<Integer> myDice, int activePlayers) {
-        // Count each face value in our hand
-        int[] counts = new int[7]; // Index 0 unused, 1-6 for dice faces
-        for (int die : myDice) {
-            counts[die]++;
-        }
-        
-        // Find the face value we have the most of
-        int bestFace = 1;
-        int maxCount = counts[1];
-        for (int face = 2; face <= 6; face++) {
-            if (counts[face] > maxCount) {
-                maxCount = counts[face];
-                bestFace = face;
-            }
-        }
-        
-        // Start conservatively: bid what we actually have or at most 1 more
-        int bidQuantity = maxCount;
-        // Only bid 1 higher if we have 3+ of a kind
-        if (maxCount >= 3 && activePlayers >= 3) {
-            bidQuantity = maxCount + 1;
-        }
-        
-        System.out.println(String.format("🧠 First bid strategy: have %d of %ds, bidding %d of %ds", 
-            maxCount, bestFace, bidQuantity, bestFace));
-        
-        return new AIAction("bid", bidQuantity, bestFace);
+        // Per new rule: if Medium AI starts the round (no current bid), it should
+        // open with quantity = 1 and a random face value between 1 and 6.
+        int randomFace = (int) (Math.random() * 6) + 1; // 1-6
+        System.out.println(String.format("🧠 First bid (opening): bidding 1 of %ds", randomFace));
+        return new AIAction("bid", 1, randomFace);
     }
     
     /**

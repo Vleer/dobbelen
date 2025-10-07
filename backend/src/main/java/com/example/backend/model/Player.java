@@ -22,6 +22,12 @@ public class Player {
         this.aiType = null; // Default to human
     }
 
+    // Convenience constructor when only a name is known (used for lightweight copies)
+    public Player(String name) {
+        this();
+        this.name = name;
+    }
+
     public Player(String name, String color) {
         this();
         this.name = name;
