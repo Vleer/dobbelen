@@ -60,8 +60,6 @@
   "game.result.winsRound": "{{playerName}} wint 🏆!",
   "game.result.roundEnded": "Ronde beëindigd!",
   "game.result.isEliminated": "{{playerName}} ligt er uit",
-  "game.result.collected7Tokens": "heeft 7 win tokens.",
-  "game.result.champion": "Dobbelkampioen!",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",
   "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
@@ -69,7 +67,7 @@
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
 
-  "game.dobbelkoning": "Dobbelkoning 🎲👑",
+  "game.dobbelkoning": "Dobbelkoning",
 
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",
   "errors.failedToStart": "Spel starten mislukt",

@@ -60,8 +60,6 @@
   "game.result.winsRound": "{{playerName}} wins the round!",
   "game.result.roundEnded": "Round ended!",
   "game.result.isEliminated": "{{playerName}} is eliminated!",
-  "game.result.collected7Tokens": "collected 7 win tokens and is the ultimate",
-  "game.result.champion": "champion",
   "game.action.doubt": "{{playerName}}: Doubts",
   "game.action.spotOn": "{{playerName}}: spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
@@ -69,7 +67,7 @@
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
 
-  "game.dobbelkoning": "Dobbelkoning 🎲👑",
+  "game.dobbelkoning": "Dobbelkoning",
 
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",

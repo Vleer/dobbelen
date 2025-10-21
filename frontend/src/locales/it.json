@@ -60,8 +60,6 @@
   "game.result.winsRound": "{{playerName}} vince il round!",
   "game.result.roundEnded": "Round terminato!",
   "game.result.isEliminated": "{{playerName}} è eliminato!",
-  "game.result.collected7Tokens": "ha raccolto 7 token vittoria ed è il",
-  "game.result.champion": "campione",
   "game.action.doubt": "{{playerName}} dubita",
   "game.action.spotOn": "{{playerName}} dice esatto",
   "game.action.raise": "{{playerName}} rilancia",
@@ -69,7 +67,7 @@
   "game.continue": "Continua",
   "game.continuing": "Continuando...",
 
-  "game.dobbelkoning": "Dobbelkoning 🎲👑",
+  "game.dobbelkoning": "Dobbelkoning",
 
   "errors.failedToAddPlayer": "Aggiunta giocatore IA fallita",
   "errors.failedToStart": "Avvio partita fallito",

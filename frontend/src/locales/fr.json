@@ -60,8 +60,6 @@
   "game.result.winsRound": "{{playerName}} remporte la manche !",
   "game.result.roundEnded": "Manche terminée !",
   "game.result.isEliminated": "{{playerName}} est éliminé !",
-  "game.result.collected7Tokens": "a collecté 7 jetons de victoire et est le",
-  "game.result.champion": "champion",
   "game.action.doubt": "{{playerName}} doute",
   "game.action.spotOn": "{{playerName}} dit exact",
   "game.action.raise": "{{playerName}} surenchérit",
@@ -69,7 +67,7 @@
   "game.continue": "Continuer",
   "game.continuing": "En cours...",
 
-  "game.dobbelkoning": "Roi du dé 🎲👑",
+  "game.dobbelkoning": "Roi du dé",
 
   "errors.failedToAddPlayer": "Échec de l'ajout du joueur IA",
   "errors.failedToStart": "Échec du démarrage de la partie",
