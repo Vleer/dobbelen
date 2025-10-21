@@ -60,8 +60,6 @@
   "game.result.winsRound": "{{playerName}} gewinnt die Runde!",
   "game.result.roundEnded": "Runde beendet!",
   "game.result.isEliminated": "{{playerName}} ist eliminiert!",
-  "game.result.collected7Tokens": "hat 7 Siegesmarken gesammelt und ist der ultimative",
-  "game.result.champion": "Champion",
   "game.action.doubt": "{{playerName}} zweifelt",
   "game.action.spotOn": "{{playerName}} sagt genau richtig",
   "game.action.raise": "{{playerName}} erhöht",
@@ -69,7 +67,7 @@
   "game.continue": "Weiter",
   "game.continuing": "Weiter...",
 
-  "game.dobbelkoning": "Würfelkönig 🎲👑",
+  "game.dobbelkoning": "Würfelkönig",
 
   "errors.failedToAddPlayer": "KI-Spieler konnte nicht hinzugefügt werden",
   "errors.failedToStart": "Spiel konnte nicht gestartet werden",
