@@ -2,6 +2,7 @@ package com.example.backend.service;
 
 import com.example.backend.model.*;
 import com.example.backend.dto.*;
+import com.example.backend.exception.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,7 +30,7 @@ public class GameService {
 
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
-            throw new IllegalArgumentException("Game requires at least 3 players");
+            throw new InvalidPlayerActionException("Game requires at least 3 players");
         }
 
         List<Player> players = new ArrayList<>();
@@ -60,7 +61,7 @@ public class GameService {
 
     public Game createGame(List<CreateGameRequest.PlayerInfo> playerInfos, boolean usePlayerInfo) {
         if (playerInfos == null || playerInfos.size() < 3) {
-            throw new IllegalArgumentException("Game requires at least 3 players");
+            throw new InvalidPlayerActionException("Game requires at least 3 players");
         }
 
         List<Player> players = new ArrayList<>();
@@ -86,7 +87,7 @@ public class GameService {
     public Game getGame(String gameId) {
         Game game = games.get(gameId);
         if (game == null) {
-            throw new IllegalArgumentException("Game not found: " + gameId);
+            throw new GameNotFoundException("Game not found: " + gameId);
         }
         return game;
     }
@@ -138,7 +139,7 @@ public class GameService {
         Bid currentBid = game.getCurrentBid();
         
         if (currentBid == null) {
-            throw new IllegalStateException("No current bid to doubt");
+            throw new InvalidGameStateException("No current bid to doubt");
         }
 
         List<Player> activePlayers = game.getActivePlayers();
@@ -278,7 +279,7 @@ public class GameService {
         Bid currentBid = game.getCurrentBid();
         
         if (currentBid == null) {
-            throw new IllegalStateException("No current bid to call spot on");
+            throw new InvalidGameStateException("No current bid to call spot on");
         }
 
         List<Player> activePlayers = game.getActivePlayers();
@@ -458,21 +459,21 @@ public class GameService {
         Game game = getGame(gameId);
 
         if (game.getState() != GameState.IN_PROGRESS) {
-            throw new IllegalStateException("Game is not in progress. Current state: " + game.getState());
+            throw new InvalidGameStateException("Game is not in progress. Current state: " + game.getState());
         }
 
         Player currentPlayer = game.getCurrentPlayer();
         if (currentPlayer == null) {
-            throw new IllegalArgumentException("No current player found");
+            throw new InvalidGameStateException("No current player found");
         }
 
         if (!currentPlayer.getId().equals(playerId)) {
-            throw new IllegalArgumentException("It's not this player's turn. Current player: " + currentPlayer.getId()
+            throw new InvalidPlayerActionException("It's not this player's turn. Current player: " + currentPlayer.getId()
                     + ", Requested player: " + playerId);
         }
 
         if (game.getEliminatedPlayers().contains(playerId)) {
-            throw new IllegalArgumentException("Player is eliminated");
+            throw new InvalidPlayerActionException("Player is eliminated");
         }
 
         Bid newBid = new Bid(playerId, quantity, faceValue, BidType.RAISE);
@@ -481,7 +482,7 @@ public class GameService {
             String currentBidStr = game.getCurrentBid() != null
                     ? game.getCurrentBid().getQuantity() + " of " + game.getCurrentBid().getFaceValue()
                     : "none";
-            throw new IllegalArgumentException("Invalid bid. Current bid: " + currentBidStr +
+            throw new InvalidPlayerActionException("Invalid bid. Current bid: " + currentBidStr +
                     ", New bid: " + quantity + " of " + faceValue + ". Must increase quantity or face value");
         }
 
@@ -555,12 +556,12 @@ public class GameService {
         Game game = getGame(gameId);
         if (game == null) {
             System.out.println("JOIN FAILED: Game not found for ID=" + gameId);
-            throw new IllegalArgumentException("Game not found");
+            throw new GameNotFoundException("Game not found");
         }
         if (!game.canJoin()) {
             System.out.println("JOIN FAILED: Cannot join game, current players=" + game.getPlayers().size() + ", max="
                     + game.getMaxPlayers());
-            throw new IllegalArgumentException("Cannot join game");
+            throw new InvalidPlayerActionException("Cannot join game");
         }
 
         // Check if player with this name already exists
@@ -569,7 +570,7 @@ public class GameService {
 
         if (playerExists) {
             System.out.println("JOIN FAILED: Player already exists with name=" + playerName);
-            throw new IllegalArgumentException("Player with name '" + playerName + "' already exists in this game");
+            throw new InvalidPlayerActionException("Player with name '" + playerName + "' already exists in this game");
         }
 
         String color = getNextColor(game);
@@ -604,13 +605,13 @@ public class GameService {
         Game game = getGame(gameId);
         if (game == null) {
             System.out.println("REMOVE FAILED: Game not found for ID=" + gameId);
-            throw new IllegalArgumentException("Game not found");
+            throw new GameNotFoundException("Game not found");
         }
 
         // Only allow removing players before game starts
         if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
             System.out.println("REMOVE FAILED: Game already started, state=" + game.getState());
-            throw new IllegalArgumentException("Cannot remove player after game has started");
+            throw new InvalidGameStateException("Cannot remove player after game has started");
         }
 
         // Find and remove the player
@@ -618,7 +619,7 @@ public class GameService {
 
         if (!removed) {
             System.out.println("REMOVE FAILED: Player not found with ID=" + playerId);
-            throw new IllegalArgumentException("Player not found");
+            throw new InvalidPlayerActionException("Player not found");
         }
 
         System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players=" + game.getPlayers().size());
@@ -629,11 +630,11 @@ public class GameService {
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {
-            throw new IllegalArgumentException("Game not found");
+            throw new GameNotFoundException("Game not found");
         }
         // Require at least 2 players to start a multiplayer game
         if (game.getPlayers().size() < 2) {
-            throw new IllegalArgumentException("Not enough players to start game. Minimum 2 players required");
+            throw new InvalidGameStateException("Not enough players to start game. Minimum 2 players required");
         }
 
         // Initialize all players
@@ -667,7 +668,7 @@ public class GameService {
     public GameResponse getGameResponse(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {
-            throw new IllegalArgumentException("Game not found");
+            throw new GameNotFoundException("Game not found");
         }
         return new GameResponse(game);
     }

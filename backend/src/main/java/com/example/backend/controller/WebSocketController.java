@@ -20,17 +20,10 @@ public class WebSocketController {
     @SendTo("/topic/game/{gameId}")
     public WebSocketMessage joinGame(@DestinationVariable String gameId, String playerName) {
         try {
-            Game game = gameService.getGame(gameId);
-            if (game == null) {
-                return new WebSocketMessage("ERROR", "Game not found", gameId, null);
-            }
-
-            if (!game.canJoin()) {
-                return new WebSocketMessage("ERROR", "Cannot join game", gameId, null);
-            }
-
-            // Add player to game
+            // Add player to game (will throw exceptions if invalid)
             gameService.addPlayerToGame(gameId, playerName);
+            
+            Game game = gameService.getGame(gameId);
             
             // Check if game is ready to start
             if (game.getPlayers().size() >= 2) {
