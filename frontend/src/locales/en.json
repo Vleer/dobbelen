@@ -99,5 +99,13 @@
   "game.history.noActions": "no actions yet",
   "game.history.noStatsYet": "No statistics available yet",
   "game.history.diceAnalysis": "Dice Analysis",
-  "game.history.noBidsYet": "No bids made yet in this hand"
+  "game.history.noBidsYet": "No bids made yet in this hand",
+
+  "instructions.title": "How to Play",
+  "instructions.close": "Close",
+  "instructions.rollDice": "Roll dice secretly under your cup",
+  "instructions.makeBid": "Raise: Bid on total dice showing a face value",
+  "instructions.doubt": "Doubt: Challenge the previous bid if too high",
+  "instructions.spotOn": "Spot On: Claim bid is exactly correct (risky!)",
+  "instructions.winRound": "Last player standing wins the round"
 }

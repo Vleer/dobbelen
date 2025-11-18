@@ -99,5 +99,13 @@
   "game.history.noActions": "nessuna azione ancora",
   "game.history.noStatsYet": "Nessuna statistica ancora disponibile",
   "game.history.diceAnalysis": "Analisi dei Dadi",
-  "game.history.noBidsYet": "Nessuna offerta ancora in questa mano"
+  "game.history.noBidsYet": "Nessuna offerta ancora in questa mano",
+
+  "instructions.title": "Come Giocare",
+  "instructions.close": "Chiudi",
+  "instructions.rollDice": "Lancia i dadi segretamente sotto il tuo bicchiere",
+  "instructions.makeBid": "Rilancio: Punta sul totale dei dadi che mostrano un valore",
+  "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
+  "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
+  "instructions.winRound": "L'ultimo giocatore in piedi vince il round"
 }

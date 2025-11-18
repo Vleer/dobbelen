@@ -99,5 +99,13 @@
   "game.history.noActions": "nog geen acties",
   "game.history.noStatsYet": "Nog geen statistieken beschikbaar",
   "game.history.diceAnalysis": "Analyse",
-  "game.history.noBidsYet": "Nog geen biedingen in deze hand"
+  "game.history.noBidsYet": "Nog geen biedingen in deze hand",
+
+  "instructions.title": "Hoe te Spelen",
+  "instructions.close": "Sluiten",
+  "instructions.rollDice": "Gooi dobbelstenen geheim onder je beker",
+  "instructions.makeBid": "Verhogen: Bied op totaal aantal met een waarde",
+  "instructions.doubt": "Optillen: Daag het vorige bod uit als het te hoog is",
+  "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (risicovol!)",
+  "instructions.winRound": "Laatste speler die overblijft wint de ronde"
 }

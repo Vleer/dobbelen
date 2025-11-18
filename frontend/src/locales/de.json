@@ -99,5 +99,13 @@
   "game.history.noActions": "noch keine Aktionen",
   "game.history.noStatsYet": "Noch keine Statistiken verfügbar",
   "game.history.diceAnalysis": "Würfel Analyse",
-  "game.history.noBidsYet": "Noch keine Gebote in dieser Hand"
+  "game.history.noBidsYet": "Noch keine Gebote in dieser Hand",
+
+  "instructions.title": "Wie man spielt",
+  "instructions.close": "Schließen",
+  "instructions.rollDice": "Würfel heimlich unter dem Becher werfen",
+  "instructions.makeBid": "Erhöhen: Auf Gesamtwürfel mit einem Wert bieten",
+  "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
+  "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
+  "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde"
 }
