@@ -183,9 +183,14 @@ public class EasyAIService {
     }
     
     /**
-     * Simulate AI thinking delay (1-3 seconds)
+     * Simulate AI thinking delay
+     * @param isFirstTurn true if this is the first move of the round (no current bid)
+     * @return delay in milliseconds - around 6 seconds for first turn, 0.5-1.5 seconds otherwise
      */
-    public long getThinkingDelay() {
-        return (long) (Math.random() * 1000) + 500; // 1-1.5 seconds
+    public long getThinkingDelay(boolean isFirstTurn) {
+        if (isFirstTurn) {
+            return (long) (Math.random() * 1000) + 5500; // 5.5-6.5 seconds
+        }
+        return (long) (Math.random() * 1000) + 500; // 0.5-1.5 seconds
     }
 }

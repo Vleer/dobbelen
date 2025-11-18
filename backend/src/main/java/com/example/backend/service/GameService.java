@@ -903,8 +903,18 @@ public class GameService {
         }
 
         try {
+            // Check if this is the first turn (no current bid)
+            boolean isFirstTurn = (game.getCurrentBid() == null);
+            
             // Simulate thinking delay
-            long thinkingDelay = isMediumAI ? mediumAIService.getThinkingDelay() : easyAIService.getThinkingDelay();
+            long thinkingDelay = isMediumAI 
+                ? mediumAIService.getThinkingDelay(isFirstTurn) 
+                : easyAIService.getThinkingDelay(isFirstTurn);
+            
+            if (isFirstTurn) {
+                System.out.println("🤖 First turn detected - AI will think for ~6 seconds");
+            }
+            
             Thread.sleep(thinkingDelay);
 
             // Generate AI action (use appropriate service and method)
