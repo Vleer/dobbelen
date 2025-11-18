@@ -20,8 +20,9 @@ const getBackendUrl = () => {
     return url;
   }
   
-  // For external access, use the same hostname as the frontend
-  const url = `http://${hostname}:8080`;
+  // For external access, use the backend port from env or default to NodePort
+  const backendPort = process.env.REACT_APP_BACKEND_PORT || '30083';
+  const url = `http://${hostname}:${backendPort}`;
   console.log('🌐 Using external backend URL:', url, 'for hostname:', hostname);
   return url;
 };

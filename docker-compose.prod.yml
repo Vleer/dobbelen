@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  mongodb:
+    image: mongo:7.0
+    container_name: dobbelen-mongodb-prod
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=dobbelen
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - dobbelen-network
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/dobbelen --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -11,9 +29,19 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
     networks:
       - dobbelen-network
     restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -36,4 +64,5 @@ networks:
     driver: bridge
 
 volumes:
+  mongodb-data:
   backend-data:

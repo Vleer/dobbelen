@@ -2,6 +2,8 @@ package com.example.backend.service;
 
 import com.example.backend.model.*;
 import com.example.backend.dto.*;
+import com.example.backend.repository.mongo.GameDocument;
+import com.example.backend.repository.mongo.GameMongoRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,6 +23,9 @@ public class GameService {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private GameMongoRepository gameMongoRepository;
 
     @Autowired
     private EasyAIService easyAIService;
@@ -56,6 +61,7 @@ public class GameService {
         }
 
         games.put(game.getId(), game);
+        gameMongoRepository.save(new GameDocument(game));
         return game;
     }
 
@@ -81,19 +87,33 @@ public class GameService {
         }
 
         games.put(game.getId(), game);
+        gameMongoRepository.save(new GameDocument(game));
         return game;
     }
 
     public Game getGame(String gameId) {
         Game game = games.get(gameId);
-        if (game == null) {
-            throw new IllegalArgumentException("Game not found: " + gameId);
+        if (game != null) {
+            return game;
         }
-        return game;
+
+        return gameMongoRepository.findById(gameId)
+                .map(GameDocument::getGame)
+                .map(loaded -> {
+                    games.put(gameId, loaded);
+                    return loaded;
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
     }
 
     public List<Game> getAllGames() {
-        return new ArrayList<>(games.values());
+        List<Game> inMemory = new ArrayList<>(games.values());
+        if (!inMemory.isEmpty()) {
+            return inMemory;
+        }
+        return gameMongoRepository.findAll().stream()
+                .map(GameDocument::getGame)
+                .toList();
     }
 
     public void startNewRound(String gameId) {
