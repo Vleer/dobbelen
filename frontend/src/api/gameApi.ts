@@ -64,8 +64,8 @@ export const gameApi = {
   },
 
   joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameResponse> => {
-    const request: JoinGameRequest = { gameId, playerName };
-    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, request);
+    // Backend only needs playerName in request body
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, { playerName });
     return response.data;
   },
 
