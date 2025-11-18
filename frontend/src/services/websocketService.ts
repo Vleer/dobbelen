@@ -14,6 +14,12 @@ export class WebSocketService {
 
     // Get the backend URL based on environment
     const getBackendUrl = () => {
+      // Check if we're running in Kubernetes (via ingress)
+      if (process.env.REACT_APP_USE_INGRESS === 'true') {
+        console.log('🔌 WebSocket using Kubernetes ingress routing');
+        return '';  // Use relative path for ingress
+      }
+      
       // Always use the hostname from the current window location
       const hostname = window.location.hostname;
       
@@ -31,7 +37,7 @@ export class WebSocketService {
     };
 
     const backendUrl = getBackendUrl();
-    const wsUrl = `${backendUrl}/ws`;
+    const wsUrl = backendUrl ? `${backendUrl}/ws` : '/ws';
 
     try {
       console.log('Creating SockJS connection to', wsUrl);
