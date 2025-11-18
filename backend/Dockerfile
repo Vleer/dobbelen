@@ -1,5 +1,5 @@
-# Use OpenJDK 21 as base image
-FROM openjdk:21-jdk-slim
+# Use Temurin (Eclipse) OpenJDK 21 as base image (widely available on Docker Hub)
+FROM eclipse-temurin:21-jdk
 
 # Install curl for health checks and clean up
 RUN apt-get update && \

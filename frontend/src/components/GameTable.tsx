@@ -602,19 +602,14 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* Victory Screen */}
         <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
-          <div className="text-6xl mb-4">🎲👑</div>
           <h1 className="text-5xl font-bold text-green-800 mb-4">
             {t("game.dobbelkoning")}
           </h1>
-          <h2 className="text-3xl font-bold text-green-700 mb-6">
+          <h2 className="text-3xl font-bold text-green-700 mb-8">
             {t("game.result.winsRound", {
               playerName: winner?.name || "Unknown Player",
             })}
           </h2>
-          <div className="text-xl text-green-600 mb-8">
-            {winner?.name} {t("game.result.collected7Tokens")}{" "}
-            {t("game.result.champion")}!
-          </div>
           <button
             onClick={() => window.location.reload()}
             className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg"
