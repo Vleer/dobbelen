@@ -99,5 +99,13 @@
   "game.history.noActions": "aucune action encore",
   "game.history.noStatsYet": "Aucune statistique disponible pour le moment",
   "game.history.diceAnalysis": "Analyse des Dés",
-  "game.history.noBidsYet": "Aucune enchère encore dans cette main"
+  "game.history.noBidsYet": "Aucune enchère encore dans cette main",
+
+  "instructions.title": "Comment Jouer",
+  "instructions.close": "Fermer",
+  "instructions.rollDice": "Lancez les dés secrètement sous votre gobelet",
+  "instructions.makeBid": "Relancer: Pariez sur le total des dés montrant une valeur",
+  "instructions.doubt": "Doute: Contestez l'enchère précédente si trop haute",
+  "instructions.spotOn": "Pile poil: Prétendez que l'enchère est exacte (risqué!)",
+  "instructions.winRound": "Le dernier joueur debout gagne la manche"
 }

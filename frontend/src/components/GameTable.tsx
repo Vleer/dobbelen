@@ -16,6 +16,7 @@ import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import InstructionsWindow from './InstructionsWindow';
 
 interface GameTableProps {
   game?: Game | null;
@@ -50,6 +51,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousGameWinner, setPreviousGameWinner] = useState<string>('');
   const [hasPlayedGameStart, setHasPlayedGameStart] = useState(false);
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [hasShownInstructions, setHasShownInstructions] = useState(false);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -65,6 +68,13 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log("Playing game start sound");
       audioService.playGameStart();
       setHasPlayedGameStart(true);
+      
+      // Show instructions window if not shown yet
+      if (!hasShownInstructions) {
+        setShowInstructions(true);
+        setHasShownInstructions(true);
+      }
+      
       // If we're on desktop, expand the history panel automatically
       try {
         const isDesktop =
@@ -79,7 +89,7 @@ const GameTable: React.FC<GameTableProps> = ({
     }
     
     setPreviousGameState(game.state);
-  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
+  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game, hasShownInstructions]);
 
   // Play sounds based on game state changes
   useEffect(() => {
@@ -1004,6 +1014,12 @@ const GameTable: React.FC<GameTableProps> = ({
       <StatisticsDisplay 
         isOpen={showStatistics}
         onClose={() => setShowStatistics(false)}
+      />
+
+      {/* Instructions Window */}
+      <InstructionsWindow
+        isOpen={showInstructions}
+        onClose={() => setShowInstructions(false)}
       />
     </div>
   );
