@@ -16,6 +16,7 @@ import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import TurnNotification from './TurnNotification';
 
 interface GameTableProps {
   game?: Game | null;
@@ -50,6 +51,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousGameWinner, setPreviousGameWinner] = useState<string>('');
   const [hasPlayedGameStart, setHasPlayedGameStart] = useState(false);
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
+  const [showTurnNotification, setShowTurnNotification] = useState(false);
+  const [previousCurrentPlayerId, setPreviousCurrentPlayerId] = useState<string>('');
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -176,6 +179,33 @@ const GameTable: React.FC<GameTableProps> = ({
       setPreviousGameWinner(game.gameWinner);
     }
   }, [game, previousRoundNumber, previousActionKey, previousRoundWinner, previousGameWinner, previousBidKey, localPlayerId]);
+
+  // Detect when turn changes to local player and show notification
+  useEffect(() => {
+    if (!game || !localPlayerId) return;
+
+    // Check if the current player changed and it's now the local player's turn
+    const currentPlayerId = game.currentPlayerId;
+    if (
+      currentPlayerId === localPlayerId &&
+      previousCurrentPlayerId !== '' &&
+      previousCurrentPlayerId !== currentPlayerId &&
+      game.state === 'IN_PROGRESS' &&
+      !game.showAllDice
+    ) {
+      const localPlayer = game.players.find(p => p.id === localPlayerId);
+      // Only show notification if player is not eliminated
+      if (localPlayer && !localPlayer.eliminated) {
+        console.log('Turn changed to local player - showing notification');
+        setShowTurnNotification(true);
+      }
+    }
+
+    // Update the previous player ID for next comparison
+    if (currentPlayerId && currentPlayerId !== previousCurrentPlayerId) {
+      setPreviousCurrentPlayerId(currentPlayerId);
+    }
+  }, [game?.currentPlayerId, game?.state, game?.showAllDice, localPlayerId, previousCurrentPlayerId, game]);
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
@@ -1004,6 +1034,12 @@ const GameTable: React.FC<GameTableProps> = ({
       <StatisticsDisplay 
         isOpen={showStatistics}
         onClose={() => setShowStatistics(false)}
+      />
+
+      {/* Turn Notification */}
+      <TurnNotification 
+        show={showTurnNotification}
+        onHide={() => setShowTurnNotification(false)}
       />
     </div>
   );
