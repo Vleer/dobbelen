@@ -1,12 +1,8 @@
-name: Deploy to Kubernetes (GHCR)
-
-# This workflow uses GitHub Container Registry instead of local registry
-# Uncomment and use this if you prefer cloud-based runners
+name: Deploy Develop to Kubernetes (GHCR)
 
 on:
   push:
     branches:
-      - main
       - develop
   workflow_dispatch:
 
@@ -50,8 +46,8 @@ jobs:
           file: ./backend/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:develop
+            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:develop-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -62,19 +58,19 @@ jobs:
           file: ./frontend/Dockerfile.k8s
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:develop
+            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:develop-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            PUBLIC_URL=/dobbelen
+            PUBLIC_URL=/dobbelen-dev
 
       - name: Summary
         run: |
           echo "### Deployment Summary :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Backend Image:** \`${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Frontend Image:** \`${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend Image:** \`${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.BACKEND_IMAGE }}:develop-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend Image:** \`${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.lowercase }}/${{ env.FRONTEND_IMAGE }}:develop-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Kubernetes manifests will be updated automatically." >> $GITHUB_STEP_SUMMARY
 
@@ -85,15 +81,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Determine target app path
-        id: app_path
-        run: |
-          if [ "${GITHUB_REF_NAME}" = "develop" ]; then
-            echo "dir=apps/dobbelen-develop" >> $GITHUB_OUTPUT
-          else
-            echo "dir=apps/dobbelen" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout infra repository
         uses: actions/checkout@v4
         with:
@@ -103,13 +90,13 @@ jobs:
 
       - name: Update deployment manifests
         run: |
-          cd infra/${{ steps.app_path.outputs.dir }}
+          cd infra/apps/dobbelen-develop
           
-          # Update backend image
-          sed -i "s|image: .*dobbelen-backend.*|image: ${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.repo_owner_lowercase }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" deployment.yaml
+          # Update backend image to develop tag
+          sed -i "s|image: .*dobbelen-backend.*|image: ${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.repo_owner_lowercase }}/${{ env.BACKEND_IMAGE }}:develop|g" deployment.yaml
           
-          # Update frontend image
-          sed -i "s|image: .*dobbelen-frontend.*|image: ${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.repo_owner_lowercase }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" deployment.yaml
+          # Update frontend image to develop tag
+          sed -i "s|image: .*dobbelen-frontend.*|image: ${{ env.REGISTRY }}/${{ needs.build-and-push.outputs.repo_owner_lowercase }}/${{ env.FRONTEND_IMAGE }}:develop|g" deployment.yaml
           
           # Show the changes
           echo "Updated deployment.yaml:"
@@ -121,12 +108,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add apps/dobbelen/deployment.yaml
+          git add apps/dobbelen-develop/deployment.yaml
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update dobbelen images to ${{ github.sha }}"
+            git commit -m "Update dobbelen-develop images to develop-${{ github.sha }}"
             git push
             echo "### Manifest Update :white_check_mark:" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
