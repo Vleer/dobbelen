@@ -3,10 +3,12 @@ import axios from "axios";
 // Get the backend URL based on environment
 const getBackendUrl = () => {
   // Check if we're running in Kubernetes (via ingress)
-  // In K8s with ingress, we use relative paths so ingress routes /api/* to backend
+  // In K8s with ingress, we use the app's base path for API routing
   if (process.env.REACT_APP_USE_INGRESS === 'true') {
-    console.log('🌐 Using Kubernetes ingress routing: /api');
-    return '';  // Empty baseURL means relative paths like /api/games
+    // Get the base path from PUBLIC_URL (e.g., /dobbelen)
+    const basePath = process.env.PUBLIC_URL || '';
+    console.log('🌐 Using Kubernetes ingress routing with base path:', basePath);
+    return basePath;  // This will make /api/games become /dobbelen/api/games
   }
   
   // Always use the hostname from the current window location
