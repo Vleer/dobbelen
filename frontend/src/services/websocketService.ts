@@ -17,7 +17,8 @@ export class WebSocketService {
       // Check if we're running in Kubernetes (via ingress)
       if (process.env.REACT_APP_USE_INGRESS === 'true') {
         console.log('🔌 WebSocket using Kubernetes ingress routing');
-        return '';  // Use relative path for ingress
+        const basePath = process.env.PUBLIC_URL || '';
+        return basePath;  // Use base path for ingress routing (e.g., /dobbelen)
       }
       
       // Always use the hostname from the current window location
