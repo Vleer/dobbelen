@@ -1,7 +1,6 @@
 # Build stage
 FROM node:18-alpine AS builder
 
-ARG PUBLIC_URL=/
 # Set working directory
 WORKDIR /app
 
@@ -16,7 +15,6 @@ COPY . .
 
 # Set environment variables
 ENV REACT_APP_USE_INGRESS=true
-ENV PUBLIC_URL=${PUBLIC_URL}
 
 # Build the application
 RUN npm run build
