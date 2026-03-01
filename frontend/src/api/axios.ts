@@ -21,12 +21,10 @@ const getBackendUrl = () => {
     console.log('🌐 Using localhost backend URL:', url);
     return url;
   }
-  
-  // For external access, use the backend port from env or default to NodePort
-  const backendPort = process.env.REACT_APP_BACKEND_PORT || '30083';
-  const url = `http://${hostname}:${backendPort}`;
-  console.log('🌐 Using external backend URL:', url, 'for hostname:', hostname);
-  return url;
+
+  // For external access, use same-origin and let nginx proxy /api to backend
+  console.log('🌐 Using same-origin backend routing for hostname:', hostname);
+  return '';
 };
 
 const axiosInstance = axios.create({

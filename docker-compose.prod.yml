@@ -4,8 +4,6 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: dobbelen-mongodb-prod
-    ports:
-      - "27017:27017"
     environment:
       - MONGO_INITDB_DATABASE=dobbelen
     volumes:
@@ -24,11 +22,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: dobbelen-backend-prod
-    ports:
-      - "0.0.0.0:8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
+      - APP_ALLOWED_ORIGINS=https://898944.xyz
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
     networks:
       - dobbelen-network
@@ -49,7 +46,7 @@ services:
       dockerfile: Dockerfile
     container_name: frontend-prod
     ports:
-      - "80:80"
+      - "127.0.0.1:80:80"
     depends_on:
       backend:
         condition: service_healthy

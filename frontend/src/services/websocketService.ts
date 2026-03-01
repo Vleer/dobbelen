@@ -30,12 +30,10 @@ export class WebSocketService {
         console.log('🔌 WebSocket using localhost backend URL:', url);
         return url;
       }
-      
-      // For external access, use the backend port from env or default to NodePort
-      const backendPort = process.env.REACT_APP_BACKEND_PORT || '30083';
-      const url = `http://${hostname}:${backendPort}`;
-      console.log('🔌 WebSocket using external backend URL:', url, 'for hostname:', hostname);
-      return url;
+
+      // For external access, use same-origin and let nginx proxy /ws to backend
+      console.log('🔌 WebSocket using same-origin backend routing for hostname:', hostname);
+      return '';
     };
 
     const backendUrl = getBackendUrl();
