@@ -9,6 +9,24 @@ export class WebSocketService {
 
   connect(gameId: string, onGameUpdate: (game: Game) => void) {
     console.log('WebSocketService.connect called with gameId:', gameId);
+
+    // Reuse an existing active client for the same game and only refresh callback
+    if (
+      this.stompClient &&
+      this.gameId === gameId &&
+      (this.stompClient.connected || this.stompClient.active)
+    ) {
+      this.onGameUpdate = onGameUpdate;
+      console.log('🔁 Reusing existing active STOMP client for game:', gameId);
+      return;
+    }
+
+    // Avoid duplicate clients when reconnecting
+    if (this.stompClient) {
+      this.stompClient.deactivate();
+      this.stompClient = null;
+    }
+
     this.gameId = gameId;
     this.onGameUpdate = onGameUpdate;
 
@@ -40,23 +58,27 @@ export class WebSocketService {
     const wsUrl = backendUrl ? `${backendUrl}/ws` : '/ws';
 
     try {
-      console.log('Creating SockJS connection to', wsUrl);
-      const socket = new SockJS(wsUrl);
-      
-      // Add SockJS event listeners for debugging
-      socket.onopen = () => {
-        console.log('🔌 SockJS connection opened');
-      };
-      socket.onclose = (event: any) => {
-        console.log('🔌 SockJS connection closed:', event);
-      };
-      socket.onerror = (error: any) => {
-        console.warn('⚠️ SockJS connection warning (non-critical):', error);
-        // Don't show SockJS errors to users as they're often non-critical
-      };
-      
       this.stompClient = new Client({
-        webSocketFactory: () => socket,
+        webSocketFactory: () => {
+          console.log('Creating SockJS connection to', wsUrl);
+          const socket = new SockJS(wsUrl);
+
+          socket.onopen = () => {
+            console.log('🔌 SockJS connection opened');
+          };
+          socket.onclose = (event: any) => {
+            console.log('🔌 SockJS connection closed:', event);
+          };
+          socket.onerror = (error: any) => {
+            console.warn('⚠️ SockJS connection warning (non-critical):', error);
+          };
+
+          return socket;
+        },
+        reconnectDelay: 2000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
+        connectionTimeout: 10000,
         onConnect: () => {
           console.log('✅ Connected to WebSocket successfully');
           
@@ -87,6 +109,9 @@ export class WebSocketService {
           console.warn('⚠️ WebSocket connection warning (non-critical):', error);
           // Don't show WebSocket errors to users as they're often non-critical
         },
+        onWebSocketClose: (event) => {
+          console.log('🔌 WebSocket closed:', event?.reason || 'no reason');
+        },
         onDisconnect: () => {
           console.log('🔌 WebSocket disconnected');
         }
@@ -109,9 +134,9 @@ export class WebSocketService {
     }
   }
 
-  sendAction(action: string, data: any, playerId: string) {
+  sendAction(action: string, data: any, playerId: string): boolean {
     console.log('📤 WebSocketService.sendAction called:', { action, data, playerId, gameId: this.gameId });
-    if (this.stompClient && this.gameId) {
+    if (this.stompClient && this.gameId && this.stompClient.connected) {
       const message = {
         type: action,
         data: data,
@@ -119,14 +144,21 @@ export class WebSocketService {
         playerId: playerId
       };
       console.log('📤 Sending WebSocket message:', message);
-      this.stompClient.publish({
-        destination: `/app/game/${this.gameId}/action`,
-        body: JSON.stringify(message)
-      });
-      console.log('✅ WebSocket message sent successfully');
-    } else {
-      console.error('❌ Cannot send WebSocket message - client not connected or gameId missing');
+      try {
+        this.stompClient.publish({
+          destination: `/app/game/${this.gameId}/action`,
+          body: JSON.stringify(message)
+        });
+        console.log('✅ WebSocket message sent successfully');
+        return true;
+      } catch (error) {
+        console.warn('⚠️ WebSocket publish failed, caller should fallback to REST:', error);
+        return false;
+      }
     }
+
+    console.warn('⚠️ Cannot send WebSocket message - STOMP not connected or gameId missing');
+    return false;
   }
 
   disconnect() {

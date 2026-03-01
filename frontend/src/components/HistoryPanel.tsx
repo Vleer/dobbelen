@@ -57,7 +57,7 @@ interface PlayerStats {
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'currentHand' | 'lastHand' | 'stats'>('currentHand');
+  const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('instructions');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
   // Load stats from storage and refresh when panel opens or game changes
@@ -148,8 +148,31 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
   return (
     <div className="rounded-lg shadow-2xl border-2 border-amber-950 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#3d1f0d', backdropFilter: 'blur(4px)' }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: '#3d1f0d' }}>
+          <h3 className="text-amber-200 font-semibold text-sm">{t('instructions.title')}</h3>
+          <button
+            onClick={onClose}
+            className="px-2 py-1 text-amber-200 hover:text-white rounded"
+            title={t('instructions.close')}
+          >
+            ✕
+          </button>
+        </div>
+
         {/* Tabs */}
         <div className="flex border-b" style={{ borderColor: '#3d1f0d' }}>
+          <button
+            onClick={() => setActiveTab('instructions')}
+            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+              activeTab === 'instructions'
+                ? 'text-white'
+                : 'text-amber-300 hover:text-white'
+            }`}
+            style={{ backgroundColor: activeTab === 'instructions' ? '#78350f' : '#5a2810' }}
+          >
+            {t('instructions.title')}
+          </button>
           <button
             onClick={() => setActiveTab('currentHand')}
             className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
@@ -187,6 +210,18 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
 
         {/* Tab Content */}
         <div className="p-4">
+          {activeTab === 'instructions' && (
+            <div className="text-amber-200">
+              <ul className="list-disc list-inside space-y-2 text-base">
+                <li>{t('instructions.rollDice')}</li>
+                <li>{t('instructions.makeBid')}</li>
+                <li>{t('instructions.doubt')}</li>
+                <li>{t('instructions.spotOn')}</li>
+                <li>{t('instructions.winRound')}</li>
+              </ul>
+            </div>
+          )}
+
           {activeTab === 'currentHand' && (
             <div>
               {game.currentHandBidHistory && game.currentHandBidHistory.length > 0 ? (

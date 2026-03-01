@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Game, Player, CreateGameRequest } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
@@ -16,7 +16,6 @@ import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
-import InstructionsWindow from './InstructionsWindow';
 
 interface GameTableProps {
   game?: Game | null;
@@ -51,8 +50,12 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousGameWinner, setPreviousGameWinner] = useState<string>('');
   const [hasPlayedGameStart, setHasPlayedGameStart] = useState(false);
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [hasShownInstructions, setHasShownInstructions] = useState(false);
+  const gameRef = useRef<Game | null>(game);
+  const gameId = game?.id;
+
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -68,28 +71,13 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log("Playing game start sound");
       audioService.playGameStart();
       setHasPlayedGameStart(true);
-      
-      // Show instructions window if not shown yet
-      if (!hasShownInstructions) {
-        setShowInstructions(true);
-        setHasShownInstructions(true);
-      }
-      
-      // If we're on desktop, expand the history panel automatically
-      try {
-        const isDesktop =
-          typeof window !== "undefined" && window.innerWidth >= 768;
-        if (isDesktop) {
-          console.log("Desktop detected - opening history panel on game start");
-          setIsHistoryOpen(true);
-        }
-      } catch (e) {
-        // ignore
-      }
+
+      // Open the top-right menu panel on game start so instructions are visible by default
+      setIsHistoryOpen(true);
     }
     
     setPreviousGameState(game.state);
-  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game, hasShownInstructions]);
+  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
 
   // Play sounds based on game state changes
   useEffect(() => {
@@ -189,15 +177,16 @@ const GameTable: React.FC<GameTableProps> = ({
 
   // Connect WebSocket for all games (all games are multiplayer)
   useEffect(() => {
+    const currentGame = gameRef.current;
     console.log("WebSocket useEffect triggered:", {
-      gameId: game?.id,
+      gameId,
       localPlayerId,
     });
-    if (game && localPlayerId) {
-      console.log("Connecting WebSocket for game:", game.id);
+    if (currentGame && gameId && localPlayerId) {
+      console.log("Connecting WebSocket for game:", gameId);
 
       // Register AI players when game is loaded
-      game.players.forEach((player) => {
+      currentGame.players.forEach((player) => {
         if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
           aiService.registerAIPlayer(player.id, player.name);
           console.log("Registered AI player:", player.name, player.id);
@@ -205,7 +194,7 @@ const GameTable: React.FC<GameTableProps> = ({
       });
 
       try {
-        webSocketService.connect(game.id, (updatedGame) => {
+        webSocketService.connect(gameId, (updatedGame) => {
           console.log("WebSocket game update received:", updatedGame);
 
           // Register any new AI players
@@ -225,16 +214,16 @@ const GameTable: React.FC<GameTableProps> = ({
 
       // Cleanup on unmount
       return () => {
-        console.log("Disconnecting WebSocket for game:", game.id);
+        console.log("Disconnecting WebSocket for game:", gameId);
         webSocketService.disconnect();
       };
     } else {
       console.log("WebSocket not connected - conditions not met:", {
-        hasGame: !!game,
+        hasGame: !!currentGame,
         hasLocalPlayerId: !!localPlayerId,
       });
     }
-  }, [game?.id, localPlayerId, game]);
+  }, [gameId, localPlayerId]);
 
   // Handle bid display and betting delay when round ends or showAllDice changes
   useEffect(() => {
@@ -262,16 +251,18 @@ const GameTable: React.FC<GameTableProps> = ({
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
+    const currentGame = gameRef.current;
     console.log("Polling useEffect triggered:", {
-      gameId: game?.id,
+      gameId,
       localPlayerId,
     });
-    if (game && localPlayerId) {
-      console.log("Starting polling for game:", game.id);
+    if (currentGame && gameId && localPlayerId) {
+      console.log("Starting polling for game:", gameId);
       const pollInterval = setInterval(async () => {
         try {
-          console.log("Polling game updates for game:", game.id);
-          const updatedGame = await gameApi.getMultiplayerGame(game.id);
+          console.log("Polling game updates for game:", gameId);
+          const updatedGame = await gameApi.getMultiplayerGame(gameId);
+          const previousGame = gameRef.current;
           console.log(
             "Polled game state:",
             updatedGame.state,
@@ -282,10 +273,10 @@ const GameTable: React.FC<GameTableProps> = ({
           );
 
           // Check if showAllDice state changed
-          if (game.showAllDice !== updatedGame.showAllDice) {
+          if (previousGame && previousGame.showAllDice !== updatedGame.showAllDice) {
             console.log(
               "🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:",
-              game.showAllDice,
+              previousGame.showAllDice,
               "New:",
               updatedGame.showAllDice,
               "at",
@@ -294,10 +285,10 @@ const GameTable: React.FC<GameTableProps> = ({
           }
 
           // Check if the current player has changed
-          if (game.currentPlayerId !== updatedGame.currentPlayerId) {
+          if (previousGame && previousGame.currentPlayerId !== updatedGame.currentPlayerId) {
             console.log(
               "🎯 TURN CHANGE DETECTED! Old:",
-              game.currentPlayerId,
+              previousGame.currentPlayerId,
               "New:",
               updatedGame.currentPlayerId
             );
@@ -310,16 +301,16 @@ const GameTable: React.FC<GameTableProps> = ({
       }, 1000); // Poll every 1 second for faster updates
 
       return () => {
-        console.log("Clearing polling interval for game:", game.id);
+        console.log("Clearing polling interval for game:", gameId);
         clearInterval(pollInterval);
       };
     } else {
       console.log("Polling not started - conditions not met:", {
-        hasGame: !!game,
+        hasGame: !!currentGame,
         hasLocalPlayerId: !!localPlayerId,
       });
     }
-  }, [game?.id, localPlayerId, game]);
+  }, [gameId, localPlayerId]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
@@ -468,9 +459,33 @@ const GameTable: React.FC<GameTableProps> = ({
         }
       }
 
-      // Use WebSocket for all games (all games are multiplayer)
+      // Use WebSocket for multiplayer; fallback to REST if socket isn't connected yet
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
-      webSocketService.sendAction(actionName, data, localPlayerId);
+      const sentViaWebSocket = webSocketService.sendAction(actionName, data, localPlayerId);
+
+      if (!sentViaWebSocket) {
+        console.warn('⚠️ WebSocket unavailable, falling back to REST for action:', action);
+        if (action === 'bid' && data) {
+          const response = await gameApi.makeBid(game.id, {
+            playerId: localPlayerId,
+            quantity: data.quantity,
+            faceValue: data.faceValue,
+          });
+          if (response?.game) {
+            setGame(response.game);
+          }
+        } else if (action === 'doubt') {
+          const response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
+          if (response?.game) {
+            setGame(response.game);
+          }
+        } else if (action === 'spotOn') {
+          const response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
+          if (response?.game) {
+            setGame(response.game);
+          }
+        }
+      }
 
       // Track doubt/spot-on actions immediately when button is pressed
       if (action === "doubt" || action === "spotOn") {
@@ -1014,12 +1029,6 @@ const GameTable: React.FC<GameTableProps> = ({
       <StatisticsDisplay 
         isOpen={showStatistics}
         onClose={() => setShowStatistics(false)}
-      />
-
-      {/* Instructions Window */}
-      <InstructionsWindow
-        isOpen={showInstructions}
-        onClose={() => setShowInstructions(false)}
       />
     </div>
   );
