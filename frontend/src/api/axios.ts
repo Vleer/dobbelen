@@ -2,6 +2,13 @@ import axios from "axios";
 
 // Get the backend URL based on environment
 const getBackendUrl = () => {
+  // Development: always use local backend so dev machine is isolated from server
+  if (process.env.NODE_ENV === 'development') {
+    const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+    console.log('🌐 [DEV] Using isolated local backend:', url);
+    return url;
+  }
+
   // Check if we're running in Kubernetes (via ingress)
   // In K8s with ingress, we use the app's base path for API routing
   if (process.env.REACT_APP_USE_INGRESS === 'true') {
@@ -10,12 +17,9 @@ const getBackendUrl = () => {
     console.log('🌐 Using Kubernetes ingress routing with base path:', basePath);
     return basePath;  // This will make /api/games become /dobbelen/api/games
   }
-  
-  // Always use the hostname from the current window location
-  // This allows access from other machines on the same network
+
+  // Production: use hostname so same-origin or explicit URL works
   const hostname = window.location.hostname;
-  
-  // If we're accessing from localhost, use the Docker internal URL
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
     console.log('🌐 Using localhost backend URL:', url);
