@@ -17,6 +17,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [playerId, setPlayerId] = useState('');
   const [restored, setRestored] = useState(false);
+  const [lobbyKey, setLobbyKey] = useState(0);
 
   // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
   useEffect(() => {
@@ -62,6 +63,7 @@ function App() {
     setGame(null);
     setUsername('');
     setPlayerId('');
+    setLobbyKey((k) => k + 1);
   };
 
   return (
@@ -77,6 +79,7 @@ function App() {
 
           {appState === 'lobby' ? (
             <MultiplayerLobby
+              key={lobbyKey}
               onGameStart={handleGameStart}
               onBack={() => {}} // No back button needed since this is the main page
             />

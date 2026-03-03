@@ -10,6 +10,8 @@ interface HistoryPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onTrackAction?: (playerId: string, actionType: 'DOUBT' | 'SPOT_ON') => void;
+  openedFromGameStart?: boolean;
+  onClearGameStartOpen?: () => void;
 }
 
 // Export function to track actions - can be called from outside
@@ -55,10 +57,24 @@ interface PlayerStats {
   wrongSpotOns: number;
 }
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) => {
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, openedFromGameStart, onClearGameStartOpen }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('instructions');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+
+  // When panel opens from game start only: show "How to play". Otherwise keep/remember the last tab.
+  const hasAppliedOpenRef = React.useRef(false);
+  useEffect(() => {
+    if (!isOpen) {
+      hasAppliedOpenRef.current = false;
+      return;
+    }
+    if (openedFromGameStart && !hasAppliedOpenRef.current) {
+      setActiveTab('instructions');
+      onClearGameStartOpen?.();
+      hasAppliedOpenRef.current = true;
+    }
+  }, [isOpen, openedFromGameStart, onClearGameStartOpen]);
 
   // Load stats from storage and refresh when panel opens or game changes
   useEffect(() => {
@@ -213,8 +229,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose }) =>
           {activeTab === 'instructions' && (
             <div className="text-amber-200">
               <ul className="list-disc list-inside space-y-2 text-base">
-                <li>{t('instructions.rollDice')}</li>
-                <li>{t('instructions.makeBid')}</li>
+                <li>{t('instructions.raise')}</li>
                 <li>{t('instructions.doubt')}</li>
                 <li>{t('instructions.spotOn')}</li>
                 <li>{t('instructions.winRound')}</li>

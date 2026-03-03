@@ -22,7 +22,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState(() => {
     const saved = localStorage.getItem('localPlayerPosition');
-    return saved ? JSON.parse(saved) : { x: 0, y: 0 };
+    return saved ? JSON.parse(saved) : { x: 16, y: 0 }; // default: bottom-left
   });
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -258,7 +258,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       style={{
         left: position.x || "50%",
         top: position.y || "auto",
-        bottom: position.y ? "auto" : "1rem",
+        bottom: position.y ? "auto" : "1.5rem",
         transform: position.x ? "none" : "translateX(-50%)",
         cursor: isDragging ? "grabbing" : "grab",
       }}

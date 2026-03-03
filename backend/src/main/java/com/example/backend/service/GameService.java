@@ -676,6 +676,75 @@ public class GameService {
     }
 
     /**
+     * Leave an in-progress multiplayer game. Removes the player; if one or zero players remain, the game is cancelled.
+     * Broadcasts PLAYER_LEFT (with player name) then either GAME_UPDATED or GAME_CANCELLED.
+     */
+    public void leaveGame(String gameId, String playerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getState() != GameState.IN_PROGRESS && game.getState() != GameState.ROUND_ENDED) {
+            throw new IllegalArgumentException("Can only leave when game is in progress or round ended");
+        }
+        int leaveIndex = -1;
+        String playerName = null;
+        for (int i = 0; i < game.getPlayers().size(); i++) {
+            if (game.getPlayers().get(i).getId().equals(playerId)) {
+                leaveIndex = i;
+                playerName = game.getPlayers().get(i).getName();
+                break;
+            }
+        }
+        if (leaveIndex < 0 || playerName == null) {
+            throw new IllegalArgumentException("Player not found");
+        }
+        game.getPlayers().remove(leaveIndex);
+        game.getEliminatedPlayers().removeIf(id -> id.equals(playerId));
+        int newSize = game.getPlayers().size();
+
+        // Fix currentPlayerIndex after removal
+        int cp = game.getCurrentPlayerIndex();
+        if (cp == leaveIndex) {
+            game.setCurrentPlayerIndex(newSize > 0 ? (leaveIndex % newSize) : 0);
+        } else if (cp > leaveIndex) {
+            game.setCurrentPlayerIndex(cp - 1);
+        }
+        if (game.getCurrentPlayerIndex() >= newSize && newSize > 0) {
+            game.setCurrentPlayerIndex(0);
+        }
+
+        // Fix dealerIndex after removal
+        int di = game.getDealerIndex();
+        if (di == leaveIndex) {
+            game.setDealerIndex(newSize > 0 ? 0 : 0);
+        } else if (di > leaveIndex) {
+            game.setDealerIndex(di - 1);
+        }
+        if (game.getDealerIndex() >= newSize && newSize > 0) {
+            game.setDealerIndex(0);
+        }
+
+        // Clear current bid if it was from the leaving player
+        if (game.getCurrentBid() != null && game.getCurrentBid().getPlayerId().equals(playerId)) {
+            game.setCurrentBid(null);
+        }
+
+        // Notify all clients that this player left (before game update or cancel)
+        messagingTemplate.convertAndSend("/topic/game/" + gameId,
+                new WebSocketMessage("PLAYER_LEFT", java.util.Map.of("playerName", playerName), gameId, playerId));
+
+        if (newSize < 2) {
+            games.remove(gameId);
+            System.out.println("LEAVE GAME: Game " + gameId + " cancelled (only " + newSize + " player(s) left)");
+            messagingTemplate.convertAndSend("/topic/game/" + gameId,
+                    new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
+        } else {
+            broadcastGameUpdate(gameId);
+        }
+    }
+
+    /**
      * Cancel (delete) a multiplayer game. Only the host (first player) may cancel.
      * When the game is removed, other players will see the game as gone when they poll.
      */
@@ -703,37 +772,46 @@ public class GameService {
         if (game == null) {
             throw new IllegalArgumentException("Game not found");
         }
-        // Require at least 2 players to start a multiplayer game
         if (game.getPlayers().size() < 2) {
             throw new IllegalArgumentException("Not enough players to start game. Minimum 2 players required");
         }
 
-        // Initialize all players
+        game.setState(GameState.COUNTDOWN);
+        game.setCountdownEndTime(System.currentTimeMillis() + 3000L);
+        broadcastGameUpdate(gameId);
+
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                doActualStart(gameId);
+            }
+        }, 3000);
+    }
+
+    private void doActualStart(String gameId) {
+        Game game = getGame(gameId);
+        if (game == null || game.getState() != GameState.COUNTDOWN) {
+            return;
+        }
         for (Player player : game.getPlayers()) {
             player.reset();
             player.rollDice();
         }
-
-        // Randomize dealer, and always start with dealer as current player
         int dealerIdx = (int) (Math.random() * game.getPlayers().size());
         game.setDealerIndex(dealerIdx);
         game.setCurrentPlayerIndex(dealerIdx);
-
         game.setState(GameState.IN_PROGRESS);
         game.setWaitingForPlayers(false);
         game.setCurrentBid(null);
         game.setPreviousBid(null);
         game.setEliminatedPlayers(new ArrayList<>());
         game.setRoundNumber(1);
-
-        // Ensure this is a multiplayer game
         game.setMultiplayer(true);
         game.setMaxPlayers(6);
-
+        game.setCountdownEndTime(null);
         System.out.println(
-                "START GAME COMPLETE: Game state=" + game.getState() + ", Players=" + game.getPlayers().size()
-                        + ", isMultiplayer=" + game.isMultiplayer());
-        broadcastGameUpdate(gameId); // Broadcast game started
+                "START GAME COMPLETE: Game state=" + game.getState() + ", Players=" + game.getPlayers().size());
+        broadcastGameUpdate(gameId);
     }
 
     public GameResponse getGameResponse(String gameId) {

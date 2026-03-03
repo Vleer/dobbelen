@@ -9,6 +9,7 @@
   "lobby.existingGames": "Parties en cours",
   "lobby.joinGame": "Rejoindre une partie",
   "lobby.gameId": "ID de la partie",
+  "lobby.youAre": "Vous êtes",
   "lobby.enterGameId": "Entrez l'ID à 3 caractères",
   "lobby.username": "Votre pseudo",
   "lobby.enterUsername": "Entrez votre pseudo",
@@ -30,6 +31,8 @@
   "lobby.startGame": "▶ Démarrer la partie",
   "lobby.waitingForHost": "En attente du démarrage de l'hôte...",
   "lobby.needAtLeastTwoPlayers": "Au moins 2 joueurs requis pour démarrer",
+  "lobby.gameStarting": "La partie commence dans...",
+  "lobby.go": "Go!",
 
   "game.round": "Manche {{roundNumber}}",
   "game.currentBid": "Enchère actuelle",
@@ -70,6 +73,11 @@
 
   "game.continue": "Continuer",
   "game.continuing": "En cours...",
+  "game.leaveGame": "Quitter la partie",
+  "game.leaveConfirmMessage": "Êtes-vous sûr de vouloir quitter la partie ?",
+  "game.leaveConfirmLeave": "Quitter",
+  "game.leaveConfirmCancel": "Annuler",
+  "game.playerLeftNotification": "{{playerName}} a quitté la partie",
 
   "game.dobbelkoning": "Roi du dé",
 
@@ -109,6 +117,7 @@
   "instructions.close": "Fermer",
   "instructions.rollDice": "Lancez les dés secrètement sous votre gobelet",
   "instructions.makeBid": "Relancer: Pariez sur le total des dés montrant une valeur",
+  "instructions.raise": "Relancer: Cliquez sur le nombre de dés que vous croyez être dans toutes les mains des joueurs",
   "instructions.doubt": "Doute: Contestez l'enchère précédente si trop haute",
   "instructions.spotOn": "Pile poil: Prétendez que l'enchère est exacte (risqué!)",
   "instructions.winRound": "Le dernier joueur debout gagne la manche"

@@ -9,6 +9,7 @@
   "lobby.existingGames": "Bestehende Spiele",
   "lobby.joinGame": "Spiel beitreten",
   "lobby.gameId": "Spiel-ID",
+  "lobby.youAre": "Du bist",
   "lobby.enterGameId": "3-stellige ID eingeben",
   "lobby.username": "Ihr Benutzername",
   "lobby.enterUsername": "Benutzername eingeben",
@@ -30,6 +31,8 @@
   "lobby.startGame": "▶ Spiel starten",
   "lobby.waitingForHost": "Warten auf den Host, um das Spiel zu starten...",
   "lobby.needAtLeastTwoPlayers": "Mindestens 2 Spieler zum Start erforderlich",
+  "lobby.gameStarting": "Spiel startet in...",
+  "lobby.go": "Los!",
 
   "game.round": "Runde {{roundNumber}}",
   "game.currentBid": "Aktuelles Gebot",
@@ -70,6 +73,11 @@
 
   "game.continue": "Weiter",
   "game.continuing": "Weiter...",
+  "game.leaveGame": "Spiel verlassen",
+  "game.leaveConfirmMessage": "Möchtest du das Spiel wirklich verlassen?",
+  "game.leaveConfirmLeave": "Verlassen",
+  "game.leaveConfirmCancel": "Abbrechen",
+  "game.playerLeftNotification": "{{playerName}} hat das Spiel verlassen",
 
   "game.dobbelkoning": "Würfelkönig",
 
@@ -109,6 +117,7 @@
   "instructions.close": "Schließen",
   "instructions.rollDice": "Würfel heimlich unter dem Becher werfen",
   "instructions.makeBid": "Erhöhen: Auf Gesamtwürfel mit einem Wert bieten",
+  "instructions.raise": "Erhöhen: Klicke auf die Anzahl der Würfel, die du glaubst, dass alle Spieler zusammen haben",
   "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
   "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
   "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde"

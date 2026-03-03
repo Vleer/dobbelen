@@ -17,13 +17,13 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState(() => {
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
     const saved = localStorage.getItem('bidDisplayPosition');
-    return saved ? JSON.parse(saved) : { x: window.innerWidth / 2 - 200, y: 20 };
+    return saved ? JSON.parse(saved) : null; // null = center of screen
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Drag functionality
+  // Drag functionality (desktop)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.drag-handle')) {
       setIsDragging(true);
@@ -90,6 +90,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     );
   }
 
+  const isCentered = position === null;
   return (
     <div
       ref={containerRef}
@@ -98,8 +99,9 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
         backgroundColor: '#3d1f0d',
         borderColor: '#78350f',
         position: "fixed",
-        left: position.x,
-        top: position.y,
+        ...(isCentered
+          ? { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }
+          : { left: position.x, top: position.y }),
         zIndex: 1000,
         cursor: isDragging ? "grabbing" : "grab",
       }}

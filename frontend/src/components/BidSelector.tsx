@@ -36,7 +36,11 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState(() => {
     const saved = localStorage.getItem("bidSelectorPosition");
-    return saved ? JSON.parse(saved) : { x: window.innerWidth - 400, y: 100 };
+    if (saved) return JSON.parse(saved);
+    // Default: just to the right of local player, with space from bottom
+    const x = 372;
+    const y = typeof window !== 'undefined' ? window.innerHeight - 280 : 400;
+    return { x, y };
   });
   const containerRef = useRef<HTMLDivElement>(null);
 

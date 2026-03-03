@@ -9,6 +9,7 @@
   "lobby.existingGames": "Partite esistenti",
   "lobby.joinGame": "Unisciti alla Partita",
   "lobby.gameId": "ID Partita",
+  "lobby.youAre": "Sei",
   "lobby.enterGameId": "Inserisci l'ID a 3 caratteri",
   "lobby.username": "Il tuo Nome",
   "lobby.enterUsername": "Inserisci il tuo nome",
@@ -30,6 +31,8 @@
   "lobby.startGame": "▶ Avvia Partita",
   "lobby.waitingForHost": "In attesa che l'host avvii la partita...",
   "lobby.needAtLeastTwoPlayers": "Sono necessari almeno 2 giocatori per iniziare",
+  "lobby.gameStarting": "La partita inizia tra...",
+  "lobby.go": "Via!",
 
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Offerta Corrente",
@@ -70,6 +73,11 @@
 
   "game.continue": "Continua",
   "game.continuing": "Continuando...",
+  "game.leaveGame": "Esci dal gioco",
+  "game.leaveConfirmMessage": "Sei sicuro di voler uscire dal gioco?",
+  "game.leaveConfirmLeave": "Esci",
+  "game.leaveConfirmCancel": "Annulla",
+  "game.playerLeftNotification": "{{playerName}} ha lasciato la partita",
 
   "game.dobbelkoning": "Dobbelkoning",
 
@@ -109,6 +117,7 @@
   "instructions.close": "Chiudi",
   "instructions.rollDice": "Lancia i dadi segretamente sotto il tuo bicchiere",
   "instructions.makeBid": "Rilancio: Punta sul totale dei dadi che mostrano un valore",
+  "instructions.raise": "Rilancio: Clicca sul numero di dadi che credi ci siano in mano a tutti i giocatori",
   "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
   "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
   "instructions.winRound": "L'ultimo giocatore in piedi vince il round"

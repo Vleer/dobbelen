@@ -1,36 +1,33 @@
-# Use Temurin (Eclipse) OpenJDK 21 as base image (widely available on Docker Hub)
-FROM eclipse-temurin:21-jdk
-
-# Install curl for health checks and clean up
-RUN apt-get update && \
-    apt-get install -y curl && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Set working directory
+# Stage 1: build (layer order: deps first so source-only changes reuse cache)
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 
-# Copy gradle wrapper and build files
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
+# Resolve dependencies only; cached until build.gradle/settings.gradle change
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
 
-# Make gradlew executable
-RUN chmod +x gradlew
-
-# Copy source code
 COPY src src
-
-# Build the application with proper Java version
 RUN ./gradlew build -x test --no-daemon
 
-# Expose port 8080
+# Stage 2: run (smaller JRE image = faster pull and startup)
+FROM eclipse-temurin:21-jre
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /app
+COPY --from=builder /app/build/libs/backend-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8080
 
-# Add health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=3 \
+  CMD curl -f -s http://localhost:8080/actuator/health || exit 1
 
-# Run the application
-CMD ["java", "-jar", "build/libs/backend-0.0.1-SNAPSHOT.jar"]
+# JVM flags for faster startup in containers
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

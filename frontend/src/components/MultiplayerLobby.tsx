@@ -33,6 +33,24 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [isPrivateGame, setIsPrivateGame] = useState(false);
   const [lobbyGames, setLobbyGames] = useState<Game[]>([]);
   const [lobbyExpanded, setLobbyExpanded] = useState(false);
+  const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
+
+  // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
+  const resetToMainLobby = useCallback((gameIdToClear?: string) => {
+    if (gameIdToClear) {
+      sessionStorage.removeItem(`lobby_${gameIdToClear}`);
+      sessionStorage.removeItem("game_session");
+      window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
+    }
+    setGame(null);
+    setGameId("");
+    setIsHost(false);
+    setHasJoined(false);
+    setError("");
+    setIsJoining(false);
+    setMyPlayerId(null);
+  }, []);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -75,9 +93,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         );
         console.log("Auto-joined game successfully:", joinedGame);
 
+        const me = joinedGame.players.find((p) => p.name === nameToUse);
+        setGameId(gameIdToJoin);
         setGame(joinedGame);
         setIsHost(false);
         setHasJoined(true);
+        setMyPlayerId(me?.id ?? null);
 
         // Optionally update URL with game ID
         if (options?.updateHistory !== false) {
@@ -124,10 +145,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           const { playerName: savedName, isHost: savedHost } = JSON.parse(saved);
           setGameId(urlGameId);
           gameApi.getMultiplayerGame(urlGameId).then((fetched) => {
+            const name = savedName ?? getRandomDutchName();
+            const me = fetched.players.find((p) => p.name === name);
             setGame(fetched);
-            setPlayerName(savedName ?? getRandomDutchName());
+            setPlayerName(name);
             setIsHost(!!savedHost);
             setHasJoined(true);
+            setMyPlayerId(me?.id ?? null);
           }).catch(() => {
             sessionStorage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
             window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
@@ -163,6 +187,23 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]); // Only run once on initialization, not when playerName changes
+
+  // Countdown ticker when game is in COUNTDOWN state (visible to all players)
+  useEffect(() => {
+    if (game?.state !== "COUNTDOWN" || game?.countdownEndTime == null) {
+      setCountdownSeconds(null);
+      return;
+    }
+    const endMs = typeof game.countdownEndTime === "number" ? game.countdownEndTime : null;
+    if (endMs == null) return;
+    const tick = () => {
+      const remaining = Math.ceil((endMs - Date.now()) / 1000);
+      setCountdownSeconds(remaining > 0 ? remaining : 0);
+    };
+    tick();
+    const interval = setInterval(tick, 200);
+    return () => clearInterval(interval);
+  }, [game?.state, game?.countdownEndTime]);
 
   // Fetch lobby list when on main screen (no game joined)
   useEffect(() => {
@@ -206,34 +247,40 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
           }
         });
 
-        // Check if game has started
+        // Kicked or no longer in game: return to main lobby (by id if we have it, else by name)
+        const stillInGame = myPlayerId
+          ? updatedGame.players.some((p) => p.id === myPlayerId)
+          : updatedGame.players.some((p) => p.name === playerName);
+        if (!stillInGame) {
+          resetToMainLobby(gameId);
+          return;
+        }
+
+        // Check if game has started (from waiting or from countdown)
         if (
           updatedGame.state === "IN_PROGRESS" &&
-          game.state === "WAITING_FOR_PLAYERS"
+          (game.state === "WAITING_FOR_PLAYERS" || game.state === "COUNTDOWN")
         ) {
           console.log("Game started! Transitioning to game table...");
-          const player = updatedGame.players.find((p) => p.name === playerName);
+          const player = myPlayerId
+            ? updatedGame.players.find((p) => p.id === myPlayerId)
+            : updatedGame.players.find((p) => p.name === playerName);
           if (player) {
-            onGameStart(updatedGame, player.id, playerName);
+            onGameStart(updatedGame, player.id, player.name);
           }
         }
 
         setGame(updatedGame);
       } catch (err: any) {
         console.error("Error polling game updates:", err);
-        // Game was cancelled (e.g. host left) — return to main screen
         if (err.response?.status === 404) {
-          setGame(null);
-          setGameId("");
-          setIsHost(false);
-          setHasJoined(false);
-          setError("");
+          resetToMainLobby(gameId);
         }
       }
-    }, 2000); // Poll every 2 seconds
+    }, 1000); // Poll every 1 second so new joiners and kick are reflected quickly
 
     return () => clearInterval(pollInterval);
-  }, [game, gameId, isInitialized, playerName, onGameStart]);
+  }, [game, gameId, isInitialized, playerName, myPlayerId, onGameStart, resetToMainLobby]);
 
   const createGame = async () => {
     if (!playerName.trim()) {
@@ -256,10 +303,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       );
       console.log("Host joined game successfully:", updatedGame);
 
+      const me = updatedGame.players.find((p) => p.name === playerName);
       setGame(updatedGame);
       setGameId(updatedGame.id);
       setIsHost(true);
-      setHasJoined(true); // Mark as joined to prevent duplicates
+      setHasJoined(true);
+      setMyPlayerId(me?.id ?? null);
       sessionStorage.setItem(`lobby_${updatedGame.id}`, JSON.stringify({ playerName, isHost: true }));
 
       // Update URL with game ID (keep in URL so refresh restores lobby)
@@ -299,9 +348,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       const joinedGame = await gameApi.joinMultiplayerGame(gameId, playerName);
       console.log("Joined game successfully:", joinedGame);
 
+      const me = joinedGame.players.find((p) => p.name === playerName);
       setGame(joinedGame);
       setIsHost(false);
-      setHasJoined(true); // Mark as joined to prevent duplicates
+      setHasJoined(true);
+      setMyPlayerId(me?.id ?? null);
       sessionStorage.setItem(`lobby_${gameId}`, JSON.stringify({ playerName, isHost: false }));
 
       // Update URL with game ID (keep in URL so refresh restores lobby)
@@ -395,15 +446,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   };
 
   const handleCancelNewGame = () => {
-    if (gameId) {
-      sessionStorage.removeItem(`lobby_${gameId}`);
-      window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
-    }
-    setGame(null);
-    setGameId("");
-    setIsHost(false);
-    setHasJoined(false);
-    setError("");
+    resetToMainLobby(gameId || undefined);
   };
 
   return (
@@ -544,7 +587,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                               type="button"
                               onClick={() => {
                                 audioService.playRaise();
-                                setGameId(g.id);
+                                handleAutoJoin(g.id);
                               }}
                               className="w-full text-left px-3 py-1.5 rounded hover:bg-gray-200 flex flex-col gap-0.5"
                             >
@@ -580,7 +623,17 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             )}
           </div>
         ) : (
-          <div className="space-y-4 md:space-y-6">
+          <div className="space-y-4 md:space-y-6 relative">
+            {game?.state === "COUNTDOWN" && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70">
+                <div className="text-white text-center">
+                  <p className="text-xl md:text-2xl font-medium mb-4">{t("lobby.gameStarting")}</p>
+                  <p className="text-7xl md:text-9xl font-bold tabular-nums">
+                    {countdownSeconds !== null && countdownSeconds > 0 ? countdownSeconds : t("lobby.go")}
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="text-center">
               {!isHost && (
                 <p className="text-sm md:text-base text-gray-600 mb-3">
@@ -592,7 +645,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   type="button"
                   onClick={async () => {
                     audioService.playRaise();
-                    const me = game.players.find((p) => p.name === playerName);
+                    const me = myPlayerId
+                      ? game.players.find((p) => p.id === myPlayerId)
+                      : game.players.find((p) => p.name === playerName);
                     if (me) {
                       try {
                         await gameApi.removePlayer(gameId, me.id);
@@ -612,7 +667,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   {t("lobby.gameId")}
                 </p>
                 <p className="text-lg md:text-2xl font-mono font-bold text-green-600 truncate">
-                  {gameId}
+                  {game?.id ?? gameId}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {t("lobby.youAre")}: <span className="font-semibold text-gray-800">{playerName}</span>
                 </p>
               </div>
             </div>
@@ -665,7 +723,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                             </span>
                           </span>
                         ) : (
-                          player.name
+                          <>
+                            {player.name}
+                            {index === 0 && <span className="ml-1" title={t("lobby.host")}>👑</span>}
+                          </>
                         )}
                       </span>
                       {isHost && game.players[0]?.id !== player.id && (
@@ -732,25 +793,18 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 <button
                   onClick={async () => {
                     audioService.playRaise();
-                    const player = game.players.find(
-                      (p) => p.name === playerName
-                    );
-                    if (player) {
-                      try {
-                        console.log("Starting multiplayer game...");
-                        const startedGame = await gameApi.startMultiplayerGame(
-                          gameId
-                        );
-                        console.log("Game started successfully:", startedGame);
-                        onGameStart(startedGame, player.id, playerName);
-                      } catch (err: any) {
-                        console.error("Error starting game:", err);
-                        setError(
-                          err.response?.data?.message ||
-                            err.message ||
-                            t("errors.failedToStart")
-                        );
-                      }
+                    try {
+                      console.log("Starting multiplayer game (3s countdown)...");
+                      const startedGame = await gameApi.startMultiplayerGame(gameId);
+                      setGame(startedGame);
+                      setError("");
+                    } catch (err: any) {
+                      console.error("Error starting game:", err);
+                      setError(
+                        err.response?.data?.message ||
+                          err.message ||
+                          t("errors.failedToStart")
+                      );
                     }
                   }}
                   className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg md:text-xl disabled:opacity-50"

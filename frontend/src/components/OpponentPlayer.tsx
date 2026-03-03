@@ -39,29 +39,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const getDefaultPosition = () => {
-    // Half-circle positioning from left to right at the top of the screen
-    const screenWidth = window.innerWidth;
-    const playerWidth = 150; // Approximate width of a player component
-    const topMargin = 80; // Distance from top of screen
-
-    // Calculate total opponents (assuming max 5 opponents for a 6-player game)
-    // We'll use a more dynamic approach based on position
-    const maxOpponents = 5;
-    const totalWidth = screenWidth - 200; // Leave margins on sides
-    const startX = 100; // Left margin
-
-    // Calculate x position by dividing available width by number of positions
-    const spacing = totalWidth / (maxOpponents + 1); // +1 to avoid edge placement
-    const x = startX + spacing * (position + 1);
-
-    // Create a slight arc by varying the y position
-    const centerPosition = maxOpponents / 2;
-    const distanceFromCenter = Math.abs(position - centerPosition);
-    const arcHeight = 30; // Maximum arc height
-    const y =
-      topMargin + arcHeight * Math.pow(distanceFromCenter / centerPosition, 2);
-
-    return { x: x - playerWidth / 2, y };
+    // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
+    const playerWidth = 180;
+    const topMargin = 80; // Below header/volume
+    const startX = 24; // Right of volume button
+    const gap = 20;
+    const x = startX + position * (playerWidth + gap);
+    const y = topMargin;
+    return { x, y };
   };
 
   const [dragPosition, setDragPosition] = useState(() => {

@@ -2,21 +2,34 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { Game } from '../types/game';
 
+export interface WebSocketCallbacks {
+  onGameUpdate: (game: Game) => void;
+  onPlayerLeft?: (playerName: string) => void;
+  onGameCancelled?: () => void;
+}
+
 export class WebSocketService {
   private stompClient: Client | null = null;
   private gameId: string | null = null;
   private onGameUpdate: ((game: Game) => void) | null = null;
+  private onPlayerLeft: ((playerName: string) => void) | null = null;
+  private onGameCancelled: (() => void) | null = null;
 
-  connect(gameId: string, onGameUpdate: (game: Game) => void) {
+  connect(gameId: string, callbacks: WebSocketCallbacks | ((game: Game) => void)) {
+    const onGameUpdate = typeof callbacks === 'function' ? callbacks : callbacks.onGameUpdate;
+    const onPlayerLeft = typeof callbacks === 'function' ? undefined : callbacks.onPlayerLeft ?? undefined;
+    const onGameCancelled = typeof callbacks === 'function' ? undefined : callbacks.onGameCancelled ?? undefined;
     console.log('WebSocketService.connect called with gameId:', gameId);
 
-    // Reuse an existing active client for the same game and only refresh callback
+    // Reuse an existing active client for the same game and only refresh callbacks
     if (
       this.stompClient &&
       this.gameId === gameId &&
       (this.stompClient.connected || this.stompClient.active)
     ) {
       this.onGameUpdate = onGameUpdate;
+      this.onPlayerLeft = onPlayerLeft ?? null;
+      this.onGameCancelled = onGameCancelled ?? null;
       console.log('🔁 Reusing existing active STOMP client for game:', gameId);
       return;
     }
@@ -29,6 +42,8 @@ export class WebSocketService {
 
     this.gameId = gameId;
     this.onGameUpdate = onGameUpdate;
+    this.onPlayerLeft = onPlayerLeft ?? null;
+    this.onGameCancelled = onGameCancelled ?? null;
 
     // Get the backend URL based on environment
     const getBackendUrl = () => {
@@ -91,7 +106,15 @@ export class WebSocketService {
             try {
               const data = JSON.parse(message.body);
               console.log('📨 Received WebSocket message:', data);
-              
+
+              if (data.type === 'PLAYER_LEFT' && data.data?.playerName) {
+                this.onPlayerLeft?.(data.data.playerName);
+                return;
+              }
+              if (data.type === 'GAME_CANCELLED') {
+                this.onGameCancelled?.();
+                return;
+              }
               if (data.type === 'GAME_UPDATED' || data.type === 'GAME_STARTED' || data.type === 'PLAYER_JOINED') {
                 console.log('🎮 Processing game update:', data.data);
                 if (data.data && typeof data.data === 'object' && 'showAllDice' in data.data) {

@@ -40,6 +40,9 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [openedForGameStart, setOpenedForGameStart] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
   const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
@@ -57,6 +60,13 @@ const GameTable: React.FC<GameTableProps> = ({
     gameRef.current = game;
   }, [game]);
 
+  // Auto-dismiss "player left" notification after 5 seconds
+  useEffect(() => {
+    if (!playerLeftNotification) return;
+    const timer = setTimeout(() => setPlayerLeftNotification(null), 5000);
+    return () => clearTimeout(timer);
+  }, [playerLeftNotification]);
+
   // Update audio service when mute state changes
   useEffect(() => {
     audioService.setMuted(isMuted);
@@ -72,7 +82,8 @@ const GameTable: React.FC<GameTableProps> = ({
       audioService.playGameStart();
       setHasPlayedGameStart(true);
 
-      // Open the top-right menu panel on game start so instructions are visible by default
+      // Open the Stats panel on game start with "How to play" tab
+      setOpenedForGameStart(true);
       setIsHistoryOpen(true);
     }
     
@@ -194,17 +205,26 @@ const GameTable: React.FC<GameTableProps> = ({
       });
 
       try {
-        webSocketService.connect(gameId, (updatedGame) => {
-          console.log("WebSocket game update received:", updatedGame);
-
-          // Register any new AI players
-          updatedGame.players.forEach((player) => {
-            if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
-              aiService.registerAIPlayer(player.id, player.name);
+        webSocketService.connect(gameId, {
+          onGameUpdate: (updatedGame) => {
+            console.log("WebSocket game update received:", updatedGame);
+            if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
+              onBack?.();
+              return;
             }
-          });
-
-          setGame(updatedGame);
+            updatedGame.players.forEach((player) => {
+              if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
+                aiService.registerAIPlayer(player.id, player.name);
+              }
+            });
+            setGame(updatedGame);
+          },
+          onPlayerLeft: (playerName) => {
+            setPlayerLeftNotification(playerName);
+          },
+          onGameCancelled: () => {
+            onBack?.();
+          },
         });
       } catch (error) {
         console.error("Failed to connect WebSocket:", error);
@@ -263,6 +283,12 @@ const GameTable: React.FC<GameTableProps> = ({
           console.log("Polling game updates for game:", gameId);
           const updatedGame = await gameApi.getMultiplayerGame(gameId);
           const previousGame = gameRef.current;
+
+          if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
+            onBack?.();
+            return;
+          }
+
           console.log(
             "Polled game state:",
             updatedGame.state,
@@ -295,8 +321,15 @@ const GameTable: React.FC<GameTableProps> = ({
           }
 
           setGame(updatedGame);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error polling game updates:", err);
+          // Game was removed (e.g. cancelled after last player left) -> return to lobby
+          if (err && typeof err === 'object' && 'response' in err) {
+            const axErr = err as { response?: { status?: number } };
+            if (axErr.response?.status === 404) {
+              onBack?.();
+            }
+          }
         }
       }, 1000); // Poll every 1 second for faster updates
 
@@ -648,6 +681,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
   const localPlayer = getLocalPlayer();
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
+  const currentBidFromActivePlayer =
+    game.currentBid && game.players.some((p) => p.id === game.currentBid!.playerId)
+      ? game.currentBid
+      : null;
 
   return (
     <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden select-none">
@@ -694,13 +731,13 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
 
           {/* Mobile Bid Display - Below opponents (when no results showing) */}
-          {game.currentBid &&
+          {currentBidFromActivePlayer &&
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
             showBidDisplay && (
               <div className="px-3 py-2">
                 <BidDisplay
-                  currentBid={game.currentBid}
+                  currentBid={currentBidFromActivePlayer}
                   currentPlayerId={game.currentPlayerId}
                   players={game.players}
                   roundNumber={game.roundNumber}
@@ -950,11 +987,11 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
       </div>
 
-      {/* Center Bid Display - Desktop only */}
-      {game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
+      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
+      {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
         <div className="hidden md:block">
           <BidDisplay
-            currentBid={game.currentBid}
+            currentBid={currentBidFromActivePlayer}
             currentPlayerId={game.currentPlayerId}
             players={game.players}
             roundNumber={game.roundNumber}
@@ -993,9 +1030,16 @@ const GameTable: React.FC<GameTableProps> = ({
             </button>
           </div>
 
-          {/* Right side - History Button and Language Selector */}
+          {/* Right side - Leave Game, Stats Button and Language Selector */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            {/* History Button - Always visible */}
+            {/* Leave Game Button - Red */}
+            <button
+              onClick={() => setShowLeaveConfirm(true)}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium shadow-lg text-sm transition-all duration-200"
+            >
+              {t("game.leaveGame")}
+            </button>
+            {/* Stats Button - Always visible */}
             <button
               onClick={() => {
                 audioService.playRaise();
@@ -1003,7 +1047,7 @@ const GameTable: React.FC<GameTableProps> = ({
               }}
               className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
             >
-              {t("game.history.title")}
+              {t("game.history.stats")}
             </button>
 
             {/* Language Selector - Desktop only */}
@@ -1020,10 +1064,63 @@ const GameTable: React.FC<GameTableProps> = ({
               game={game}
               isOpen={isHistoryOpen}
               onClose={() => setIsHistoryOpen(false)}
+              openedFromGameStart={openedForGameStart}
+              onClearGameStartOpen={() => setOpenedForGameStart(false)}
             />
           </div>
         )}
       </div>
+
+      {/* Leave Game Confirmation - always on top, styled like bid element */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+          <div
+            className="border-2 rounded-xl px-6 py-5 shadow-2xl min-w-[280px] max-w-md"
+            style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+          >
+            <p className="text-amber-200 text-center text-lg mb-5">
+              {t("game.leaveConfirmMessage")}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={async () => {
+                  setShowLeaveConfirm(false);
+                  if (gameId && localPlayerId) {
+                    try {
+                      await gameApi.leaveGame(gameId, localPlayerId);
+                    } catch (err) {
+                      console.error("Leave game failed:", err);
+                    }
+                  }
+                  onBack?.();
+                }}
+                className="px-5 py-2 rounded-lg font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >
+                {t("game.leaveConfirmLeave")}
+              </button>
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                className="px-5 py-2 rounded-lg font-semibold border-2 transition-colors"
+                style={{ backgroundColor: '#5a2810', borderColor: '#78350f', color: '#fef3c7' }}
+              >
+                {t("game.leaveConfirmCancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Player left notification - styled like bid element */}
+      {playerLeftNotification && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[9998] border-2 rounded-xl px-6 py-4 shadow-2xl"
+          style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+        >
+          <p className="text-amber-200 text-center text-lg font-medium">
+            {t("game.playerLeftNotification", { playerName: playerLeftNotification })}
+          </p>
+        </div>
+      )}
 
       {/* Statistics Display Modal */}
       <StatisticsDisplay 

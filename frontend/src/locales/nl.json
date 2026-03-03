@@ -15,6 +15,7 @@
   "lobby.back": "Terug",
   "lobby.joinGame": "Deelnemen",
   "lobby.gameId": "Spel ID",
+  "lobby.youAre": "Jij bent",
   "lobby.enterGameId": "Voer 3-karakter ID in",
   "lobby.username": "Naam",
   "lobby.enterUsername": "Voer je gebruikersnaam in",
@@ -36,6 +37,8 @@
   "lobby.startGame": "▶ Spel Starten",
   "lobby.waitingForHost": "Wachten tot de host het spel start...",
   "lobby.needAtLeastTwoPlayers": "Minimaal 2 spelers nodig om te starten",
+  "lobby.gameStarting": "Spel start over...",
+  "lobby.go": "Go!",
 
   "game.round": "Ronde {{roundNumber}}",
   "game.currentBid": "Huidige Bod",
@@ -76,6 +79,11 @@
 
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
+  "game.leaveGame": "Spel verlaten",
+  "game.leaveConfirmMessage": "Weet je zeker dat je het spel wilt verlaten?",
+  "game.leaveConfirmLeave": "Verlaten",
+  "game.leaveConfirmCancel": "Annuleren",
+  "game.playerLeftNotification": "{{playerName}} heeft het spel verlaten",
 
   "game.dobbelkoning": "Dobbelkoning",
 
@@ -115,6 +123,7 @@
   "instructions.close": "Sluiten",
   "instructions.rollDice": "Gooi dobbelstenen geheim onder je beker",
   "instructions.makeBid": "Verhogen: Bied op totaal aantal met een waarde",
+  "instructions.raise": "Verhogen: Klik op het aantal dobbelstenen dat je denkt dat alle spelers samen hebben",
   "instructions.doubt": "Optillen: Daag het vorige bod uit als het te hoog is",
   "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (risicovol!)",
   "instructions.winRound": "Laatste speler die overblijft wint de ronde"

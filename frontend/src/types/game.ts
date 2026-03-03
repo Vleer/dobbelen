@@ -41,6 +41,7 @@ export interface Game {
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
   currentHandBidHistory?: Bid[];
+  countdownEndTime?: number | null;
 }
 
 export interface CreateGameRequest {

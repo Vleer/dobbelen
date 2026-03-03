@@ -97,6 +97,8 @@ public class Game {
     private Integer twoPlayerRoundStartIndex;
     // Track all bids made in the current hand
     private List<Bid> currentHandBidHistory;
+    /** When state is COUNTDOWN, timestamp (ms) when the game will start */
+    private Long countdownEndTime;
 
     public Game() {
         this.id = generateShortGameId();
@@ -350,6 +352,14 @@ public class Game {
 
     public void setCurrentHandBidHistory(List<Bid> currentHandBidHistory) {
         this.currentHandBidHistory = currentHandBidHistory;
+    }
+
+    public Long getCountdownEndTime() {
+        return countdownEndTime;
+    }
+
+    public void setCountdownEndTime(Long countdownEndTime) {
+        this.countdownEndTime = countdownEndTime;
     }
 
     public void addBidToCurrentHand(Bid bid) {

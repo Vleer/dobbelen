@@ -180,6 +180,16 @@ public class GameController {
         }
     }
 
+    @PostMapping("/multiplayer/{gameId}/leave")
+    public ResponseEntity<Void> leaveGame(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            gameService.leaveGame(gameId, request.getPlayerId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @DeleteMapping("/multiplayer/{gameId}")
     public ResponseEntity<Void> cancelMultiplayerGame(@PathVariable String gameId,
             @RequestParam String playerId) {

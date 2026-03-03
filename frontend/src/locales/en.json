@@ -15,6 +15,7 @@
   "lobby.back": "Back",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
+  "lobby.youAre": "You are",
   "lobby.enterGameId": "Enter 3-character ID",
   "lobby.username": "Name",
   "lobby.enterUsername": "Enter your username",
@@ -36,6 +37,8 @@
   "lobby.startGame": "▶ Start Game",
   "lobby.waitingForHost": "Waiting for the host to start the game...",
   "lobby.needAtLeastTwoPlayers": "At least 2 players required to start",
+  "lobby.gameStarting": "Game starting in...",
+  "lobby.go": "Go!",
 
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Current Bid",
@@ -76,6 +79,11 @@
 
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
+  "game.leaveGame": "Leave game",
+  "game.leaveConfirmMessage": "Are you sure you want to leave the game?",
+  "game.leaveConfirmLeave": "Leave",
+  "game.leaveConfirmCancel": "Cancel",
+  "game.playerLeftNotification": "{{playerName}} has left the game",
 
   "game.dobbelkoning": "Dobbelkoning",
 
@@ -113,9 +121,8 @@
 
   "instructions.title": "How to Play",
   "instructions.close": "Close",
-  "instructions.rollDice": "Roll dice secretly under your cup",
-  "instructions.makeBid": "Raise: Bid on total dice showing a face value",
-  "instructions.doubt": "Doubt: Challenge the previous bid if too high",
-  "instructions.spotOn": "Spot On: Claim bid is exactly correct (risky!)",
-  "instructions.winRound": "Last player standing wins the round"
+  "instructions.raise": "Raise: Click on the number of dice you believe is in all player's hands combined",
+  "instructions.doubt": "Doubt: Challenged the previous bid if too high",
+  "instructions.spotOn": "Spot On: Claim Bid is exactly correct (risky!) If true, the round resets.",
+  "instructions.winRound": "Last player standing wins the round!"
 }
