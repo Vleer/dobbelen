@@ -5,6 +5,9 @@ import LanguageSelector from "./components/LanguageSelector";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { StatisticsProvider } from "./contexts/StatisticsContext";
 import { Game } from "./types/game";
+import { gameApi } from "./api/gameApi";
+
+const GAME_SESSION_KEY = "game_session";
 
 type AppState = 'lobby' | 'game';
 
@@ -13,25 +16,40 @@ function App() {
   const [game, setGame] = useState<Game | null>(null);
   const [username, setUsername] = useState('');
   const [playerId, setPlayerId] = useState('');
-  // Removed unused state variables
+  const [restored, setRestored] = useState(false);
 
-  // Check for gameId in URL on load
+  // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameId = urlParams.get('gameId');
-    if (gameId) {
-      // If there's a gameId in URL, we're joining an existing game
-      console.log('Found gameId in URL:', gameId);
+    if (restored) return;
+    setRestored(true);
+    const raw = sessionStorage.getItem(GAME_SESSION_KEY);
+    if (!raw) return;
+    try {
+      const { gameId, playerId: savedPlayerId, username: savedUsername } = JSON.parse(raw);
+      if (!gameId || !savedPlayerId || !savedUsername) return;
+      gameApi.getMultiplayerGame(gameId)
+        .then((g) => {
+          if (g.state === "IN_PROGRESS") {
+            setGame(g);
+            setPlayerId(savedPlayerId);
+            setUsername(savedUsername);
+            setAppState("game");
+          } else {
+            sessionStorage.removeItem(GAME_SESSION_KEY);
+          }
+        })
+        .catch(() => sessionStorage.removeItem(GAME_SESSION_KEY));
+    } catch {
+      sessionStorage.removeItem(GAME_SESSION_KEY);
     }
-  }, []);
+  }, [restored]);
 
   const handleGameStart = (gameData: Game, userPlayerId: string, userUsername: string) => {
-    console.log('🎮 Game started with data:', { 
-      id: gameData.id, 
-      isMultiplayer: gameData.isMultiplayer, 
-      state: gameData.state,
-      players: gameData.players.length 
-    });
+    sessionStorage.setItem(GAME_SESSION_KEY, JSON.stringify({
+      gameId: gameData.id,
+      playerId: userPlayerId,
+      username: userUsername,
+    }));
     setGame(gameData);
     setPlayerId(userPlayerId);
     setUsername(userUsername);
@@ -39,6 +57,7 @@ function App() {
   };
 
   const handleBackToLobby = () => {
+    sessionStorage.removeItem(GAME_SESSION_KEY);
     setAppState('lobby');
     setGame(null);
     setUsername('');

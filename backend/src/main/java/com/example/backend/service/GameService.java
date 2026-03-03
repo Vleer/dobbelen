@@ -675,6 +675,29 @@ public class GameService {
         return game;
     }
 
+    /**
+     * Cancel (delete) a multiplayer game. Only the host (first player) may cancel.
+     * When the game is removed, other players will see the game as gone when they poll.
+     */
+    public void cancelMultiplayerGame(String gameId, String playerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            throw new IllegalArgumentException("Cannot cancel game after it has started");
+        }
+        if (game.getPlayers().isEmpty()) {
+            throw new IllegalArgumentException("Game has no players");
+        }
+        com.example.backend.model.Player host = game.getPlayers().get(0);
+        if (!host.getId().equals(playerId)) {
+            throw new IllegalArgumentException("Only the host can cancel the game");
+        }
+        games.remove(gameId);
+        System.out.println("CANCEL GAME: Removed game " + gameId + " (host cancelled)");
+    }
+
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {

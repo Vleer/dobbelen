@@ -179,4 +179,15 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/multiplayer/{gameId}")
+    public ResponseEntity<Void> cancelMultiplayerGame(@PathVariable String gameId,
+            @RequestParam String playerId) {
+        try {
+            gameService.cancelMultiplayerGame(gameId, playerId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
