@@ -138,20 +138,17 @@ public class GameService {
 
         System.out.println("Starting new round " + (game.getRoundNumber() + 1) + " for game " + gameId);
 
-        // Only reset and roll dice for active (non-eliminated) players
+        // Round reset: bring everyone back. Elimination is per-round only.
+        game.getEliminatedPlayers().clear();
         for (Player player : game.getPlayers()) {
-            if (!player.isEliminated()) {
-                player.reset();
-                player.rollDice();
-            }
+            player.reset();
+            player.rollDice();
         }
-        
-        // Keep eliminated players list intact - don't reset it
-        // Randomize starting player from active players only
-        List<Player> activePlayers = game.getActivePlayers();
-        if (!activePlayers.isEmpty()) {
-            Player randomActivePlayer = activePlayers.get((int) (Math.random() * activePlayers.size()));
-            game.setCurrentPlayerIndex(game.getPlayers().indexOf(randomActivePlayer));
+
+        // Randomize starting player from all players
+        if (!game.getPlayers().isEmpty()) {
+            Player randomPlayer = game.getPlayers().get((int) (Math.random() * game.getPlayers().size()));
+            game.setCurrentPlayerIndex(game.getPlayers().indexOf(randomPlayer));
         }
         game.setCurrentBid(null);
         game.setPreviousBid(null);
@@ -159,6 +156,8 @@ public class GameService {
         game.setState(GameState.IN_PROGRESS);
         game.setRoundNumber(game.getRoundNumber() + 1);
         game.setTwoPlayerRoundStartIndex(null);
+        game.setShowAllDice(false);
+        game.clearCurrentHandBidHistory();
 
         Player newCurrent = game.getCurrentPlayer();
         if (newCurrent != null) recordActivity(gameId, newCurrent.getId());
@@ -233,9 +232,6 @@ public class GameService {
         // Eliminate the player
         game.eliminatePlayer(eliminatedPlayerId);
 
-        // Schedule to enable continue button after 15 seconds
-        scheduleEnableContinue(gameId);
-
         // Reset the current bid after elimination
         game.setCurrentBid(null);
 
@@ -255,7 +251,8 @@ public class GameService {
 
         // If elimination resulted in 2 active players, set the start index for the
         // 2-player phase
-        if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+        List<Player> activeAfterElimination = game.getActivePlayers();
+        if (activeAfterElimination.size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
             // If eliminated player had the dealer button, the next non-eliminated after
             // them starts
             int startIndex;
@@ -283,31 +280,13 @@ public class GameService {
             game.setTwoPlayerRoundStartIndex(startIndex);
         }
 
-        // Check if round is over
-        if (game.getActivePlayers().size() <= 1) {
-            if (game.getActivePlayers().size() == 1) {
-                Player roundWinner = game.getActivePlayers().get(0);
-                game.setWinner(roundWinner.getId());
-                boolean gameEnded = game.addRoundWinner(roundWinner.getId());
-                if (gameEnded) {
-                    System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
-                            + roundWinner.getWinTokens() + " tokens");
-                } else {
-                    game.passDealerToWinner(roundWinner.getId());
-                    System.out.println("Dealer button passed to: " + roundWinner.getName());
-                    System.out.println("Starting new round automatically. Winner: " + roundWinner.getName() + " with "
-                            + roundWinner.getWinTokens() + " tokens");
-                    new java.util.Timer().schedule(new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            startNewRound(gameId);
-                        }
-                    }, 6000); // Start new round after 15 seconds
-                }
-            }
+        // If one player left, they win the round; finish round and schedule next. Otherwise enable continue.
+        if (activeAfterElimination.size() == 1) {
+            Player roundWinner = activeAfterElimination.get(0);
+            finishRoundWithOneWinner(game, gameId, roundWinner);
+        } else {
+            scheduleEnableContinue(gameId);
         }
-
-        // Dice will be hidden when continue is pressed, not automatically
 
         return new GameResult(game, eliminatedPlayerId, actualCount, currentBid.getQuantity());
     }
@@ -424,9 +403,6 @@ public class GameService {
             // Spot on is wrong - spot on player is eliminated
             game.eliminatePlayer(spotOnPlayerId);
 
-            // Schedule to enable continue button after 15 seconds
-            scheduleEnableContinue(gameId);
-
             // Reset the current bid after elimination
             game.setCurrentBid(null);
 
@@ -446,7 +422,8 @@ public class GameService {
 
             // If elimination resulted in 2 active players, set the start index for the
             // 2-player phase
-            if (game.getActivePlayers().size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
+            List<Player> activeAfterElimination = game.getActivePlayers();
+            if (activeAfterElimination.size() == 2 && game.getTwoPlayerRoundStartIndex() == null) {
                 int startIndex;
                 int eliminatedIndex = -1;
                 for (int i = 0; i < game.getPlayers().size(); i++) {
@@ -472,25 +449,12 @@ public class GameService {
                 game.setTwoPlayerRoundStartIndex(startIndex);
             }
 
-            // Check if round is over
-            if (game.getActivePlayers().size() <= 1) {
-                if (game.getActivePlayers().size() == 1) {
-                    Player roundWinner = game.getActivePlayers().get(0);
-                    game.setWinner(roundWinner.getId());
-                    boolean gameEnded = game.addRoundWinner(roundWinner.getId());
-                    if (gameEnded) {
-                        // Game ended, nothing more to do
-                    } else {
-                        game.passDealerToWinner(roundWinner.getId());
-                        System.out.println("Dealer button passed to: " + roundWinner.getName());
-                        new java.util.Timer().schedule(new java.util.TimerTask() {
-                            @Override
-                            public void run() {
-                                startNewRound(gameId);
-                            }
-                        }, 6000); // Start new round after 15 seconds
-                    }
-                }
+            // If one player left, they win the round; finish round and schedule next. Otherwise enable continue.
+            if (activeAfterElimination.size() == 1) {
+                Player roundWinner = activeAfterElimination.get(0);
+                finishRoundWithOneWinner(game, gameId, roundWinner);
+            } else {
+                scheduleEnableContinue(gameId);
             }
         }
 
@@ -928,6 +892,31 @@ public class GameService {
         if (game != null) {
             Player current = game.getCurrentPlayer();
             if (current != null) recordActivity(gameId, current.getId());
+        }
+    }
+
+    /**
+     * When exactly one player remains in the round, that player wins the round.
+     * Sets winner, ROUND_ENDED state, adds win token, and either ends the game or schedules the next round.
+     */
+    private void finishRoundWithOneWinner(Game game, String gameId, Player roundWinner) {
+        game.setWinner(roundWinner.getId());
+        game.setState(GameState.ROUND_ENDED);
+        boolean gameEnded = game.addRoundWinner(roundWinner.getId());
+        if (gameEnded) {
+            System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
+                    + roundWinner.getWinTokens() + " tokens");
+        } else {
+            game.passDealerToWinner(roundWinner.getId());
+            System.out.println("Dealer button passed to: " + roundWinner.getName());
+            System.out.println("Round won by: " + roundWinner.getName() + " with "
+                    + roundWinner.getWinTokens() + " tokens. Starting new round in 6s.");
+            new java.util.Timer().schedule(new java.util.TimerTask() {
+                @Override
+                public void run() {
+                    startNewRound(gameId);
+                }
+            }, 6000);
         }
     }
 
