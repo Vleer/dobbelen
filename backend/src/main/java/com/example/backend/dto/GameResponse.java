@@ -19,6 +19,7 @@ public class GameResponse {
     private String gameWinner;
     private String dealerId;
     private boolean isMultiplayer;
+    private boolean isPrivate;
     private int maxPlayers;
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
@@ -49,6 +50,7 @@ public class GameResponse {
         this.gameWinner = game.getGameWinner();
         this.dealerId = game.getDealer() != null ? game.getDealer().getId() : null;
         this.isMultiplayer = game.isMultiplayer();
+        this.isPrivate = game.isPrivate();
         this.maxPlayers = game.getMaxPlayers();
         this.isWaitingForPlayers = game.isWaitingForPlayers();
         this.showAllDice = game.isShowAllDice();
@@ -122,6 +124,14 @@ public class GameResponse {
 
     public void setMultiplayer(boolean multiplayer) {
         this.isMultiplayer = multiplayer;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 
     public int getMaxPlayers() {

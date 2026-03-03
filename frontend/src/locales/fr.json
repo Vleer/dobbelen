@@ -3,6 +3,10 @@
   "game.subtitle": "Le jeu classique de bluff",
 
   "lobby.createGame": "Créer une nouvelle partie",
+  "lobby.privateGame": "Partie privée",
+  "lobby.clickToCopyLink": "Cliquez ici pour copier le lien",
+  "lobby.cancelNewGame": "Annuler",
+  "lobby.existingGames": "Parties en cours",
   "lobby.joinGame": "Rejoindre une partie",
   "lobby.gameId": "ID de la partie",
   "lobby.enterGameId": "Entrez l'ID à 3 caractères",

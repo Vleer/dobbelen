@@ -28,6 +28,7 @@ export interface Game {
   gameWinner: string | null;
   dealerId: string | null;
   isMultiplayer: boolean;
+  isPrivate?: boolean;
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;
@@ -84,6 +85,7 @@ export interface GameResponse {
   gameWinner: string | null;
   dealerId: string | null;
   isMultiplayer: boolean;
+  isPrivate?: boolean;
   maxPlayers: number;
   isWaitingForPlayers: boolean;
   showAllDice: boolean;

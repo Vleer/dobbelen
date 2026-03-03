@@ -58,8 +58,15 @@ export const gameApi = {
   },
 
   // Multiplayer endpoints
-  createMultiplayerGame: async (): Promise<GameResponse> => {
-    const response = await axiosInstance.post<GameResponse>("/api/games/multiplayer/create");
+  listMultiplayerGames: async (): Promise<GameResponse[]> => {
+    const response = await axiosInstance.get<GameResponse[]>("/api/games/multiplayer");
+    return response.data;
+  },
+
+  createMultiplayerGame: async (isPrivate: boolean = false): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(
+      `/api/games/multiplayer/create?private=${isPrivate}`
+    );
     return response.data;
   },
 

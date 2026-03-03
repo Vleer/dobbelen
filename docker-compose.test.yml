@@ -1,5 +1,4 @@
-# Develop: default stack. Use: docker compose up --build
-# Frontend http://localhost:3000, Backend http://localhost:8080
+# Test: for now identical to develop (no separate test suite yet). Use: docker compose -f docker-compose.test.yml up --build
 
 services:
   mongodb:

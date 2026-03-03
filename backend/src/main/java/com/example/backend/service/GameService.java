@@ -568,14 +568,24 @@ public class GameService {
     }
 
     // Multiplayer methods
-    public Game createMultiplayerGame() {
+    public Game createMultiplayerGame(boolean isPrivate) {
         Game game = new Game();
         game.setMultiplayer(true);
+        game.setPrivate(isPrivate);
         game.setMaxPlayers(6);
         game.setWaitingForPlayers(true);
         game.setState(GameState.WAITING_FOR_PLAYERS);
         games.put(game.getId(), game);
         return game;
+    }
+
+    public List<Game> listMultiplayerLobbyGames() {
+        List<Game> all = new ArrayList<>(games.values());
+        return all.stream()
+                .filter(g -> g.isMultiplayer())
+                .filter(g -> g.getState() == GameState.WAITING_FOR_PLAYERS)
+                .filter(g -> !g.isPrivate())
+                .toList();
     }
 
     private static final String[] COLOR_ORDER = { "blue", "red", "green", "yellow", "brown", "cyan" };

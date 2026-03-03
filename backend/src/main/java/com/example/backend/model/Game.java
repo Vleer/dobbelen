@@ -79,6 +79,7 @@ public class Game {
     private String gameWinner;
     private int dealerIndex;
     private boolean isMultiplayer;
+    private boolean isPrivate;
     private int maxPlayers;
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
@@ -106,6 +107,7 @@ public class Game {
         this.roundNumber = 1;
         this.dealerIndex = 0;
         this.isMultiplayer = false;
+        this.isPrivate = false;
         this.maxPlayers = 6;
         this.isWaitingForPlayers = true;
         this.showAllDice = false;
@@ -227,6 +229,14 @@ public class Game {
 
     public void setMultiplayer(boolean multiplayer) {
         this.isMultiplayer = multiplayer;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 
     public int getMaxPlayers() {

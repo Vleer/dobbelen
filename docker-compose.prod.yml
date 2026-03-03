@@ -1,4 +1,4 @@
-version: '3.8'
+# Production/hosted: uses dedicated prod Dockerfiles. Use: docker compose -f docker-compose.prod.yml up --build
 
 services:
   mongodb:
@@ -12,7 +12,7 @@ services:
       - dobbelen-network
     restart: unless-stopped
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/dobbelen --quiet
+      test: ["CMD", "mongosh", "localhost:27017/dobbelen", "--eval", "db.runCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,7 +20,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: dobbelen-backend-prod
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -43,8 +43,8 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend-prod
+      dockerfile: Dockerfile.prod
+    container_name: dobbelen-frontend-prod
     ports:
       - "127.0.0.1:80:80"
     depends_on:
@@ -62,4 +62,3 @@ networks:
 
 volumes:
   mongodb-data:
-  backend-data:

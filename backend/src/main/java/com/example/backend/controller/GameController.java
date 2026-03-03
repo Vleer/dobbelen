@@ -115,10 +115,20 @@ public class GameController {
     }
 
     // Multiplayer endpoints
+    @GetMapping("/multiplayer")
+    public ResponseEntity<List<GameResponse>> listMultiplayerGames() {
+        List<Game> games = gameService.listMultiplayerLobbyGames();
+        List<GameResponse> responses = games.stream()
+                .map(GameResponse::new)
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
     @PostMapping("/multiplayer/create")
-    public ResponseEntity<GameResponse> createMultiplayerGame() {
+    public ResponseEntity<GameResponse> createMultiplayerGame(
+            @RequestParam(value = "private", required = false, defaultValue = "false") boolean isPrivate) {
         try {
-            Game game = gameService.createMultiplayerGame();
+            Game game = gameService.createMultiplayerGame(isPrivate);
             GameResponse response = new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (Exception e) {

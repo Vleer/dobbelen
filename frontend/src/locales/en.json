@@ -3,6 +3,10 @@
   "game.subtitle": "The classic bluffing game",
 
   "lobby.createGame": "Create New Game",
+  "lobby.privateGame": "Private game",
+  "lobby.clickToCopyLink": "Click here to copy link",
+  "lobby.cancelNewGame": "Cancel",
+  "lobby.existingGames": "Existing games",
   "lobby.joinGame": "Join Game",
   "lobby.gameId": "Game ID",
   "lobby.enterGameId": "Enter 3-character ID",

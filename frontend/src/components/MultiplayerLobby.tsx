@@ -30,6 +30,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [hasJoined, setHasJoined] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isPrivateGame, setIsPrivateGame] = useState(false);
+  const [lobbyGames, setLobbyGames] = useState<Game[]>([]);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -181,6 +183,22 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]); // Only run once on initialization, not when playerName changes
 
+  // Fetch lobby list when on main screen (no game joined)
+  useEffect(() => {
+    if (game || !isInitialized) return;
+    const loadLobby = async () => {
+      try {
+        const list = await gameApi.listMultiplayerGames();
+        setLobbyGames(list);
+      } catch {
+        setLobbyGames([]);
+      }
+    };
+    loadLobby();
+    const interval = setInterval(loadLobby, 5000);
+    return () => clearInterval(interval);
+  }, [game, isInitialized]);
+
   // Poll for game updates when in a game - only fetch, don't join
   useEffect(() => {
     if (!game || !gameId || !isInitialized) return;
@@ -239,7 +257,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       setError("");
 
       console.log("Creating multiplayer game...");
-      const gameResponse = await gameApi.createMultiplayerGame();
+      const gameResponse = await gameApi.createMultiplayerGame(isPrivateGame);
       console.log("Game created successfully:", gameResponse);
 
       // Add the host (creator) to the game
@@ -379,28 +397,60 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     navigator.clipboard.writeText(gameLink);
   };
 
+  const handleCancelNewGame = () => {
+    setGame(null);
+    setGameId("");
+    setIsHost(false);
+    setHasJoined(false);
+    setError("");
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800 p-4 select-none">
-      {/* Mute button in top-left corner */}
-      <div className="absolute top-4 left-4 z-50">
+    <div className="flex flex-col min-h-screen bg-green-800 select-none">
+      {/* Invisible top bar: volume + language sit here (language is in App.tsx) */}
+      <div className="flex-shrink-0 h-14 flex items-center justify-between px-4 bg-green-800">
         <button
-          onClick={() => {
-            setIsMuted(!isMuted);
-          }}
+          onClick={() => setIsMuted(!isMuted)}
           className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
           aria-label={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? "🔇" : "🔊"}
         </button>
+        <div className="w-10" />
       </div>
-      
-      <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full">
-        <h1 className="text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800">
-          {t("game.title")}
-        </h1>
+
+      <div className="flex-1 flex items-start md:items-center justify-center p-4 pt-2 md:pt-4 overflow-auto">
+        <div className="bg-white p-4 md:p-8 rounded-3xl shadow-lg max-w-sm md:max-w-lg w-full border-4 border-green-700">
+          <h1 className={`text-2xl md:text-4xl font-bold text-center mb-6 md:mb-8 text-green-800 ${game ? 'hidden md:block' : ''}`}>
+            {t("game.title")}
+          </h1>
 
         {!game ? (
           <div className="space-y-4 md:space-y-6">
+            {/* Lobby list - existing public games */}
+            {lobbyGames.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">{t("lobby.existingGames")}</h3>
+                <ul className="space-y-1 max-h-28 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  {lobbyGames.map((g) => (
+                    <li key={g.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          audioService.playRaise();
+                          setGameId(g.id);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded hover:bg-gray-200 flex items-center justify-between"
+                      >
+                        <span className="font-mono font-bold text-green-700">{g.id}</span>
+                        <span className="text-xs text-gray-500">{g.players?.length ?? 0}/6</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Player Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -412,7 +462,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
+                  className="flex-1 min-w-0 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
                   placeholder={t("lobby.enterUsername")}
                   autoFocus
                 />
@@ -421,7 +471,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     audioService.playRaise();
                     setPlayerName(getRandomDutchName());
                   }}
-                  className="w-10 h-10 md:w-12 md:h-12 p-0 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium flex items-center justify-center"
+                  className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 p-0 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium flex items-center justify-center"
                   aria-label="Randomize name"
                 >
                   <img
@@ -433,8 +483,17 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               </div>
             </div>
 
-            {/* Main Action Buttons */}
-            <div className="space-y-3 md:space-y-4">
+            {/* Private game checkbox + New Game */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPrivateGame}
+                  onChange={(e) => setIsPrivateGame(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-sm font-medium text-gray-700">{t("lobby.privateGame")}</span>
+              </label>
               <button
                 onClick={() => {
                   audioService.playRaise();
@@ -445,63 +504,70 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               >
                 {isCreating ? t("lobby.creating") : t("lobby.createGame")}
               </button>
+            </div>
 
-              <div className="flex items-center space-x-2 md:space-x-4">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-gray-500 font-medium text-sm md:text-base">
-                  {t("lobby.or")}
-                </span>
-                <div className="flex-1 h-px bg-gray-300"></div>
-              </div>
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="flex-1 h-px bg-gray-300"></div>
+              <span className="text-gray-500 font-medium text-sm md:text-base">
+                {t("lobby.or")}
+              </span>
+              <div className="flex-1 h-px bg-gray-300"></div>
+            </div>
 
-              <div>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={gameId}
-                    onChange={(e) => setGameId(e.target.value.toLowerCase())}
-                    onFocus={(e) => e.target.select()}
-                    onKeyPress={(e) => {
-                      if (
-                        e.key === "Enter" &&
-                        gameId.trim() &&
-                        playerName.trim() &&
-                        !isJoining
-                      ) {
-                        joinGame();
-                      }
-                    }}
-                    className="flex-1 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
-                    placeholder={t("lobby.gameId")}
-                    maxLength={3}
-                  />
-                  <button
-                    onClick={() => {
-                      audioService.playRaise();
+            <div className="min-w-0">
+              <div className="flex gap-2 min-w-0">
+                <input
+                  type="text"
+                  value={gameId}
+                  onChange={(e) => setGameId(e.target.value.toLowerCase())}
+                  onFocus={(e) => e.target.select()}
+                  onKeyPress={(e) => {
+                    if (
+                      e.key === "Enter" &&
+                      gameId.trim() &&
+                      playerName.trim() &&
+                      !isJoining
+                    ) {
                       joinGame();
-                    }}
-                    disabled={isJoining || !gameId.trim() || !playerName.trim()}
-                    className="px-4 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm md:text-base"
-                  >
-                    {isJoining ? t("lobby.joining") : t("lobby.joinGame")}
-                  </button>
-                </div>
+                    }
+                  }}
+                  className="flex-1 min-w-0 w-0 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-base md:text-lg font-mono text-center"
+                  placeholder={t("lobby.gameId")}
+                  maxLength={3}
+                />
+                <button
+                  onClick={() => {
+                    audioService.playRaise();
+                    joinGame();
+                  }}
+                  disabled={isJoining || !gameId.trim() || !playerName.trim()}
+                  className="flex-shrink-0 px-3 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm md:text-base whitespace-nowrap"
+                >
+                  {isJoining ? t("lobby.joining") : t("lobby.joinGame")}
+                </button>
               </div>
             </div>
           </div>
         ) : (
           <div className="space-y-4 md:space-y-6">
             <div className="text-center">
-              <h2 className="text-lg md:text-2xl font-bold text-green-800 mb-2">
+              <h2 className="text-lg md:text-2xl font-bold text-green-800 mb-2 hidden md:block">
                 {isHost
                   ? t("lobby.createGame")
                   : "✅ " + t("lobby.joinGame") + ""}
               </h2>
-              <div className="bg-gray-100 p-3 md:p-4 rounded-lg">
+              <button
+                type="button"
+                onClick={() => { audioService.playRaise(); handleCancelNewGame(); }}
+                className="mb-3 w-full py-2 px-4 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium text-sm"
+              >
+                {t("lobby.cancelNewGame")}
+              </button>
+              <div className="bg-gray-100 p-3 md:p-4 rounded-lg min-w-0 overflow-hidden">
                 <p className="text-xs md:text-sm text-gray-600 mb-1">
                   {t("lobby.gameId")}
                 </p>
-                <p className="text-xl md:text-2xl font-mono font-bold text-green-600">
+                <p className="text-lg md:text-2xl font-mono font-bold text-green-600 truncate">
                   {gameId}
                 </p>
               </div>
@@ -587,15 +653,15 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   }}
                   className="w-full py-2 md:py-3 px-3 md:px-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-bold text-sm md:text-base"
                 >
-                  📋 {t("lobby.copy")} {t("lobby.shareLink")}
+                  📋 {t("lobby.clickToCopyLink")}
                 </button>
-                <div className="flex space-x-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => {
                       audioService.playRaise();
                       addAIPlayer("easy");
                     }}
-                    className="flex-1 py-2 md:py-3 px-2 md:px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xs md:text-sm"
+                    className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-xs md:text-sm whitespace-nowrap"
                     disabled={game.players.length >= 6}
                   >
                     🎲 Easy AI
@@ -605,7 +671,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       audioService.playRaise();
                       addAIPlayer("medium");
                     }}
-                    className="flex-1 py-2 md:py-3 px-2 md:px-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-xs md:text-sm"
+                    className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-xs md:text-sm whitespace-nowrap"
                     disabled={game.players.length >= 6}
                   >
                     🧠 Medium AI
@@ -664,6 +730,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
             ❌ {error}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

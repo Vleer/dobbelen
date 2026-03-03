@@ -3,6 +3,10 @@
   "game.subtitle": "Het klassieke bluffspel",
 
   "lobby.createGame": "Nieuw Spel",
+  "lobby.privateGame": "Privéspel",
+  "lobby.clickToCopyLink": "Klik hier om link te kopiëren",
+  "lobby.cancelNewGame": "Annuleren",
+  "lobby.existingGames": "Bestaande spellen",
   "lobby.joinGame": "Deelnemen",
   "lobby.gameId": "Spel ID",
   "lobby.enterGameId": "Voer 3-karakter ID in",
