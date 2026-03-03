@@ -178,46 +178,34 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       <div
         className={`bg-green-950 rounded-lg shadow-lg border-2 select-none ${
           isMyTurn ? "border-green-300" : playerColorClass
-        } ${player.eliminated ? "opacity-50" : ""} p-2 min-w-0 flex-shrink-0`}
+        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0`}
       >
-        {/* Username with Dealer Button and Win Tokens */}
-        <div className="text-center mb-1">
-          <div className="flex items-center justify-center space-x-1">
-            <span className={`font-bold text-xs ${playerTextClass}`}>{player.name}</span>
-            {/* Dealer Button */}
+        {/* One row: name + dice next to each other (dice when revealed) */}
+        <div className="flex items-center gap-1 min-w-0">
+          <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
+            <span className={`font-bold text-[11px] truncate ${playerTextClass}`}>{player.name}</span>
             {isDealer && (
-              <div className="inline-flex items-center justify-center w-4 h-4 bg-white border-2 border-black rounded-full">
-                <span className="text-black text-xs font-bold">D</span>
+              <div className="w-3 h-3 bg-white border border-black rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-black text-[8px] font-bold">D</span>
               </div>
             )}
-            {/* Win Tokens */}
             {player.winTokens > 0 && (
-              <div className="text-xs text-amber-300 font-bold">
-                🏆 {player.winTokens}
-              </div>
+              <span className="text-amber-300 font-bold text-[10px]">🏆 {player.winTokens}</span>
             )}
           </div>
-        </div>
-
-        {/* Dice - Only show when revealed */}
-        {showDice &&
-          previousRoundPlayer &&
-          previousRoundPlayer.dice &&
-          previousRoundPlayer.dice.length > 0 && (
-            <div className="flex justify-center mb-1">
-              <div className="flex flex-col items-center space-y-1">
-                <DiceHandSVG diceValues={previousRoundPlayer.dice} size="sm" />
-                {/* <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div> */}
+          {/* Dice next to name when revealed */}
+          {showDice &&
+            previousRoundPlayer &&
+            previousRoundPlayer.dice &&
+            previousRoundPlayer.dice.length > 0 && (
+              <div className="flex items-center flex-1 min-w-0 justify-end">
+                <DiceHandSVG diceValues={previousRoundPlayer.dice} size="xs" noWrap />
               </div>
-            </div>
+            )}
+          {player.eliminated && (
+            <span className="text-red-300 font-bold text-[10px] flex-shrink-0">{t("game.out")}</span>
           )}
-
-        {/* Eliminated State */}
-        {player.eliminated && (
-          <div className="text-center text-red-300 font-bold text-xs">
-            {t("game.out")}
-          </div>
-        )}
+        </div>
       </div>
     );
   }

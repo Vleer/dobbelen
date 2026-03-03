@@ -99,6 +99,7 @@
   "game.history.currentHand": "Current Hand",
   "game.history.lastHand": "Last Hand",
   "game.history.stats": "Stats",
+  "game.info": "Info",
   "game.history.action": "Action",
   "game.history.bid": "Bid",
   "game.history.bidPossessive": "'s bid:",
@@ -120,6 +121,7 @@
   "game.history.noBidsYet": "No bids made yet in this hand",
 
   "instructions.title": "How to Play",
+  "instructions.rules": "Rules",
   "instructions.close": "Close",
   "instructions.raise": "Raise: Click on the number of dice you believe is in all player's hands combined",
   "instructions.doubt": "Doubt: Challenged the previous bid if too high",

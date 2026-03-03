@@ -93,6 +93,7 @@
   "game.history.currentHand": "Aktuelle Hand",
   "game.history.lastHand": "Letzte Hand",
   "game.history.stats": "Statistiken",
+  "game.info": "Info",
   "game.history.action": "Aktion",
   "game.history.bid": "Gebot",
   "game.history.bidPossessive": "s Gebot:",
@@ -114,6 +115,7 @@
   "game.history.noBidsYet": "Noch keine Gebote in dieser Hand",
 
   "instructions.title": "Wie man spielt",
+  "instructions.rules": "Regeln",
   "instructions.close": "Schließen",
   "instructions.rollDice": "Würfel heimlich unter dem Becher werfen",
   "instructions.makeBid": "Erhöhen: Auf Gesamtwürfel mit einem Wert bieten",

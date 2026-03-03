@@ -95,6 +95,10 @@ export const gameApi = {
     await axiosInstance.post(`/api/games/multiplayer/${gameId}/leave`, { playerId });
   },
 
+  heartbeat: async (gameId: string, playerId: string): Promise<void> => {
+    await axiosInstance.post(`/api/games/multiplayer/${gameId}/heartbeat`, { playerId });
+  },
+
   cancelMultiplayerGame: async (gameId: string, playerId: string): Promise<void> => {
     await axiosInstance.delete(`/api/games/multiplayer/${gameId}`, {
       params: { playerId },

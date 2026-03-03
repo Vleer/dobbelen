@@ -93,6 +93,7 @@
   "game.history.currentHand": "Mano Attuale",
   "game.history.lastHand": "Ultima Mano",
   "game.history.stats": "Statistiche",
+  "game.info": "Info",
   "game.history.action": "Azione",
   "game.history.bid": "Offerta",
   "game.history.bidPossessive": " offerta:",
@@ -114,6 +115,7 @@
   "game.history.noBidsYet": "Nessuna offerta ancora in questa mano",
 
   "instructions.title": "Come Giocare",
+  "instructions.rules": "Regole",
   "instructions.close": "Chiudi",
   "instructions.rollDice": "Lancia i dadi segretamente sotto il tuo bicchiere",
   "instructions.makeBid": "Rilancio: Punta sul totale dei dadi che mostrano un valore",

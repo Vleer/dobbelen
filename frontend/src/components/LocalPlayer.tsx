@@ -149,104 +149,62 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   if (isMobile) {
     return (
       <div
-        className={`w-full bg-green-950 p-3 shadow-2xl border-t-4 select-none ${
+        className={`w-full bg-green-950 p-2 shadow-2xl border-t-4 select-none ${
           isMyTurn ? "border-green-300" : playerColorClass
         } ${player.eliminated ? "opacity-70" : ""}`}
       >
-        {/* Mobile Layout - Horizontal */}
-        <div className="flex items-center justify-between">
-          {/* Left side - Player info with eye toggle */}
-          <div className="flex items-center space-x-2">
-            <div className="flex flex-col items-start">
-              <div className="flex items-center space-x-2">
-                <div className={`font-bold text-lg ${playerTextClass}`}>
-                  {player.name}
+        {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
+            <span className={`font-bold text-sm truncate ${playerTextClass}`}>{player.name}</span>
+            {isDealer && (
+              <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center border border-gray-400 flex-shrink-0">
+                <span className="text-black font-bold text-[9px]">D</span>
+              </div>
+            )}
+            {!showDice && (
+              <button
+                type="button"
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  touchHandledRef.current = true;
+                  handleToggleDiceVisibility();
+                  setTimeout(() => { touchHandledRef.current = false; }, 300);
+                }}
+                onClick={(e) => {
+                  if (touchHandledRef.current) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                  }
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleToggleDiceVisibility();
+                }}
+                className="p-0.5 rounded bg-transparent hover:bg-white/10 active:bg-white/20 text-white flex-shrink-0 cursor-pointer z-50 relative touch-manipulation"
+                style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+                aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
+              >
+                <div className="pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3">
+                  {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
                 </div>
-                {/* Eye toggle button - next to name */}
-                {!showDice && (
-                  <button
-                    type="button"
-                    onTouchEnd={(e) => {
-                      console.log("MOBILE BUTTON TOUCH END!", e);
-                      console.log(
-                        "isDiceVisible before toggle:",
-                        isDiceVisible
-                      );
-                      e.preventDefault();
-                      e.stopPropagation();
-                      touchHandledRef.current = true;
-                      handleToggleDiceVisibility();
-                      // Reset flag after a short delay to allow click event to be blocked
-                      setTimeout(() => {
-                        touchHandledRef.current = false;
-                      }, 300);
-                    }}
-                    onClick={(e) => {
-                      console.log("MOBILE BUTTON CLICKED!", e);
-                      // Prevent click if touch was already handled
-                      if (touchHandledRef.current) {
-                        console.log("Click blocked - touch already handled");
-                        e.preventDefault();
-                        e.stopPropagation();
-                        return;
-                      }
-                      console.log(
-                        "isDiceVisible before toggle:",
-                        isDiceVisible
-                      );
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleToggleDiceVisibility();
-                    }}
-                    className="p-2 rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white flex-shrink-0 cursor-pointer z-50 relative touch-manipulation"
-                    style={{
-                      touchAction: "manipulation",
-                      pointerEvents: "auto",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                    aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
-                  >
-                    <div className="pointer-events-none">
-                      {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                    </div>
-                  </button>
-                )}
-              </div>
-              {/* Dealer Button and Win Tokens row */}
-              <div className="flex items-center space-x-2 mt-1">
-                {isDealer && (
-                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-400">
-                    <span className="text-black font-bold text-xs">D</span>
-                  </div>
-                )}
-                {player.winTokens > 0 && (
-                  <div className="text-yellow-300 font-bold text-sm">
-                    🏆 {player.winTokens}
-                  </div>
-                )}
-              </div>
-            </div>
+              </button>
+            )}
+            {player.winTokens > 0 && (
+              <span className="text-yellow-300 font-bold text-[10px] flex-shrink-0">🏆 {player.winTokens}</span>
+            )}
           </div>
-
-          {/* Center - Dice (horizontal) */}
-          <div className="flex items-center justify-center flex-1 min-w-0 px-2">
+          <div className="flex items-center flex-1 min-w-0 flex-shrink overflow-hidden">
             {shouldShowDice ? (
-              <DiceHandSVG diceValues={diceValues} size="md" />
+              <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
             ) : (
-              <div className="text-gray-400 text-sm italic">
-                {t("game.diceHidden") || "Hidden"}
-              </div>
+              <span className="text-gray-400 text-xs italic">{t("game.diceHidden") || "Hidden"}</span>
             )}
           </div>
-
-          {/* Right side - Status */}
-          <div className="text-right flex-shrink-0">
-            {player.eliminated && (
-              <div className="text-red-300 font-bold text-sm">
-                {t("game.eliminated")}
-              </div>
-            )}
-          </div>
+          {player.eliminated && (
+            <span className="text-red-300 font-bold text-xs flex-shrink-0">{t("game.eliminated")}</span>
+          )}
         </div>
       </div>
     );
@@ -258,7 +216,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       style={{
         left: position.x || "50%",
         top: position.y || "auto",
-        bottom: position.y ? "auto" : "1.5rem",
+        bottom: position.y ? "auto" : "2rem",
         transform: position.x ? "none" : "translateX(-50%)",
         cursor: isDragging ? "grabbing" : "grab",
       }}

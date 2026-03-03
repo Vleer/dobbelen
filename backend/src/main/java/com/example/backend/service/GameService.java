@@ -17,9 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
+    private static final long RECONNECT_TIMEOUT_MS = 60_000; // 60 seconds for current player to reconnect
+
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI
                                                                                  // turns
+    /** Last activity timestamp (gameId:playerId -> epoch ms) for disconnect/reconnect timeout */
+    private final Map<String, Long> lastActivityByGameAndPlayer = new ConcurrentHashMap<>();
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -121,9 +125,10 @@ public class GameService {
         System.out.println("🔄 NEW_ROUND: startNewRound called for game " + gameId + " at " + System.currentTimeMillis()
                 + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
         
-        // Check if game is already completed
+        // Game may have been removed (e.g. last players left)
         if (game == null) {
-            throw new IllegalArgumentException("Game not found: " + gameId);
+            System.out.println("NEW_ROUND: Game " + gameId + " no longer exists, skipping");
+            return;
         }
 
         if (game.hasGameWinner()) {
@@ -155,13 +160,16 @@ public class GameService {
         game.setRoundNumber(game.getRoundNumber() + 1);
         game.setTwoPlayerRoundStartIndex(null);
 
+        Player newCurrent = game.getCurrentPlayer();
+        if (newCurrent != null) recordActivity(gameId, newCurrent.getId());
         System.out.println("New round started. State: " + game.getState() + ", Current player: "
-                + game.getCurrentPlayer().getName());
+                + (newCurrent != null ? newCurrent.getName() : "none"));
     }
 
     // Use GameRules for bid validation and dice counting
 
     public GameResult processDoubt(String gameId, String doubtingPlayerId) {
+        recordActivity(gameId, doubtingPlayerId);
         Game game = getGame(gameId);
         Bid currentBid = game.getCurrentBid();
         
@@ -305,6 +313,7 @@ public class GameService {
     }
 
     public GameResult processSpotOn(String gameId, String spotOnPlayerId) {
+        recordActivity(gameId, spotOnPlayerId);
         Game game = getGame(gameId);
         Bid currentBid = game.getCurrentBid();
         
@@ -491,6 +500,7 @@ public class GameService {
     }
 
     public GameResult processBid(String gameId, String playerId, int quantity, int faceValue) {
+        recordActivity(gameId, playerId);
         Game game = getGame(gameId);
 
         if (game.getState() != GameState.IN_PROGRESS) {
@@ -676,7 +686,9 @@ public class GameService {
     }
 
     /**
-     * Leave an in-progress multiplayer game. Removes the player; if one or zero players remain, the game is cancelled.
+     * Leave an in-progress multiplayer game. If the leaving player is the current player and there is a bid,
+     * they are treated as having called "spot on" (and lost), then removed. Otherwise the player is simply removed.
+     * If one or zero players remain after removal, the game is cancelled.
      * Broadcasts PLAYER_LEFT (with player name) then either GAME_UPDATED or GAME_CANCELLED.
      */
     public void leaveGame(String gameId, String playerId) {
@@ -699,6 +711,25 @@ public class GameService {
         if (leaveIndex < 0 || playerName == null) {
             throw new IllegalArgumentException("Player not found");
         }
+
+        // If it's their turn and there's a bid, treat as spot on (they lose), then they leave before next round
+        com.example.backend.model.Player currentPlayer = game.getCurrentPlayer();
+        if (currentPlayer != null && currentPlayer.getId().equals(playerId) && game.getCurrentBid() != null) {
+            try {
+                processSpotOn(gameId, playerId);
+            } catch (Exception e) {
+                System.err.println("leaveGame: processSpotOn failed for " + playerId + ": " + e.getMessage());
+            }
+            // Re-resolve leaveIndex after processSpotOn (list unchanged)
+            leaveIndex = -1;
+            for (int i = 0; i < game.getPlayers().size(); i++) {
+                if (game.getPlayers().get(i).getId().equals(playerId)) {
+                    leaveIndex = i;
+                    break;
+                }
+            }
+        }
+
         game.getPlayers().remove(leaveIndex);
         game.getEliminatedPlayers().removeIf(id -> id.equals(playerId));
         int newSize = game.getPlayers().size();
@@ -741,6 +772,44 @@ public class GameService {
                     new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
         } else {
             broadcastGameUpdate(gameId);
+        }
+    }
+
+    /**
+     * Record that a player was active (heartbeat or game action). Used to give the current player
+     * limited time to reconnect before being treated as having left.
+     */
+    public void recordActivity(String gameId, String playerId) {
+        if (gameId == null || playerId == null) return;
+        lastActivityByGameAndPlayer.put(gameId + ":" + playerId, System.currentTimeMillis());
+    }
+
+    /**
+     * If the current player has had no activity (heartbeat or action) for RECONNECT_TIMEOUT_MS,
+     * treat them as having left the game (calls leaveGame).
+     */
+    @Scheduled(fixedRate = 15_000) // every 15 seconds
+    public void checkDisconnectedCurrentPlayers() {
+        long now = System.currentTimeMillis();
+        List<String> gameIds = new ArrayList<>(games.keySet());
+        for (String gameId : gameIds) {
+            Game game = games.get(gameId);
+            if (game == null) continue;
+            if (game.getState() != GameState.IN_PROGRESS && game.getState() != GameState.ROUND_ENDED) continue;
+            com.example.backend.model.Player current = game.getCurrentPlayer();
+            if (current == null) continue;
+            String currentPlayerId = current.getId();
+            String key = gameId + ":" + currentPlayerId;
+            Long last = lastActivityByGameAndPlayer.get(key);
+            if (last != null && (now - last) > RECONNECT_TIMEOUT_MS) {
+                System.out.println("RECONNECT TIMEOUT: Current player " + currentPlayerId + " in game " + gameId + " had no activity for " + ((now - last) / 1000) + "s, treating as left");
+                lastActivityByGameAndPlayer.remove(key);
+                try {
+                    leaveGame(gameId, currentPlayerId);
+                } catch (Exception ex) {
+                    System.err.println("checkDisconnectedCurrentPlayers leaveGame failed: " + ex.getMessage());
+                }
+            }
         }
     }
 
@@ -809,6 +878,8 @@ public class GameService {
         game.setMultiplayer(true);
         game.setMaxPlayers(6);
         game.setCountdownEndTime(null);
+        Player initialCurrent = game.getCurrentPlayer();
+        if (initialCurrent != null) recordActivity(gameId, initialCurrent.getId());
         System.out.println(
                 "START GAME COMPLETE: Game state=" + game.getState() + ", Players=" + game.getPlayers().size());
         broadcastGameUpdate(gameId);
@@ -836,20 +907,28 @@ public class GameService {
     // Override existing methods to broadcast updates
     public GameResult processBidWithBroadcast(String gameId, String playerId, int quantity, int faceValue) {
         GameResult result = processBid(gameId, playerId, quantity, faceValue);
-        // WebSocket controller will handle broadcasting
+        recordActivityForCurrentPlayer(gameId);
         return result;
     }
 
     public GameResult processDoubtWithBroadcast(String gameId, String playerId) {
         GameResult result = processDoubt(gameId, playerId);
-        // WebSocket controller will handle broadcasting
+        recordActivityForCurrentPlayer(gameId);
         return result;
     }
 
     public GameResult processSpotOnWithBroadcast(String gameId, String playerId) {
         GameResult result = processSpotOn(gameId, playerId);
-        // WebSocket controller will handle broadcasting
+        recordActivityForCurrentPlayer(gameId);
         return result;
+    }
+
+    private void recordActivityForCurrentPlayer(String gameId) {
+        Game game = getGame(gameId);
+        if (game != null) {
+            Player current = game.getCurrentPlayer();
+            if (current != null) recordActivity(gameId, current.getId());
+        }
     }
 
     private void scheduleEnableContinue(String gameId) {

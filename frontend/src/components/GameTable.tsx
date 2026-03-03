@@ -82,7 +82,7 @@ const GameTable: React.FC<GameTableProps> = ({
       audioService.playGameStart();
       setHasPlayedGameStart(true);
 
-      // Open the Stats panel on game start with "How to play" tab
+      // Open the Info panel on game start with Rules tab
       setOpenedForGameStart(true);
       setIsHistoryOpen(true);
     }
@@ -268,6 +268,17 @@ const GameTable: React.FC<GameTableProps> = ({
       }
     }
   }, [game]);
+
+  // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
+  useEffect(() => {
+    if (!gameId || !localPlayerId || !game?.isMultiplayer) return;
+    if (game.state !== 'IN_PROGRESS' && game.state !== 'ROUND_ENDED') return;
+    gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
+    const interval = setInterval(() => {
+      gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [gameId, localPlayerId, game?.isMultiplayer, game?.state]);
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
@@ -735,7 +746,7 @@ const GameTable: React.FC<GameTableProps> = ({
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
             showBidDisplay && (
-              <div className="px-3 py-2">
+              <div className="px-2 py-1">
                 <BidDisplay
                   currentBid={currentBidFromActivePlayer}
                   currentPlayerId={game.currentPlayerId}
@@ -749,11 +760,11 @@ const GameTable: React.FC<GameTableProps> = ({
 
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
-            <div className="px-3 py-2">
-              <div className="rounded-2xl p-3 shadow-2xl border-4" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+            <div className="px-2 py-1">
+              <div className="rounded-2xl p-2 md:p-3 shadow-2xl border-4" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
                 {/* Compact Header - Action and Who */}
-                <div className="text-center mb-2">
-                  <div className="text-base font-bold text-amber-200">
+                <div className="text-center mb-1 md:mb-2">
+                  <div className="text-sm md:text-base font-bold text-amber-200">
                     {game.lastActionType &&
                       game.lastActionPlayerId &&
                       (game.lastActionType === "DOUBT"
@@ -784,14 +795,14 @@ const GameTable: React.FC<GameTableProps> = ({
                   game.lastBidQuantity !== undefined &&
                   game.lastBidFaceValue !== undefined && (
                     <div
-                      className={`text-center mb-2 p-2 rounded-lg ${
+                      className={`text-center mb-1 md:mb-2 p-1.5 md:p-2 rounded-lg ${
                         game.lastActualCount >= game.lastBidQuantity
                           ? "bg-green-950 border-2 border-green-700"
                           : "bg-red-950 border-2 border-red-800"
                       }`}
                     >
                       <div
-                        className={`text-lg font-bold ${
+                        className={`text-sm md:text-lg font-bold ${
                           game.lastActualCount >= game.lastBidQuantity
                             ? "text-green-400"
                             : "text-red-400"
@@ -812,8 +823,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Winner - Prominent */}
                 {game.winner && (
-                  <div className="text-center mb-2 p-2 bg-green-950 rounded-lg border-2 border-green-700">
-                    <div className="text-xl font-bold text-green-400">
+                  <div className="text-center mb-1 md:mb-2 p-1.5 md:p-2 bg-green-950 rounded-lg border-2 border-green-700">
+                    <div className="text-base md:text-xl font-bold text-green-400">
                       🏆{" "}
                       {t("game.result.winsRound", {
                         playerName:
@@ -826,8 +837,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Eliminated Player - Very Prominent */}
                 {game.lastEliminatedPlayerId && (
-                  <div className="text-center mb-2 p-2 bg-red-950 rounded-lg border-2 border-red-800">
-                    <div className="text-lg font-bold text-red-900">
+                  <div className="text-center mb-1 md:mb-2 p-1.5 md:p-2 bg-red-950 rounded-lg border-2 border-red-800">
+                    <div className="text-sm md:text-lg font-bold text-red-900">
                       💀{" "}
                       {t("game.result.isEliminated", {
                         playerName:
@@ -847,9 +858,9 @@ const GameTable: React.FC<GameTableProps> = ({
 
           {/* Waiting Message - In scrollable area, below results */}
           {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
-            <div className="px-3 py-2">
-              <div className="bg-gray-800 p-4 rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
-                <div className="text-center text-white text-lg font-bold">
+            <div className="px-2 py-1">
+              <div className="bg-gray-800 p-2 md:p-4 rounded-2xl md:rounded-3xl shadow-lg border-4 border-gray-600 max-w-sm w-full mx-auto">
+                <div className="text-center text-white text-sm md:text-lg font-bold">
                   {localPlayer.eliminated
                     ? t("game.waitingForNextRound")
                     : t("game.waitingForTurn")}
@@ -864,7 +875,7 @@ const GameTable: React.FC<GameTableProps> = ({
           localPlayer &&
           isMyTurn() &&
           !localPlayer.eliminated && (
-            <div className="fixed bottom-24 left-0 right-0 z-45 px-3">
+            <div className="fixed bottom-24 left-0 right-0 z-45 px-2">
               <BidSelector
                 currentBid={game.currentBid}
                 previousBid={game.previousBid}
@@ -1017,37 +1028,37 @@ const GameTable: React.FC<GameTableProps> = ({
         )}
 
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
-        <div className="flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-50 p-1 md:p-4">
+        <div className="flex items-center justify-between gap-1">
           {/* Left side - Audio Button */}
           <div>
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+              className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? "🔇" : "🔊"}
             </button>
           </div>
 
-          {/* Right side - Leave Game, Stats Button and Language Selector */}
-          <div className="flex items-center space-x-2 md:space-x-4">
+          {/* Right side - Leave Game, Info button and Language Selector */}
+          <div className="flex items-center gap-1 md:space-x-4">
             {/* Leave Game Button - Red */}
             <button
               onClick={() => setShowLeaveConfirm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium shadow-lg text-sm transition-all duration-200"
+              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
             >
               {t("game.leaveGame")}
             </button>
-            {/* Stats Button - Always visible */}
+            {/* Info button - opens Rules / Current Hand / Last Hand / Stats */}
             <button
               onClick={() => {
                 audioService.playRaise();
                 setIsHistoryOpen(!isHistoryOpen);
               }}
-              className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+              className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
             >
-              {t("game.history.stats")}
+              {t("game.info")}
             </button>
 
             {/* Language Selector - Desktop only */}
@@ -1059,7 +1070,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* History Panel - Positioned below the header */}
         {isHistoryOpen && (
-          <div className="mt-2 flex justify-end">
+          <div className="mt-1 md:mt-2 flex justify-end">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}
@@ -1073,15 +1084,15 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Leave Game Confirmation - always on top, styled like bid element */}
       {showLeaveConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4 bg-black/50">
           <div
-            className="border-2 rounded-xl px-6 py-5 shadow-2xl min-w-[280px] max-w-md"
+            className="border-2 rounded-xl px-4 py-3 md:px-6 md:py-5 shadow-2xl min-w-[240px] max-w-md"
             style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
           >
-            <p className="text-amber-200 text-center text-lg mb-5">
+            <p className="text-amber-200 text-center text-sm md:text-lg mb-3 md:mb-5">
               {t("game.leaveConfirmMessage")}
             </p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-2 md:gap-3 justify-center">
               <button
                 onClick={async () => {
                   setShowLeaveConfirm(false);
@@ -1094,13 +1105,13 @@ const GameTable: React.FC<GameTableProps> = ({
                   }
                   onBack?.();
                 }}
-                className="px-5 py-2 rounded-lg font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base bg-red-600 hover:bg-red-700 text-white transition-colors"
               >
                 {t("game.leaveConfirmLeave")}
               </button>
               <button
                 onClick={() => setShowLeaveConfirm(false)}
-                className="px-5 py-2 rounded-lg font-semibold border-2 transition-colors"
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
                 style={{ backgroundColor: '#5a2810', borderColor: '#78350f', color: '#fef3c7' }}
               >
                 {t("game.leaveConfirmCancel")}
@@ -1110,13 +1121,13 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Player left notification - styled like bid element */}
+      {/* Player left notification - styled like bid element, compact on mobile */}
       {playerLeftNotification && (
         <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-[9998] border-2 rounded-xl px-6 py-4 shadow-2xl"
+          className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] border-2 rounded-xl px-3 py-2 md:px-6 md:py-4 shadow-2xl max-w-[95vw]"
           style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
         >
-          <p className="text-amber-200 text-center text-lg font-medium">
+          <p className="text-amber-200 text-center text-sm md:text-lg font-medium">
             {t("game.playerLeftNotification", { playerName: playerLeftNotification })}
           </p>
         </div>

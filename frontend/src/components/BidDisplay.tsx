@@ -77,13 +77,11 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className="border-2 rounded-xl px-4 py-3 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
-        <div className="flex items-center justify-center space-x-3">
-          <div className="text-lg font-bold text-white">{bidderName}</div>
-
-          {/* Dice Visualization */}
-          <div className="flex items-center space-x-1">
-            <DiceHandSVG diceValues={diceValues} size="sm" />
+      <div className="border-2 rounded-xl px-2 py-1.5 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-sm font-bold text-white truncate">{bidderName}</span>
+          <div className="flex items-center flex-shrink-0">
+            <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
           </div>
         </div>
       </div>

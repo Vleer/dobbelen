@@ -99,6 +99,7 @@
   "game.history.currentHand": "Huidige Hand",
   "game.history.lastHand": "Laatste Hand",
   "game.history.stats": "Statistieken",
+  "game.info": "Info",
   "game.history.action": "Actie",
   "game.history.bid": "Bod",
   "game.history.bidPossessive": "'s bod:",
@@ -120,11 +121,12 @@
   "game.history.noBidsYet": "Nog geen biedingen in deze hand",
 
   "instructions.title": "Hoe te Spelen",
+  "instructions.rules": "Regels",
   "instructions.close": "Sluiten",
   "instructions.rollDice": "Gooi dobbelstenen geheim onder je beker",
   "instructions.makeBid": "Verhogen: Bied op totaal aantal met een waarde",
   "instructions.raise": "Verhogen: Klik op het aantal dobbelstenen dat je denkt dat alle spelers samen hebben",
   "instructions.doubt": "Optillen: Daag het vorige bod uit als het te hoog is",
-  "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (risicovol!)",
+  "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (riskant!)",
   "instructions.winRound": "Laatste speler die overblijft wint de ronde"
 }

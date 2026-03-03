@@ -109,7 +109,7 @@ const InstructionsWindow: React.FC<InstructionsWindowProps> = ({ isOpen, onClose
         {/* Header - Draggable Area */}
         <div className="flex justify-between items-center mb-4 drag-handle cursor-grab hover:cursor-grab active:cursor-grabbing">
           <h2 className="text-2xl font-bold text-amber-200 pointer-events-none">
-            {t('instructions.title')}
+            {t('instructions.rules')}
           </h2>
           <button
             onClick={onClose}

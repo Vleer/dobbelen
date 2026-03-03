@@ -62,7 +62,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
   const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('instructions');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
-  // When panel opens from game start only: show "How to play". Otherwise keep/remember the last tab.
+  // When panel opens from game start only: show "Rules" tab. Otherwise keep/remember the last tab.
   const hasAppliedOpenRef = React.useRef(false);
   useEffect(() => {
     if (!isOpen) {
@@ -113,7 +113,8 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
       return <span>{t('game.history.noAction')}</span>;
     }
 
-    const actionPlayer = game.players.find(p => p.id === game.lastActionPlayerId);
+    const actionPlayer = game.players.find(p => p.id === game.lastActionPlayerId)
+      || lastHandPlayers.find(p => p.id === game.lastActionPlayerId);
     const actionPlayerName = actionPlayer?.name || t('common.unknownPlayer');
     const playerColor = getPlayerColorFromString(actionPlayer?.color || 'blue');
 
@@ -153,23 +154,23 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
     }
 
     const eliminatedPlayer = game.players.find(p => p.id === game.lastEliminatedPlayerId);
-    const eliminatedPlayerName = eliminatedPlayer?.name || t('common.unknownPlayer');
+    const alsoInPrevious = lastHandPlayers.find(p => p.id === game.lastEliminatedPlayerId);
+    const eliminatedPlayerName = eliminatedPlayer?.name || alsoInPrevious?.name || t('common.unknownPlayer');
 
     return (
-      <div className="mt-2 text-red-400 font-semibold">
+      <span className="text-red-400 font-semibold text-xs md:text-sm">
         {t('game.history.playerEliminated', { playerName: eliminatedPlayerName })}
-      </div>
+      </span>
     );
   };
 
   return (
-    <div className="rounded-lg shadow-2xl border-2 border-amber-950 w-[calc(100vw-1rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#3d1f0d', backdropFilter: 'blur(4px)' }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: '#3d1f0d' }}>
-          <h3 className="text-amber-200 font-semibold text-sm">{t('instructions.title')}</h3>
+    <div className="rounded-lg shadow-2xl border-2 border-amber-950 w-[calc(100vw-0.5rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#3d1f0d', backdropFilter: 'blur(4px)' }}>
+        {/* Header - compact, no title */}
+        <div className="flex items-center justify-end px-1 py-0.5 md:px-2 md:py-1 border-b" style={{ borderColor: '#3d1f0d' }}>
           <button
             onClick={onClose}
-            className="px-2 py-1 text-amber-200 hover:text-white rounded"
+            className="p-0.5 md:p-1 text-amber-200 hover:text-white rounded text-sm"
             title={t('instructions.close')}
           >
             ✕
@@ -180,18 +181,18 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
         <div className="flex border-b" style={{ borderColor: '#3d1f0d' }}>
           <button
             onClick={() => setActiveTab('instructions')}
-            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+            className={`flex-1 py-1 px-1.5 md:py-2 md:px-3 text-xs md:text-sm font-semibold transition-colors ${
               activeTab === 'instructions'
                 ? 'text-white'
                 : 'text-amber-300 hover:text-white'
             }`}
             style={{ backgroundColor: activeTab === 'instructions' ? '#78350f' : '#5a2810' }}
           >
-            {t('instructions.title')}
+            {t('instructions.rules')}
           </button>
           <button
             onClick={() => setActiveTab('currentHand')}
-            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+            className={`flex-1 py-1 px-1.5 md:py-2 md:px-3 text-xs md:text-sm font-semibold transition-colors ${
               activeTab === 'currentHand'
                 ? 'text-white'
                 : 'text-amber-300 hover:text-white'
@@ -202,7 +203,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
           </button>
           <button
             onClick={() => setActiveTab('lastHand')}
-            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+            className={`flex-1 py-1 px-1.5 md:py-2 md:px-3 text-xs md:text-sm font-semibold transition-colors ${
               activeTab === 'lastHand'
                 ? 'text-white'
                 : 'text-amber-300 hover:text-white'
@@ -213,7 +214,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
+            className={`flex-1 py-1 px-1.5 md:py-2 md:px-3 text-xs md:text-sm font-semibold transition-colors ${
               activeTab === 'stats'
                 ? 'text-white'
                 : 'text-amber-300 hover:text-white'
@@ -225,14 +226,22 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
         </div>
 
         {/* Tab Content */}
-        <div className="p-4">
+        <div className="p-2 md:p-4">
           {activeTab === 'instructions' && (
             <div className="text-amber-200">
-              <ul className="list-disc list-inside space-y-2 text-base">
-                <li>{t('instructions.raise')}</li>
-                <li>{t('instructions.doubt')}</li>
-                <li>{t('instructions.spotOn')}</li>
-                <li>{t('instructions.winRound')}</li>
+              <ul className="list-disc list-inside space-y-1 md:space-y-2 text-xs md:text-base">
+                {['raise', 'doubt', 'spotOn', 'winRound'].map((key) => {
+                  const text = t(`instructions.${key}`);
+                  const colonIdx = text.indexOf(': ');
+                  const action = colonIdx >= 0 ? text.slice(0, colonIdx) : text;
+                  const rest = colonIdx >= 0 ? text.slice(colonIdx + 2) : '';
+                  return (
+                    <li key={key}>
+                      <strong>{action}</strong>
+                      {rest && <span className="text-[0.85em] opacity-95">: {rest}</span>}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -240,7 +249,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
           {activeTab === 'currentHand' && (
             <div>
               {game.currentHandBidHistory && game.currentHandBidHistory.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1 md:space-y-2">
                   {game.currentHandBidHistory.map((bid, index) => {
                     const bidPlayer = game.players.find(p => p.id === bid.playerId);
                     const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
@@ -254,7 +263,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                     return (
                       <div
                         key={index}
-                        className="p-3 rounded-lg border-2"
+                        className="p-2 md:p-3 rounded-lg border-2"
                         style={{ 
                           backgroundColor: '#14532d', // green-950 for poker felt
                           borderColor: `${bidPlayerColor}` // Player's color for border
@@ -263,33 +272,33 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                         {isRaise ? (
                           // Display RAISE action (bid with dice)
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               <div
-                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                className="w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: bidPlayerColor }}
                               />
                               <span 
-                                className="font-semibold"
+                                className="font-semibold text-xs md:text-base"
                                 style={{ color: bidPlayerColor }}
                               >
                                 {bidPlayerName}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1 flex-wrap justify-end">
+                            <div className="flex items-center gap-0.5 flex-wrap justify-end min-w-0">
                               {Array.from({ length: bid.quantity }).map((_, diceIndex) => (
-                                <DiceSVG key={diceIndex} value={bid.faceValue} size="sm" />
+                                <DiceSVG key={diceIndex} value={bid.faceValue} size="xs" />
                               ))}
                             </div>
                           </div>
                         ) : (
                           // Display DOUBT or SPOT_ON action (text only)
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <div
-                              className="w-4 h-4 rounded-full flex-shrink-0"
+                              className="w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0"
                               style={{ backgroundColor: bidPlayerColor }}
                             />
                             <span 
-                              className="font-semibold"
+                              className="font-semibold text-xs md:text-base"
                               style={{ color: bidPlayerColor }}
                             >
                               {isDoubt ? t('game.action.doubt', { playerName: bidPlayerName }) : 
@@ -303,7 +312,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                   })}
                 </div>
               ) : (
-                <div className="text-center text-green-400 py-8">
+                <div className="text-center text-green-400 py-4 md:py-8 text-xs md:text-base">
                   {t('game.history.noBidsYet')}
                 </div>
               )}
@@ -314,36 +323,36 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
             <div>
               {hasLastHandData ? (
                 <>
-                  {/* Action Description */}
-                  <div className="mb-4 p-3 bg-green-950 rounded-lg border-2 border-green-700">
-                    <div className="text-white">
+                  {/* Action (who doubted) left, Outcome (who eliminated) right - one row */}
+                  <div className="flex items-center justify-between gap-2 mb-1 p-1.5 md:p-2 bg-green-950 rounded-lg border-2 border-green-700">
+                    <div className="text-white text-xs md:text-sm min-w-0 flex-1 text-left">
                       {getActionDescription()}
                     </div>
+                    <div className="flex-shrink-0 text-right">
+                      {getOutcomeDescription()}
+                    </div>
+                  </div>
+                  {/* Bid and actual count - tightly packed */}
+                  <div className="mb-1 p-1.5 md:p-2 bg-green-950 rounded-lg border-2 border-green-700">
                     {game.lastBidQuantity !== undefined && game.lastBidFaceValue && (
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-green-200 text-sm">
+                      <div className="mt-0.5 flex items-center justify-between gap-1">
+                        <span className="text-green-200 text-xs md:text-sm">
                           {(() => {
-                            // The bid was made by someone - try multiple sources
-                            // 1. Check previousBid first (most likely to have the right player)
-                            // 2. If action was RAISE, use lastActionPlayerId (they made the bid)
-                            // 3. Otherwise try currentBid
+                            // Resolve who made this bid: previousBid (challenged bid), or raiser for RAISE
                             let bidPlayerId = game.previousBid?.playerId;
-                            
                             if (!bidPlayerId && game.lastActionType === 'RAISE') {
                               bidPlayerId = game.lastActionPlayerId;
                             }
-                            
                             if (!bidPlayerId) {
                               bidPlayerId = game.currentBid?.playerId;
                             }
 
-                            // Try to find in current players first, then in previousRoundPlayers
-                            let bidPlayer = bidPlayerId ? game.players.find(p => p.id === bidPlayerId) : null;
+                            // Resolve name: prefer previousRoundPlayers (last hand) then current players
+                            let bidPlayer = bidPlayerId ? lastHandPlayers.find(p => p.id === bidPlayerId) : null;
                             if (!bidPlayer && bidPlayerId) {
-                              bidPlayer = lastHandPlayers.find(p => p.id === bidPlayerId);
+                              bidPlayer = game.players.find(p => p.id === bidPlayerId) ?? null;
                             }
-                            
-                            const bidPlayerName = bidPlayer?.name || t('common.unknownPlayer');
+                            const bidPlayerName = bidPlayer?.name || (bidPlayerId ? t('common.unknownPlayer') : '');
                             const bidPlayerColor = getPlayerColorFromString(bidPlayer?.color || 'blue');
                             return (
                               <>
@@ -355,7 +364,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                             );
                           })()}
                         </span>
-                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                        <div className="flex items-center gap-0.5 flex-wrap justify-end min-w-0">
                           {Array.from({ length: game.lastBidQuantity }).map((_, index) => (
                             <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
                           ))}
@@ -363,20 +372,19 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                       </div>
                     )}
                     {game.lastActualCount !== undefined && game.lastBidFaceValue && (
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-green-200 text-sm">{t('game.history.actualCount')}:</span>
-                        <div className="flex items-center gap-1 flex-wrap justify-end">
+                      <div className="mt-0.5 flex items-center justify-between gap-1">
+                        <span className="text-green-200 text-xs md:text-sm">{t('game.history.actualCount')}:</span>
+                        <div className="flex items-center gap-0.5 flex-wrap justify-end min-w-0">
                           {Array.from({ length: game.lastActualCount }).map((_, index) => (
                             <DiceSVG key={index} value={game.lastBidFaceValue!} size="xs" />
                           ))}
                         </div>
                       </div>
                     )}
-                    {getOutcomeDescription()}
                   </div>
 
                   {/* Players and Their Dice */}
-                  <div className="space-y-2">
+                  <div className="space-y-0.5 md:space-y-1 mt-0.5">
                     {lastHandPlayers.map((player) => {
                       // Find current player to get color
                       const currentPlayer = game.players.find(p => p.id === player.id);
@@ -385,22 +393,22 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                       return (
                         <div
                           key={player.id}
-                          className="flex items-center gap-2 p-2 bg-green-950 rounded-lg border-2 border-green-700"
+                          className="flex items-center gap-1.5 p-1 md:p-2 bg-green-950 rounded-lg border-2 border-green-700"
                         >
                           <div
-                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            className="w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0"
                             style={{ backgroundColor: playerHexColor }}
                           />
                           <span 
-                            className="font-semibold flex-shrink-0"
+                            className="font-semibold flex-shrink-0 text-xs md:text-base"
                             style={{ color: playerHexColor }}
                           >
                             {player.name}
                           </span>
-                          {/* Display dice inline */}
-                          <div className="flex flex-wrap gap-1 justify-end ml-auto">
+                          {/* Display dice inline - xs so they fit next to each other on mobile */}
+                          <div className="flex flex-wrap gap-0.5 justify-end ml-auto min-w-0">
                             {player.dice.map((diceValue, index) => (
-                              <DiceSVG key={index} value={diceValue} size="sm" />
+                              <DiceSVG key={index} value={diceValue} size="xs" />
                             ))}
                           </div>
                         </div>
@@ -409,12 +417,12 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                   </div>
 
                   {/* Dice Analysis Chart */}
-                  <div className="mt-4">
+                  <div className="mt-2 md:mt-4">
                     <DiceAnalysisChart game={game} players={lastHandPlayers} />
                   </div>
                 </>
               ) : (
-                <div className="text-center text-green-400 py-8">
+                <div className="text-center text-green-400 py-4 md:py-8 text-xs md:text-base">
                   {t('game.history.noData')}
                 </div>
               )}
@@ -423,10 +431,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
 
           {activeTab === 'stats' && (
             <div>
-              <h3 className="text-green-300 font-semibold mb-3">
+              <h3 className="text-green-300 font-semibold mb-1.5 md:mb-3 text-xs md:text-base">
                 {t('game.history.playerActions')}
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-1.5 md:space-y-3">
                 {game.players.map((player) => {
                   const stats = playerStats[player.id] || {
                     playerId: player.id,
@@ -443,52 +451,49 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                   return (
                     <div
                       key={player.id}
-                      className="p-3 bg-green-950 rounded-lg border-2 border-green-700"
+                      className="p-2 md:p-3 bg-green-950 rounded-lg border-2 border-green-700"
                     >
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-1.5 mb-1 md:mb-2">
                         <div
-                          className="w-4 h-4 rounded-full"
+                          className="w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: playerHexColor }}
                         />
                         <span 
-                          className="font-semibold"
+                          className="font-semibold text-xs md:text-base"
                           style={{ color: playerHexColor }}
                         >
                           {player.name}
                         </span>
                         {totalActions === 0 && (
-                          <span className="text-xs text-green-500 ml-auto">
+                          <span className="text-[10px] md:text-xs text-green-500 ml-auto">
                             ({t('game.history.noActions')})
                           </span>
                         )}
                       </div>
                       
                       {totalActions > 0 && (
-                        <div className="space-y-2 text-sm">
-                          {/* Doubts Section */}
+                        <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                           {(stats.correctDoubts > 0 || stats.wrongDoubts > 0) && (
                             <div>
-                              <div className="text-green-200 font-semibold mb-1">{t('game.history.doubts')}:</div>
-                              <div className="flex justify-between pl-2">
+                              <div className="text-green-200 font-semibold mb-0.5 md:mb-1 text-[11px] md:text-base">{t('game.history.doubts')}:</div>
+                              <div className="flex justify-between pl-1 md:pl-2">
                                 <span className="text-green-300">{t('game.history.correct')}:</span>
                                 <span className="text-green-400 font-semibold">{stats.correctDoubts}</span>
                               </div>
-                              <div className="flex justify-between pl-2">
+                              <div className="flex justify-between pl-1 md:pl-2">
                                 <span className="text-green-300">{t('game.history.wrong')}:</span>
                                 <span className="text-red-400 font-semibold">{stats.wrongDoubts}</span>
                               </div>
                             </div>
                           )}
-                          
-                          {/* Spot Ons Section */}
                           {(stats.correctSpotOns > 0 || stats.wrongSpotOns > 0) && (
                             <div>
-                              <div className="text-green-200 font-semibold mb-1">{t('game.history.spotOns')}:</div>
-                              <div className="flex justify-between pl-2">
+                              <div className="text-green-200 font-semibold mb-0.5 md:mb-1 text-[11px] md:text-base">{t('game.history.spotOns')}:</div>
+                              <div className="flex justify-between pl-1 md:pl-2">
                                 <span className="text-green-300">{t('game.history.correct')}:</span>
                                 <span className="text-green-400 font-semibold">{stats.correctSpotOns}</span>
                               </div>
-                              <div className="flex justify-between pl-2">
+                              <div className="flex justify-between pl-1 md:pl-2">
                                 <span className="text-green-300">{t('game.history.wrong')}:</span>
                                 <span className="text-red-400 font-semibold">{stats.wrongSpotOns}</span>
                               </div>

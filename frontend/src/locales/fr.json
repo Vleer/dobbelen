@@ -93,6 +93,7 @@
   "game.history.currentHand": "Main Actuelle",
   "game.history.lastHand": "Dernière Main",
   "game.history.stats": "Statistiques",
+  "game.info": "Info",
   "game.history.action": "Action",
   "game.history.bid": "Enchère",
   "game.history.bidPossessive": " enchère:",
@@ -114,6 +115,7 @@
   "game.history.noBidsYet": "Aucune enchère encore dans cette main",
 
   "instructions.title": "Comment Jouer",
+  "instructions.rules": "Règles",
   "instructions.close": "Fermer",
   "instructions.rollDice": "Lancez les dés secrètement sous votre gobelet",
   "instructions.makeBid": "Relancer: Pariez sur le total des dés montrant une valeur",

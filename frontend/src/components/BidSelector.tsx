@@ -206,27 +206,24 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     return (
       <div
         ref={containerRef}
-        className="bg-green-950 p-3 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm w-full select-none relative z-10"
+        className="bg-green-950 p-2 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm w-full select-none relative z-10"
         onMouseDown={handleMouseDown}
         style={{
           cursor: isDragging ? "grabbing" : "grab",
         }}
       >
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
           {displayQuantities.map((quantity) => (
             <div
               key={quantity}
-              className="flex items-center justify-center gap-1"
+              className="flex items-center justify-center gap-0.5"
             >
               {faceValues.map((faceValue) => (
                 <button
                   key={`${quantity}-${faceValue}`}
                   onClick={(e) => {
-                    // Only handle click if it wasn't a drag
-                    if (!isDragging) {
-                      handleBidClick(quantity, faceValue);
-                    }
+                    if (!isDragging) handleBidClick(quantity, faceValue);
                   }}
                   disabled={disabled || !isBidValid(quantity, faceValue)}
                   className={getBidButtonClass(quantity, faceValue)}
@@ -242,28 +239,28 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             </div>
           ))}
 
-          {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-          <div className="flex items-center justify-center gap-1 pt-1">
+          {/* Face Value Headers with Dice - smaller so they line up with buttons */}
+          <div className="flex items-center justify-center gap-0.5 pt-0.5">
             {faceValues.map((faceValue) => (
               <div
                 key={faceValue}
                 className="w-12 h-12 flex justify-center items-center"
               >
-                <DiceHandSVG diceValues={[faceValue]} size="md" />
+                <DiceHandSVG diceValues={[faceValue]} size="sm" />
               </div>
             ))}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-2 flex gap-2 w-full">
+        <div className="mt-1.5 flex gap-1 w-full">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDoubt?.();
             }}
             disabled={disabled || noBidToChallenge}
-            className="flex-1 py-2 text-white rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200"
+            className="flex-1 py-1.5 text-white rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200"
             style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
           >
             {t("game.doubt")}
@@ -275,7 +272,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={disabled || noBidToChallenge}
-            className="flex-1 py-2 bg-green-950 text-white rounded-2xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200"
+            className="flex-1 py-1.5 bg-green-950 text-white rounded-xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200"
           >
             {t("game.spotOn")}
           </button>
@@ -285,7 +282,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               toggleExpanded();
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-12 h-10 bg-green-950 hover:bg-green-900 rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
+            className="w-10 h-8 bg-green-950 hover:bg-green-900 rounded-xl hover:scale-105 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
           >
             {isExpanded ? "−" : "+"}
           </button>
