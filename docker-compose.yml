@@ -56,6 +56,19 @@ services:
     environment:
       - REACT_APP_BACKEND_URL=http://host.docker.internal:8080
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: dobbelen-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    user: "1000:1000"
+    volumes:
+      - ${CLOUDFLARED_CONFIG_PATH}:/etc/cloudflared:ro
+    command: tunnel --config /etc/cloudflared/config.yml run ${CLOUDFLARED_TUNNEL_ID}
+    networks:
+      - dobbelen-network
+
 networks:
   dobbelen-network:
     driver: bridge
