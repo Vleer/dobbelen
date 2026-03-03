@@ -1,4 +1,6 @@
-# Production/hosted: uses dedicated prod Dockerfiles. Use: docker compose -f docker-compose.prod.yml up --build
+# Production/hosted: uses dedicated prod Dockerfiles.
+# Uses .env for CLOUDFLARED_CONFIG_PATH and CLOUDFLARED_TUNNEL_ID (898944.xyz).
+# Run: docker compose -f docker-compose.prod.yml --env-file .env up --build -d
 
 services:
   mongodb:
@@ -44,6 +46,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        # Same-origin so nginx proxies /api and /ws when served at 898944.xyz
+        - REACT_APP_BACKEND_URL=
     container_name: dobbelen-frontend-prod
     ports:
       - "127.0.0.1:80:80"
@@ -53,8 +58,22 @@ services:
     networks:
       - dobbelen-network
     restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: dobbelen-cloudflared-prod
+    restart: unless-stopped
+    user: "1000:1000"
     environment:
-      - REACT_APP_BACKEND_URL=http://localhost:8080
+      - HOME=/tmp
+    depends_on:
+      - frontend
+    # Mount at same path as on host so config.yml paths (e.g. /home/vleer/.cloudflared/...) work unchanged
+    volumes:
+      - ${CLOUDFLARED_CONFIG_PATH}:/home/vleer/.cloudflared:ro
+    command: tunnel --config /home/vleer/.cloudflared/config.yml run ${CLOUDFLARED_TUNNEL_ID}
+    networks:
+      - dobbelen-network
 
 networks:
   dobbelen-network:

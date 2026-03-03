@@ -1,5 +1,4 @@
-# Develop: default stack. Use: docker compose up --build
-# Frontend http://localhost:3000, Backend http://localhost:8080
+version: '3.8'
 
 services:
   mongodb:
@@ -14,7 +13,7 @@ services:
     networks:
       - dobbelen-network
     healthcheck:
-      test: ["CMD", "mongosh", "localhost:27017/dobbelen", "--eval", "db.runCommand('ping').ok"]
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/dobbelen --quiet
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +45,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: dobbelen-frontend
+    container_name: frontend
     ports:
       - "3000:80"
     depends_on:
@@ -55,7 +54,7 @@ services:
     networks:
       - dobbelen-network
     environment:
-      - REACT_APP_BACKEND_URL=http://localhost:8080
+      - REACT_APP_BACKEND_URL=http://host.docker.internal:8080
 
 networks:
   dobbelen-network:
@@ -63,3 +62,4 @@ networks:
 
 volumes:
   mongodb-data:
+  backend-data:
