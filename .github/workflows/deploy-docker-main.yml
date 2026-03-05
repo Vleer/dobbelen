@@ -25,16 +25,35 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script_stop: true
           script: |
-            set -e
+            set -euo pipefail
 
-            cd "${{ secrets.DEPLOY_PATH }}"
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
 
-            git fetch origin main
-            git checkout main
-            git reset --hard origin/main
+            echo "== Preflight =="
+            echo "Host: $(hostname)"
+            echo "User: $(whoami)"
+            echo "Path: ${DEPLOY_PATH}"
 
-            docker compose -f docker-compose.prod.yml pull || true
-            docker compose -f docker-compose.prod.yml up --build -d
+            [ -d "${DEPLOY_PATH}" ] || { echo "DEPLOY_PATH not found: ${DEPLOY_PATH}"; exit 1; }
+            cd "${DEPLOY_PATH}"
+
+            command -v git >/dev/null 2>&1 || { echo "git not found"; exit 1; }
+            command -v docker >/dev/null 2>&1 || { echo "docker not found"; exit 1; }
+            docker compose version >/dev/null 2>&1 || { echo "docker compose plugin not found"; exit 1; }
+            [ -f docker-compose.prod.yml ] || { echo "docker-compose.prod.yml not found in ${DEPLOY_PATH}"; exit 1; }
+            [ -f .env ] || { echo ".env not found in ${DEPLOY_PATH} (required for prod compose vars)"; exit 1; }
+
+            echo "== Git sync =="
+            git fetch --prune origin main
+            git checkout -B main origin/main
+
+            echo "== Compose validate =="
+            docker compose --env-file .env -f docker-compose.prod.yml config >/dev/null
+
+            echo "== Deploy =="
+            docker compose --env-file .env -f docker-compose.prod.yml pull || true
+            docker compose --env-file .env -f docker-compose.prod.yml up --build -d --remove-orphans
+            docker compose --env-file .env -f docker-compose.prod.yml ps
             docker image prune -f
 
       - name: Deployment summary
