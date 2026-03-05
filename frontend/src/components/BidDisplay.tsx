@@ -11,9 +11,10 @@ interface BidDisplayProps {
   winner?: string;
   playerName?: string;
   isMobile?: boolean;
+  infoPanelBottom?: number;
 }
 
-const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false }) => {
+const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, infoPanelBottom }) => {
   const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -89,6 +90,21 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   }
 
   const isCentered = position === null;
+
+  // When the info panel is open and the bid has no saved position, place the bid
+  // just below the info panel so it doesn't overlap with it.
+  // BID_DISPLAY_MIN_BOTTOM_CLEARANCE reserves enough room at the viewport bottom
+  // for the local player panel and basic padding.
+  const BID_DISPLAY_MIN_BOTTOM_CLEARANCE = 120;
+  const getDefaultPosition = (): React.CSSProperties => {
+    if (infoPanelBottom && infoPanelBottom > 0) {
+      const marginBelow = 12;
+      const safeTop = Math.min(infoPanelBottom + marginBelow, window.innerHeight - BID_DISPLAY_MIN_BOTTOM_CLEARANCE);
+      return { left: '50%', top: safeTop, transform: 'translateX(-50%)' };
+    }
+    return { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' };
+  };
+
   return (
     <div
       ref={containerRef}
@@ -97,9 +113,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
         backgroundColor: '#3d1f0d',
         borderColor: '#78350f',
         position: "fixed",
-        ...(isCentered
-          ? { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }
-          : { left: position.x, top: position.y }),
+        ...(isCentered ? getDefaultPosition() : { left: position.x, top: position.y }),
         zIndex: 1000,
         cursor: isDragging ? "grabbing" : "grab",
       }}

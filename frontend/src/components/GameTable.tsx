@@ -56,12 +56,39 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousGameWinner, setPreviousGameWinner] = useState<string>('');
   const [hasPlayedGameStart, setHasPlayedGameStart] = useState(false);
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
+  const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
+  const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
   const gameId = game?.id;
 
   useEffect(() => {
     gameRef.current = game;
   }, [game]);
+
+  // Measure the bottom of the history panel so the BidDisplay can avoid overlapping it
+  useEffect(() => {
+    if (!isHistoryOpen || !historyPanelRef.current) {
+      setHistoryPanelBottom(0);
+      return;
+    }
+
+    let mounted = true;
+
+    const measure = () => {
+      const rect = historyPanelRef.current?.getBoundingClientRect();
+      if (rect && mounted) {
+        setHistoryPanelBottom(rect.bottom);
+      }
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(historyPanelRef.current);
+    return () => {
+      mounted = false;
+      observer.disconnect();
+    };
+  }, [isHistoryOpen]);
 
   // Auto-dismiss "player left" notification after 5 seconds
   useEffect(() => {
@@ -1011,6 +1038,7 @@ const GameTable: React.FC<GameTableProps> = ({
             roundNumber={game.roundNumber}
             winner={game.winner || undefined}
             isMobile={false}
+            infoPanelBottom={historyPanelBottom}
           />
         </div>
       )}
@@ -1073,7 +1101,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* History Panel - Positioned below the header */}
         {isHistoryOpen && (
-          <div className="mt-1 md:mt-2 flex justify-end">
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 flex justify-end">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}
