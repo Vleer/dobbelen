@@ -16,6 +16,7 @@ import LanguageSelector from './LanguageSelector';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import useWindowSize from '../utils/useWindowSize';
 
 interface GameTableProps {
   game?: Game | null;
@@ -32,6 +33,8 @@ const GameTable: React.FC<GameTableProps> = ({
 }) => {
   const { t } = useLanguage();
   const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
+  const { isMobile, isTablet } = useWindowSize();
+  const useMobileLayout = isMobile || isTablet;
   const [game, setGame] = useState<Game | null>(initialGame || null);
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -705,8 +708,8 @@ const GameTable: React.FC<GameTableProps> = ({
         style={{ backgroundImage: "url(resources/bg.webp)" }}
       />
 
-      {/* Mobile Layout - Clean Vertical Stack with fixed bottom elements */}
-      <div className="md:hidden flex flex-col h-screen">
+      {/* Mobile/Tablet Layout - Clean Vertical Stack with fixed bottom elements */}
+      <div className="lg:hidden flex flex-col h-screen">
         {/* Scrollable content area - opponents and results/bid display */}
         <div className="flex-1 overflow-y-auto pb-80 pt-16">
           {/* Opponent Players - Top section with natural flow, below header */}
@@ -733,7 +736,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     }
                     previousBid={game.previousBid}
                     previousRoundPlayer={previousRoundPlayer}
-                    isMobile={true}
+                    isMobile={useMobileLayout}
                     playerIndex={originalIndex}
                   />
                 );
@@ -753,7 +756,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   players={game.players}
                   roundNumber={game.roundNumber}
                   winner={game.winner || undefined}
-                  isMobile={true}
+                  isMobile={useMobileLayout}
                 />
               </div>
             )}
@@ -885,7 +888,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 onDoubt={() => handleAction("doubt")}
                 onSpotOn={() => handleAction("spotOn")}
                 disabled={isLoading || bettingDisabled}
-                isMobile={true}
+                isMobile={useMobileLayout}
               />
             </div>
           )}
@@ -909,14 +912,14 @@ const GameTable: React.FC<GameTableProps> = ({
               previousRoundPlayer={game.previousRoundPlayers?.find(
                 (p) => p.id === localPlayer.id
               )}
-              isMobile={true}
+              isMobile={useMobileLayout}
             />
           </div>
         )}
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         {/* Local Player - Bottom Center */}
         {localPlayer && (
           <LocalPlayer
@@ -1000,7 +1003,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
       {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <BidDisplay
             currentBid={currentBidFromActivePlayer}
             currentPlayerId={game.currentPlayerId}
@@ -1013,7 +1016,7 @@ const GameTable: React.FC<GameTableProps> = ({
       )}
 
       {/* Game Result Display - Desktop only */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <GameResultDisplay game={game} currentPlayerId={localPlayerId} />
       </div>
 
@@ -1062,7 +1065,7 @@ const GameTable: React.FC<GameTableProps> = ({
             </button>
 
             {/* Language Selector - Desktop only */}
-            <div className="hidden md:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
+            <div className="hidden lg:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">
               <LanguageSelector />
             </div>
           </div>
