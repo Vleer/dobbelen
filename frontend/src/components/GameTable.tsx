@@ -772,11 +772,12 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
 
           {/* Mobile Bid Display - Below opponents (when no results showing) */}
+          {/* When the info panel is open, render as a fixed element below the panel so it isn't covered */}
           {currentBidFromActivePlayer &&
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
-            showBidDisplay && (
-              <div className="px-2 py-1">
+            showBidDisplay && (() => {
+              const bidNode = (
                 <BidDisplay
                   currentBid={currentBidFromActivePlayer}
                   currentPlayerId={game.currentPlayerId}
@@ -785,8 +786,18 @@ const GameTable: React.FC<GameTableProps> = ({
                   winner={game.winner || undefined}
                   isMobile={useMobileLayout}
                 />
-              </div>
-            )}
+              );
+              return isHistoryOpen && historyPanelBottom > 0 ? (
+                <div
+                  className="fixed left-0 right-0 px-2 z-40"
+                  style={{ top: historyPanelBottom + 8 }}
+                >
+                  {bidNode}
+                </div>
+              ) : (
+                <div className="px-2 py-1">{bidNode}</div>
+              );
+            })()}
 
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
