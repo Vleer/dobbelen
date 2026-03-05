@@ -12,86 +12,41 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy on main push
-    runs-on: ubuntu-latest
+    name: Deploy on self-hosted runner
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - dobbelen-deploy
     env:
-      REPO_SSH_URL: git@github.com:Vleer/dobbelen.git
-      DEFAULT_DEPLOY_HOST: 898944.xyz
-      DEFAULT_DEPLOY_USER: vleer
-      DEFAULT_DEPLOY_PATH: /home/vleer/dobbelen
+      DEPLOY_PATH: /home/vleer/dobbelen
 
     steps:
-      - name: Validate required configuration
-        env:
-          DEPLOY_HOST: ${{ vars.DEPLOY_HOST || env.DEFAULT_DEPLOY_HOST }}
-          DEPLOY_USER: ${{ vars.DEPLOY_USER || env.DEFAULT_DEPLOY_USER }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || env.DEFAULT_DEPLOY_PATH }}
+      - name: Sync repository
         run: |
           set -euo pipefail
-          missing=0
-          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH; do
-            if [ -z "${!name}" ]; then
-              echo "Missing required configuration: ${name}"
-              missing=1
-            fi
-          done
-          if [ "$missing" -ne 0 ]; then
-            echo "Set DEPLOY_SSH_KEY in Actions secrets; optionally set DEPLOY_HOST/DEPLOY_USER/DEPLOY_PATH in Actions variables."
-            exit 1
-          fi
+          cd "$DEPLOY_PATH"
+          git fetch --prune origin main
+          git checkout -B main origin/main
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ vars.DEPLOY_HOST || env.DEFAULT_DEPLOY_HOST }}
-          username: ${{ vars.DEPLOY_USER || env.DEFAULT_DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ vars.DEPLOY_PORT || 22 }}
-          script_stop: true
-          script: |
-            set -euo pipefail
+      - name: Validate local deploy prerequisites
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          command -v docker >/dev/null 2>&1 || { echo "docker not found"; exit 1; }
+          docker compose version >/dev/null 2>&1 || { echo "docker compose plugin not found"; exit 1; }
+          [ -f docker-compose.prod.yml ] || { echo "docker-compose.prod.yml not found in $DEPLOY_PATH"; exit 1; }
+          [ -f .env ] || { echo ".env not found in $DEPLOY_PATH (required for prod compose vars)"; exit 1; }
 
-            DEPLOY_PATH="${{ vars.DEPLOY_PATH || env.DEFAULT_DEPLOY_PATH }}"
-            REPO_SSH_URL="${{ env.REPO_SSH_URL }}"
-
-            echo "== Preflight =="
-            echo "Host: $(hostname)"
-            echo "User: $(whoami)"
-            echo "Path: ${DEPLOY_PATH}"
-
-            mkdir -p "${DEPLOY_PATH}"
-
-            if [ ! -d "${DEPLOY_PATH}/.git" ]; then
-              echo "No git repo found at DEPLOY_PATH; cloning ${REPO_SSH_URL} ..."
-              if [ -n "$(ls -A "${DEPLOY_PATH}" 2>/dev/null)" ]; then
-                echo "DEPLOY_PATH is not empty and not a git repo: ${DEPLOY_PATH}"
-                exit 1
-              fi
-              git clone "${REPO_SSH_URL}" "${DEPLOY_PATH}"
-            fi
-
-            cd "${DEPLOY_PATH}"
-
-            command -v git >/dev/null 2>&1 || { echo "git not found"; exit 1; }
-            command -v docker >/dev/null 2>&1 || { echo "docker not found"; exit 1; }
-            docker compose version >/dev/null 2>&1 || { echo "docker compose plugin not found"; exit 1; }
-            [ -f docker-compose.prod.yml ] || { echo "docker-compose.prod.yml not found in $(pwd)"; exit 1; }
-            [ -f .env ] || { echo ".env not found in $(pwd) (required for prod compose vars)"; exit 1; }
-
-            echo "== Git sync =="
-            git remote set-url origin "${REPO_SSH_URL}"
-            git fetch --prune origin main
-            git checkout -B main origin/main
-
-            echo "== Compose validate =="
-            docker compose --env-file .env -f docker-compose.prod.yml config >/dev/null
-
-            echo "== Deploy =="
-            docker compose --env-file .env -f docker-compose.prod.yml pull || true
-            docker compose --env-file .env -f docker-compose.prod.yml up --build -d --remove-orphans
-            docker compose --env-file .env -f docker-compose.prod.yml ps
-            docker image prune -f
+      - name: Deploy stack
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose --env-file .env -f docker-compose.prod.yml config >/dev/null
+          docker compose --env-file .env -f docker-compose.prod.yml pull || true
+          docker compose --env-file .env -f docker-compose.prod.yml up --build -d --remove-orphans
+          docker compose --env-file .env -f docker-compose.prod.yml ps
+          docker image prune -f
 
       - name: Deployment summary
         run: |
