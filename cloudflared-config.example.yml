@@ -1,0 +1,20 @@
+# Example Cloudflare Tunnel config for dobbelen when using docker-compose.prod.yml.
+# Copy to your real config (e.g. ~/.cloudflared/config.yml).
+#
+# When cloudflared runs INSIDE Docker (same network as frontend), the ingress
+# service must use the Docker service name "frontend", not localhost.
+#
+# credentials-file: use the path INSIDE the container. The host dir is mounted at /etc/cloudflared.
+# The file is often named <tunnel-id>.json when downloaded from the Cloudflare dashboard.
+
+tunnel: your-tunnel-id-here
+# Use the filename you actually have in ~/.cloudflared/ (e.g. credentials.json or <tunnel-id>.json)
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: your-domain.example.com
+    service: http://frontend:80
+  - hostname: www.your-domain.example.com
+    service: http://frontend:80
+  # Required catch-all rule (keep as last)
+  - service: http_status:404
