@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,17 @@ public class GameService {
 
     @Autowired
     private MediumAIService mediumAIService;
+
+    /**
+     * On startup, remove all persisted games from the database.
+     * This ensures that when a new version of the application is published,
+     * stale games from previous versions are cleaned up.
+     */
+    @PostConstruct
+    public void clearGamesOnStartup() {
+        gameMongoRepository.deleteAll();
+        System.out.println("STARTUP: Cleared all persisted games from database");
+    }
 
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
@@ -650,9 +662,10 @@ public class GameService {
     }
 
     /**
-     * Leave an in-progress multiplayer game. If the leaving player is the current player and there is a bid,
-     * they are treated as having called "spot on" (and lost), then removed. Otherwise the player is simply removed.
-     * If one or zero players remain after removal, the game is cancelled.
+     * Leave an in-progress multiplayer game. If the leaving player is the host (first player),
+     * the entire game is cancelled. If the leaving player is the current player and there is a bid,
+     * they are treated as having called "spot on" (and lost), then removed. Otherwise the player is
+     * simply removed. If one or zero players remain after removal, the game is cancelled.
      * Broadcasts PLAYER_LEFT (with player name) then either GAME_UPDATED or GAME_CANCELLED.
      */
     public void leaveGame(String gameId, String playerId) {
@@ -674,6 +687,15 @@ public class GameService {
         }
         if (leaveIndex < 0 || playerName == null) {
             throw new IllegalArgumentException("Player not found");
+        }
+
+        // If the host (first player) leaves, cancel the entire game
+        if (leaveIndex == 0) {
+            games.remove(gameId);
+            System.out.println("LEAVE GAME: Game " + gameId + " cancelled (host " + playerName + " left)");
+            messagingTemplate.convertAndSend("/topic/game/" + gameId,
+                    new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
+            return;
         }
 
         // If it's their turn and there's a bid, treat as spot on (they lose), then they leave before next round
