@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameService {
     private static final long RECONNECT_TIMEOUT_MS = 60_000; // 60 seconds for current player to reconnect
+    private static final long HOST_INACTIVITY_TIMEOUT_MS = 3 * 60 * 60 * 1000L; // 3 hours for host when game has started
 
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI
@@ -786,8 +787,10 @@ public class GameService {
             if (current == null) continue;
             String currentPlayerId = current.getId();
             String key = gameId + ":" + currentPlayerId;
+            boolean isHost = !game.getPlayers().isEmpty() && game.getPlayers().get(0).getId().equals(currentPlayerId);
+            long timeout = isHost ? HOST_INACTIVITY_TIMEOUT_MS : RECONNECT_TIMEOUT_MS;
             Long last = lastActivityByGameAndPlayer.get(key);
-            if (last != null && (now - last) > RECONNECT_TIMEOUT_MS) {
+            if (last != null && (now - last) > timeout) {
                 System.out.println("RECONNECT TIMEOUT: Current player " + currentPlayerId + " in game " + gameId + " had no activity for " + ((now - last) / 1000) + "s, treating as left");
                 lastActivityByGameAndPlayer.remove(key);
                 try {

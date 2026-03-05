@@ -41,13 +41,20 @@ class GameServiceLeaveTest {
     private GameService gameService;
 
     private Map<String, Game> gamesMap;
+    private Map<String, Long> activityMap;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() throws Exception {
         // Access the internal games map via reflection so we can seed test games
         Field gamesField = GameService.class.getDeclaredField("games");
         gamesField.setAccessible(true);
         gamesMap = (Map<String, Game>) gamesField.get(gameService);
+
+        // Access the activity map via reflection for inactivity timeout tests
+        Field activityField = GameService.class.getDeclaredField("lastActivityByGameAndPlayer");
+        activityField.setAccessible(true);
+        activityMap = (Map<String, Long>) activityField.get(gameService);
     }
 
     /** Build a minimal in-progress multiplayer game with the given players. */
@@ -117,5 +124,67 @@ class GameServiceLeaveTest {
                 .map(v -> (WebSocketMessage) v)
                 .anyMatch(m -> "GAME_CANCELLED".equals(m.getType()));
         assertTrue(hasCancelled, "GAME_CANCELLED message should be broadcast");
+    }
+
+    @Test
+    void checkDisconnectedCurrentPlayers_hostInactiveLessThan3Hours_gameNotCancelled() {
+        Player host = new Player("Alice", "blue");
+        Player guest = new Player("Bob", "red");
+        Player third = new Player("Carol", "green");
+        Game game = buildInProgressGame(host, guest, third);
+        // Host is current player
+        game.setCurrentPlayerIndex(0);
+        gamesMap.put(game.getId(), game);
+
+        // Record host activity 2 hours ago (under 3-hour threshold)
+        long twoHoursAgo = System.currentTimeMillis() - (2 * 60 * 60 * 1000L);
+        activityMap.put(game.getId() + ":" + host.getId(), twoHoursAgo);
+
+        gameService.checkDisconnectedCurrentPlayers();
+
+        // Game must still be present — host inactive for only 2 hours should not cancel the game
+        assertNotNull(gamesMap.get(game.getId()), "Game should not be cancelled when host has been inactive for less than 3 hours");
+    }
+
+    @Test
+    void checkDisconnectedCurrentPlayers_hostInactiveOver3Hours_gameCancelled() {
+        Player host = new Player("Alice", "blue");
+        Player guest = new Player("Bob", "red");
+        Player third = new Player("Carol", "green");
+        Game game = buildInProgressGame(host, guest, third);
+        // Host is current player
+        game.setCurrentPlayerIndex(0);
+        gamesMap.put(game.getId(), game);
+
+        // Record host activity 4 hours ago (over 3-hour threshold)
+        long fourHoursAgo = System.currentTimeMillis() - (4 * 60 * 60 * 1000L);
+        activityMap.put(game.getId() + ":" + host.getId(), fourHoursAgo);
+
+        gameService.checkDisconnectedCurrentPlayers();
+
+        // Game must be cancelled after host has been inactive for more than 3 hours
+        assertNull(gamesMap.get(game.getId()), "Game should be cancelled when host has been inactive for more than 3 hours");
+    }
+
+    @Test
+    void checkDisconnectedCurrentPlayers_nonHostInactiveOver60Seconds_playerRemoved() {
+        Player host = new Player("Alice", "blue");
+        Player guest = new Player("Bob", "red");
+        Player third = new Player("Carol", "green");
+        Game game = buildInProgressGame(host, guest, third);
+        // Guest is current player (index 1)
+        game.setCurrentPlayerIndex(1);
+        gamesMap.put(game.getId(), game);
+
+        // Record guest activity 90 seconds ago (over 60s threshold)
+        long ninetySecondsAgo = System.currentTimeMillis() - 90_000L;
+        activityMap.put(game.getId() + ":" + guest.getId(), ninetySecondsAgo);
+
+        gameService.checkDisconnectedCurrentPlayers();
+
+        // Game should still exist but guest should have been removed
+        assertNotNull(gamesMap.get(game.getId()), "Game should continue after non-host player is removed");
+        assertTrue(game.getPlayers().stream().noneMatch(p -> p.getId().equals(guest.getId())),
+                "Non-host player should be removed after 60s inactivity");
     }
 }
