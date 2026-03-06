@@ -3,17 +3,11 @@
 @tailwind utilities;
 
 /* ── Scale (font-size / element size) ───────────────────────────── */
-/* Apply zoom only to #root so the body/background is not affected  */
-html.scale-small  #root { zoom: 0.75; }
-html.scale-medium #root { zoom: 1;    }
-html.scale-large  #root { zoom: 1.25; }
-
-/* Firefox fallback: zoom is not supported, use transform on the root wrapper */
-@-moz-document url-prefix() {
-  html.scale-small  #root { transform: scale(0.75); transform-origin: top center; }
-  html.scale-medium #root { transform: none; }
-  html.scale-large  #root { transform: scale(1.25); transform-origin: top center; }
-}
+/* Change the root font-size so all rem-based sizes scale, while     */
+/* the body and background remain full viewport size.               */
+html.scale-small  { font-size: 12px; }
+html.scale-medium { font-size: 16px; }
+html.scale-large  { font-size: 20px; }
 
 /* ── Color-scheme themes ─────────────────────────────────────────── */
 /* Default theme: no overrides, original colours */
