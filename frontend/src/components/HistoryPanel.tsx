@@ -386,9 +386,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                   {/* Players and Their Dice */}
                   <div className="space-y-0.5 md:space-y-1 mt-0.5">
                     {lastHandPlayers.map((player) => {
-                      // Find current player to get color
+                      // Prefer color stored in previousRoundPlayers (now correctly copied from backend).
+                      // Fall back to current game.players lookup for backward compatibility.
                       const currentPlayer = game.players.find(p => p.id === player.id);
-                      const playerHexColor = getPlayerColorFromString(currentPlayer?.color || 'blue');
+                      const playerHexColor = getPlayerColorFromString(player.color || currentPlayer?.color || 'blue');
                       
                       return (
                         <div
