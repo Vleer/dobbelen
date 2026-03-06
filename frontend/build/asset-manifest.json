@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.css": "/static/css/main.6e2a9bc9.css",
-    "main.js": "/static/js/main.9442188a.js",
-    "static/js/174.bddf96d5.chunk.js": "/static/js/174.bddf96d5.chunk.js",
-    "static/js/894.57e81e33.chunk.js": "/static/js/894.57e81e33.chunk.js",
-    "static/js/605.3f2462a9.chunk.js": "/static/js/605.3f2462a9.chunk.js",
-    "static/js/672.c82dba41.chunk.js": "/static/js/672.c82dba41.chunk.js",
-    "static/js/943.543a91cf.chunk.js": "/static/js/943.543a91cf.chunk.js",
+    "main.css": "/static/css/main.8d318e74.css",
+    "main.js": "/static/js/main.46dd3357.js",
+    "static/js/174.ab5f054f.chunk.js": "/static/js/174.ab5f054f.chunk.js",
+    "static/js/894.01c3f98e.chunk.js": "/static/js/894.01c3f98e.chunk.js",
+    "static/js/605.61b3b65d.chunk.js": "/static/js/605.61b3b65d.chunk.js",
+    "static/js/672.a09259cc.chunk.js": "/static/js/672.a09259cc.chunk.js",
+    "static/js/943.c46032f7.chunk.js": "/static/js/943.c46032f7.chunk.js",
     "static/media/win.wav": "/static/media/win.54185d6e6218ca43c65e.wav",
     "static/media/spot_on.wav": "/static/media/spot_on.825b11b7ac2883b70a1d.wav",
     "static/media/game_start.wav": "/static/media/game_start.06e873abec7be3891a60.wav",
@@ -14,11 +14,11 @@
     "static/media/doubt.wav": "/static/media/doubt.9892d3bf2c1c13626e5d.wav",
     "static/media/raise.wav": "/static/media/raise.98f5aacea7db498d0d3b.wav",
     "index.html": "/index.html",
-    "main.6e2a9bc9.css.map": "/static/css/main.6e2a9bc9.css.map",
-    "main.9442188a.js.map": "/static/js/main.9442188a.js.map"
+    "main.8d318e74.css.map": "/static/css/main.8d318e74.css.map",
+    "main.46dd3357.js.map": "/static/js/main.46dd3357.js.map"
   },
   "entrypoints": [
-    "static/css/main.6e2a9bc9.css",
-    "static/js/main.9442188a.js"
+    "static/css/main.8d318e74.css",
+    "static/js/main.46dd3357.js"
   ]
 }
