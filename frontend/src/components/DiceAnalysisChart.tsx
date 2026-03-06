@@ -34,6 +34,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
 
   // Use previousRoundPlayers when showing results (contains dice state at time of doubt/spot-on)
   // Use current players as fallback for when results aren't being shown
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const playersToAnalyze = (game?.showAllDice && (game.previousRoundPlayers?.length || 0) > 0)
     ? game!.previousRoundPlayers!
     : game?.players || [];

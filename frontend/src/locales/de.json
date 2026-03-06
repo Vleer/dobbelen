@@ -128,5 +128,6 @@
   "settings.colorDefault": "Standard",
   "settings.colorDark": "Dunkel",
   "settings.colorWhite": "Weiß",
-  "settings.fontSize": "Schriftgröße"
+  "settings.fontSize": "Schriftgröße",
+  "settings.animations": "Animationen"
 }

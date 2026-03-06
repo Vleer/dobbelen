@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
-import DiceHandSVG from './DiceHandSVG';
+import { useSettings } from '../contexts/SettingsContext';
+import AnimatedDiceHandSVG from './AnimatedDiceHandSVG';
 
 interface LocalPlayerProps {
   player: Player;
@@ -18,6 +19,7 @@ interface LocalPlayerProps {
 
 const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false }) => {
   const { t } = useLanguage();
+  const { animationsEnabled } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState(() => {
@@ -25,8 +27,10 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     return saved ? JSON.parse(saved) : { x: 16, y: 0 }; // default: bottom-left
   });
   const [isDiceVisible, setIsDiceVisible] = useState(true);
+  const [showTurnAnim, setShowTurnAnim] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
+  const prevIsMyTurnRef = useRef(isMyTurn);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -78,6 +82,16 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     console.log('isDiceVisible state changed to:', isDiceVisible);
     console.log('shouldShowDice is now:', shouldShowDice);
   }, [isDiceVisible, shouldShowDice]);
+
+  // Animate the container when it becomes the local player's turn
+  useEffect(() => {
+    if (animationsEnabled && isMyTurn && !prevIsMyTurnRef.current) {
+      setShowTurnAnim(true);
+      const timer = setTimeout(() => setShowTurnAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevIsMyTurnRef.current = isMyTurn;
+  }, [isMyTurn, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -144,14 +158,15 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragOffset]);
 
   if (isMobile) {
     return (
       <div
-        className={`w-full bg-green-950 p-2 shadow-2xl border-t-4 select-none ${
+        className={`w-full bg-green-950 p-2 shadow-2xl border-t-4 select-none transition-all duration-300 ${
           isMyTurn ? "border-green-300" : playerColorClass
-        } ${player.eliminated ? "opacity-70" : ""}`}
+        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
         {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
         <div className="flex items-center gap-1.5 min-w-0">
@@ -197,7 +212,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           </div>
           <div className="flex items-center flex-1 min-w-0 flex-shrink overflow-hidden">
             {shouldShowDice ? (
-              <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
+              <AnimatedDiceHandSVG diceValues={diceValues} size="xs" noWrap />
             ) : (
               <span className="text-gray-400 text-xs italic">{t("game.diceHidden") || "Hidden"}</span>
             )}
@@ -227,7 +242,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         onMouseDown={handleMouseDown}
         className={`bg-green-950 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
-        }`}
+        } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
         style={{
           width: "340px", // fixed width
           minHeight: "180px", // minimum height, allow to grow if needed
@@ -315,7 +330,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           style={{ minHeight: "60px", width: "100%" }}
         >
           {shouldShowDice ? (
-            <DiceHandSVG diceValues={diceValues} size="lg" />
+            <AnimatedDiceHandSVG diceValues={diceValues} size="lg" />
           ) : (
             <div
               className="text-gray-300 text-lg italic w-full text-center"

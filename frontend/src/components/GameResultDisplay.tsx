@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Game } from '../types/game';
 import { useLanguage } from "../contexts/LanguageContext";
+import { useSettings } from "../contexts/SettingsContext";
 import DiceAnalysisChart from "./DiceAnalysisChart";
 
 interface GameResultDisplayProps {
@@ -13,6 +14,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
   currentPlayerId,
 }) => {
   const { t } = useLanguage();
+  const { animationsEnabled } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -151,7 +153,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className="border-4 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none"
+        className={`border-4 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none ${animationsEnabled ? 'animate-bounce-in' : ''}`}
         style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
       >
         {/* Result Status */}

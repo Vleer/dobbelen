@@ -3,9 +3,8 @@ import {
   CreateGameRequest, 
   BidRequest, 
   ActionRequest, 
-  ActionResponse, 
-  GameResponse,
-  JoinGameRequest
+  ActionResponse,
+  GameResponse
 } from "../types/game";
 
 export const gameApi = {

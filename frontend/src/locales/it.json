@@ -128,5 +128,6 @@
   "settings.colorDefault": "Predefinito",
   "settings.colorDark": "Scuro",
   "settings.colorWhite": "Bianco",
-  "settings.fontSize": "Dimensione carattere"
+  "settings.fontSize": "Dimensione carattere",
+  "settings.animations": "Animazioni"
 }

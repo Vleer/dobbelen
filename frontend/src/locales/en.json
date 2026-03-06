@@ -132,5 +132,6 @@
   "settings.colorDefault": "Default",
   "settings.colorDark": "Dark",
   "settings.colorWhite": "White",
-  "settings.fontSize": "Font Size"
+  "settings.fontSize": "Font Size",
+  "settings.animations": "Animations"
 }

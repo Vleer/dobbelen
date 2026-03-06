@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from "../contexts/LanguageContext";
+import { useSettings } from "../contexts/SettingsContext";
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
@@ -16,6 +17,9 @@ interface BidDisplayProps {
 
 const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, infoPanelBottom }) => {
   const { t } = useLanguage();
+  const { animationsEnabled } = useSettings();
+  const [showSlideAnim, setShowSlideAnim] = useState(false);
+  const prevBidKeyRef = useRef('');
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
@@ -23,6 +27,19 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     return saved ? JSON.parse(saved) : null; // null = center of screen
   });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Animate whenever the bid changes
+  useEffect(() => {
+    if (!currentBid) return;
+    const newKey = `${currentBid.quantity}-${currentBid.faceValue}-${currentBid.playerId}`;
+    if (newKey !== prevBidKeyRef.current && animationsEnabled) {
+      prevBidKeyRef.current = newKey;
+      setShowSlideAnim(true);
+      const timer = setTimeout(() => setShowSlideAnim(false), 400);
+      return () => clearTimeout(timer);
+    }
+    prevBidKeyRef.current = newKey;
+  }, [currentBid, animationsEnabled]);
 
   // Drag functionality (desktop)
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -78,7 +95,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className="border-2 rounded-xl px-2 py-1.5 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+      <div className={`border-2 rounded-xl px-2 py-1.5 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
         <div className="flex items-center justify-center gap-2">
           <span className="text-sm font-bold text-white truncate">{bidderName}</span>
           <div className="flex items-center flex-shrink-0">
@@ -108,7 +125,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   return (
     <div
       ref={containerRef}
-      className="border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
+      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
       style={{
         backgroundColor: '#3d1f0d',
         borderColor: '#78350f',

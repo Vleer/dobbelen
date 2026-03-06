@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Player } from "../types/game";
 import { useLanguage } from "../contexts/LanguageContext";
-import DiceHandSVG from "./DiceHandSVG";
+import { useSettings } from "../contexts/SettingsContext";
 import DiceSVG from "./DiceSVG";
 
 interface OpponentPlayerProps {
@@ -32,12 +32,17 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   playerIndex = 0,
 }) => {
   const { t } = useLanguage();
+  const { animationsEnabled } = useSettings();
 
   useEffect(() => {
     console.log("OpponentPlayer color:", player.color);
   }, [player.color]);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [showTurnAnim, setShowTurnAnim] = useState(false);
+  const [showDiceAnim, setShowDiceAnim] = useState(false);
+  const prevIsMyTurnRef = useRef(isMyTurn);
+  const prevShowDiceRef = useRef(showDice);
   const getDefaultPosition = () => {
     // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
     const playerWidth = 180;
@@ -63,6 +68,26 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       playerIndex,
     });
   }, [player.name, player.color, player.id, playerIndex]);
+
+  // Animate when it becomes this opponent's turn
+  useEffect(() => {
+    if (animationsEnabled && isMyTurn && !prevIsMyTurnRef.current) {
+      setShowTurnAnim(true);
+      const timer = setTimeout(() => setShowTurnAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevIsMyTurnRef.current = isMyTurn;
+  }, [isMyTurn, animationsEnabled]);
+
+  // Animate dice when they become visible (round reveal)
+  useEffect(() => {
+    if (animationsEnabled && showDice && !prevShowDiceRef.current) {
+      setShowDiceAnim(true);
+      const timer = setTimeout(() => setShowDiceAnim(false), 800);
+      return () => clearTimeout(timer);
+    }
+    prevShowDiceRef.current = showDice;
+  }, [showDice, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -176,9 +201,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   if (isMobile) {
     return (
       <div
-        className={`bg-green-950 rounded-lg shadow-lg border-2 select-none ${
+        className={`bg-green-950 rounded-lg shadow-lg border-2 select-none transition-all duration-300 ${
           isMyTurn ? "border-green-300" : playerColorClass
-        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0`}
+        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
         <div className="flex items-center gap-1 min-w-0">
@@ -199,7 +224,17 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
             previousRoundPlayer.dice &&
             previousRoundPlayer.dice.length > 0 && (
               <div className="flex items-center flex-1 min-w-0 justify-end">
-                <DiceHandSVG diceValues={previousRoundPlayer.dice} size="xs" noWrap />
+                <div className="flex gap-0.5 flex-nowrap">
+                  {previousRoundPlayer.dice.map((value, index) => (
+                    <div
+                      key={index}
+                      className={showDiceAnim && animationsEnabled ? 'animate-dice-land' : ''}
+                      style={{ animationDelay: showDiceAnim && animationsEnabled ? `${index * 55}ms` : '0ms' }}
+                    >
+                      <DiceSVG value={value} size="xs" />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           {player.eliminated && (
@@ -228,9 +263,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg border-4 select-none ${playerColorClass} ${
+        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg border-4 select-none transition-all duration-300 ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
-        } ${
+        } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${
           position === 0
             ? "transform -rotate-90"
             : position === 1
@@ -279,7 +314,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                   <div className="flex justify-center w-full px-1 overflow-hidden">
                     <div className="flex gap-0.5 flex-nowrap justify-center max-w-full">
                       {previousRoundPlayer.dice.map((value, index) => (
-                        <DiceSVG key={index} value={value} size="sm" />
+                        <div
+                          key={index}
+                          className={showDiceAnim && animationsEnabled ? 'animate-dice-land' : ''}
+                          style={{ animationDelay: showDiceAnim && animationsEnabled ? `${index * 55}ms` : '0ms' }}
+                        >
+                          <DiceSVG value={value} size="sm" />
+                        </div>
                       ))}
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Bid } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
-import DiceHand from './DiceHand';
+import { useSettings } from '../contexts/SettingsContext';
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidSelectorProps {
@@ -24,6 +24,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   isMobile = false,
 }) => {
   const { t } = useLanguage();
+  const { animationsEnabled } = useSettings();
   // Disable doubt/spot on if there's no current bid to challenge
   // You can only doubt/spot-on a bid that exists
   const noBidToChallenge = currentBid === null;
@@ -42,6 +43,9 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     const y = typeof window !== 'undefined' ? window.innerHeight - 280 : 400;
     return { x, y };
   });
+  const [clickedBidKey, setClickedBidKey] = useState<string | null>(null);
+  const [doubtClicked, setDoubtClicked] = useState(false);
+  const [spotOnClicked, setSpotOnClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const faceValues = [1, 2, 3, 4, 5, 6];
@@ -116,6 +120,12 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       (bid) => bid.quantity === quantity && bid.faceValue === faceValue
     );
     if (!isValid) return;
+
+    if (animationsEnabled) {
+      const key = `${quantity}-${faceValue}`;
+      setClickedBidKey(key);
+      setTimeout(() => setClickedBidKey(null), 320);
+    }
 
     onBidSelect(quantity, faceValue);
   };
@@ -200,6 +210,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragOffset]);
 
   if (isMobile) {
@@ -219,23 +230,27 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               key={quantity}
               className="flex items-center justify-center gap-0.5"
             >
-              {faceValues.map((faceValue) => (
-                <button
-                  key={`${quantity}-${faceValue}`}
-                  onClick={(e) => {
-                    if (!isDragging) handleBidClick(quantity, faceValue);
-                  }}
-                  disabled={disabled || !isBidValid(quantity, faceValue)}
-                  className={getBidButtonClass(quantity, faceValue)}
-                  title={
-                    isBidValid(quantity, faceValue)
-                      ? `${quantity} of ${faceValue}s`
-                      : "Invalid bid"
-                  }
-                >
-                  {quantity}
-                </button>
-              ))}
+              {faceValues.map((faceValue) => {
+                const bidKey = `${quantity}-${faceValue}`;
+                const isClicked = animationsEnabled && clickedBidKey === bidKey;
+                return (
+                  <button
+                    key={bidKey}
+                    onClick={(e) => {
+                      if (!isDragging) handleBidClick(quantity, faceValue);
+                    }}
+                    disabled={disabled || !isBidValid(quantity, faceValue)}
+                    className={`${getBidButtonClass(quantity, faceValue)} ${isClicked ? 'animate-button-press' : ''}`}
+                    title={
+                      isBidValid(quantity, faceValue)
+                        ? `${quantity} of ${faceValue}s`
+                        : "Invalid bid"
+                    }
+                  >
+                    {quantity}
+                  </button>
+                );
+              })}
             </div>
           ))}
 
@@ -257,10 +272,14 @@ const BidSelector: React.FC<BidSelectorProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (animationsEnabled) {
+                setDoubtClicked(true);
+                setTimeout(() => setDoubtClicked(false), 480);
+              }
               onDoubt?.();
             }}
             disabled={disabled || noBidToChallenge}
-            className="flex-1 py-1.5 text-white rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200"
+            className={`flex-1 py-1.5 text-white rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
             style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
           >
             {t("game.doubt")}
@@ -268,11 +287,15 @@ const BidSelector: React.FC<BidSelectorProps> = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (animationsEnabled) {
+                setSpotOnClicked(true);
+                setTimeout(() => setSpotOnClicked(false), 320);
+              }
               onSpotOn?.();
             }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={disabled || noBidToChallenge}
-            className="flex-1 py-1.5 bg-green-950 text-white rounded-xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200"
+            className={`flex-1 py-1.5 bg-green-950 text-white rounded-xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
           >
             {t("game.spotOn")}
           </button>
@@ -311,26 +334,30 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             key={quantity}
             className="flex items-center justify-center gap-1"
           >
-            {faceValues.map((faceValue) => (
-              <button
-                key={`${quantity}-${faceValue}`}
-                onClick={(e) => {
-                  // Only handle click if it wasn't a drag
-                  if (!isDragging) {
-                    handleBidClick(quantity, faceValue);
+            {faceValues.map((faceValue) => {
+              const bidKey = `${quantity}-${faceValue}`;
+              const isClicked = animationsEnabled && clickedBidKey === bidKey;
+              return (
+                <button
+                  key={bidKey}
+                  onClick={(e) => {
+                    // Only handle click if it wasn't a drag
+                    if (!isDragging) {
+                      handleBidClick(quantity, faceValue);
+                    }
+                  }}
+                  disabled={disabled || !isBidValid(quantity, faceValue)}
+                  className={`${getBidButtonClass(quantity, faceValue)} ${isClicked ? 'animate-button-press' : ''}`}
+                  title={
+                    isBidValid(quantity, faceValue)
+                      ? `${quantity} of ${faceValue}s`
+                      : "Invalid bid"
                   }
-                }}
-                disabled={disabled || !isBidValid(quantity, faceValue)}
-                className={getBidButtonClass(quantity, faceValue)}
-                title={
-                  isBidValid(quantity, faceValue)
-                    ? `${quantity} of ${faceValue}s`
-                    : "Invalid bid"
-                }
-              >
-                {quantity}
-              </button>
-            ))}
+                >
+                  {quantity}
+                </button>
+              );
+            })}
           </div>
         ))}
 
@@ -352,10 +379,14 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            if (animationsEnabled) {
+              setDoubtClicked(true);
+              setTimeout(() => setDoubtClicked(false), 480);
+            }
             onDoubt?.();
           }}
           disabled={disabled || noBidToChallenge}
-          className="flex-1 py-2 text-white rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200"
+          className={`flex-1 py-2 text-white rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
           style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
         >
           {t("game.doubt")}
@@ -363,10 +394,14 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
+            if (animationsEnabled) {
+              setSpotOnClicked(true);
+              setTimeout(() => setSpotOnClicked(false), 320);
+            }
             onSpotOn?.();
           }}
           disabled={disabled || noBidToChallenge}
-          className="flex-1 py-2 bg-green-950 text-white rounded-2xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200"
+          className={`flex-1 py-2 bg-green-950 text-white rounded-2xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
         >
           {t("game.spotOn")}
         </button>

@@ -128,5 +128,6 @@
   "settings.colorDefault": "Défaut",
   "settings.colorDark": "Sombre",
   "settings.colorWhite": "Blanc",
-  "settings.fontSize": "Taille de police"
+  "settings.fontSize": "Taille de police",
+  "settings.animations": "Animations"
 }

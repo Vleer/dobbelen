@@ -6,6 +6,7 @@ import { webSocketService } from '../services/websocketService';
 import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStatistics } from '../contexts/StatisticsContext';
+import { useSettings } from '../contexts/SettingsContext';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
@@ -33,7 +34,8 @@ const GameTable: React.FC<GameTableProps> = ({
   onBack
 }) => {
   const { t } = useLanguage();
-  const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
+  const { trackBid } = useStatistics();
+  const { animationsEnabled } = useSettings();
   const { isMobile, isTablet } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
   const [game, setGame] = useState<Game | null>(initialGame || null);
@@ -275,6 +277,7 @@ const GameTable: React.FC<GameTableProps> = ({
         hasLocalPlayerId: !!localPlayerId,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, localPlayerId]);
 
   // Handle bid display and betting delay when round ends or showAllDice changes
@@ -386,6 +389,7 @@ const GameTable: React.FC<GameTableProps> = ({
         hasLocalPlayerId: !!localPlayerId,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, localPlayerId]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
@@ -626,60 +630,6 @@ const GameTable: React.FC<GameTableProps> = ({
     return game?.currentPlayerId === localPlayerId;
   };
 
-  const trackGameStateChanges = (oldGame: Game | null, newGame: Game) => {
-    if (!oldGame || !localPlayerId) return;
-
-    // Track dice rolls when new round starts or dice are revealed
-    if (newGame.showAllDice && (!oldGame.showAllDice || newGame.roundNumber !== oldGame.roundNumber)) {
-      newGame.players.forEach(player => {
-        if (player.dice && player.dice.length > 0) {
-          trackDiceRoll(player, player.dice, newGame);
-        }
-      });
-    }
-
-    // Track round end when a winner is determined
-    if (newGame.winner && !oldGame.winner) {
-      const winner = newGame.players.find(p => p.id === newGame.winner);
-      if (winner) {
-        // Check if this was the last round (game ended)
-        const wasLastRound = newGame.gameWinner !== null;
-        trackRoundEnd(winner, newGame, wasLastRound);
-
-        if (wasLastRound) {
-          trackGameEnd(winner, newGame);
-        }
-      }
-    }
-
-    // Track doubt results when showAllDice becomes true after a doubt
-    if (newGame.showAllDice && !oldGame.showAllDice && (window as any).pendingDoubtTrack) {
-      const pendingDoubt = (window as any).pendingDoubtTrack;
-      const actualCount = newGame.lastActualCount;
-      const targetQuantity = newGame.lastBidQuantity;
-      
-      if (actualCount !== undefined && targetQuantity !== undefined) {
-        const success = actualCount < targetQuantity; // Doubt succeeds if actual count is less than bid
-        trackDoubt(pendingDoubt.doubter, pendingDoubt.targetBid, actualCount, success, newGame);
-      }
-      
-      // Clear the pending doubt tracking
-      delete (window as any).pendingDoubtTrack;
-    }
-
-    // Track all bids made by other players (AI or other humans)
-    if (newGame.currentBid && (!oldGame.currentBid || 
-        newGame.currentBid.playerId !== oldGame.currentBid.playerId ||
-        newGame.currentBid.quantity !== oldGame.currentBid.quantity ||
-        newGame.currentBid.faceValue !== oldGame.currentBid.faceValue)) {
-      
-      // Only track if it's not our own bid (we already tracked it in handleAction)
-      if (newGame.currentBid.playerId !== localPlayerId) {
-        trackBid(newGame.currentBid, newGame);
-      }
-    }
-  };
-
   if (!game) {
     return (
       <GameSetup
@@ -703,7 +653,7 @@ const GameTable: React.FC<GameTableProps> = ({
         />
 
         {/* Victory Screen */}
-        <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
+        <div className={`relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600 ${animationsEnabled ? 'animate-bounce-in' : ''}`}>
           <h1 className="text-5xl font-bold text-green-800 mb-4">
             {t("game.dobbelkoning")}
           </h1>
