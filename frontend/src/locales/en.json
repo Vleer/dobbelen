@@ -1,7 +1,6 @@
 {
   "game.title": "Liar's Dice",
   "game.subtitle": "The classic bluffing game",
-
   "lobby.createGame": "Create New Game",
   "lobby.privateGame": "Private game",
   "lobby.clickToCopyLink": "Click here to copy link",
@@ -26,7 +25,6 @@
   "lobby.pleaseEnterUsername": "Please enter your username.",
   "lobby.failedToCreateGame": "Failed to create game",
   "lobby.failedToJoinGame": "Failed to join game",
-
   "lobby.shareLink": "Share this link to invite players:",
   "lobby.copy": "Copy",
   "lobby.players": "Players",
@@ -39,7 +37,6 @@
   "lobby.needAtLeastTwoPlayers": "At least 2 players required to start",
   "lobby.gameStarting": "Game starting in...",
   "lobby.go": "Go!",
-
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Current Bid",
   "game.noCurrentBid": "No current bid",
@@ -50,14 +47,12 @@
   "game.fours": "Fours",
   "game.fives": "Fives",
   "game.sixes": "Sixes",
-
   "game.makeYourBid": "Make Your Bid",
   "game.yourTurn": "Your Turn",
   "game.waitingForTurn": "Waiting for your turn...",
   "game.waitingForNextRound": "Waiting for next round...",
   "game.doubt": "Doubt",
   "game.spotOn": "Spot On",
-
   "game.dealer": "D",
   "game.dice": "dice",
   "game.revealed": "REVEALED",
@@ -66,7 +61,6 @@
   "game.previousBid": "Previous Bid: {{quantity}} of {{faceValue}}s",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Hidden",
-
   "game.result.thereWere": "There were {{actualCount}} {{faceValue}}s",
   "game.result.bidWasCorrect": "Bid was correct ✓",
   "game.result.bidWasWrong": "Bid was wrong ✗",
@@ -77,11 +71,11 @@
   "game.result.youWinRound": "You win this round! 🎉",
   "game.result.youLoseRound": "You lose a die! 💀",
   "game.result.youWinGame": "You are the Dobbelkoning! 👑",
+  "game.result.youLoseGame": "You lost! 😢",
   "game.result.gameWinnerIs": "{{playerName}} wins the game!",
   "game.action.doubt": "{{playerName}}: Doubts",
   "game.action.spotOn": "{{playerName}}: spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
-
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
   "game.leaveGame": "Leave game",
@@ -89,17 +83,13 @@
   "game.leaveConfirmLeave": "Leave",
   "game.leaveConfirmCancel": "Cancel",
   "game.playerLeftNotification": "{{playerName}} has left the game",
-
   "game.dobbelkoning": "Dobbelkoning",
-
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",
   "errors.failedToRemove": "Failed to remove AI player",
-
   "common.playAgain": "Play Again",
   "common.state": "State",
   "common.unknownPlayer": "Unknown Player",
-
   "game.history.title": "History",
   "game.history.currentHand": "Current Hand",
   "game.history.lastHand": "Last Hand",
@@ -125,7 +115,6 @@
   "game.history.noStatsYet": "No statistics available yet",
   "game.history.diceAnalysis": "Dice Analysis",
   "game.history.noBidsYet": "No bids made yet in this hand",
-
   "instructions.title": "How to Play",
   "instructions.rules": "Rules",
   "instructions.close": "Close",
@@ -133,11 +122,11 @@
   "instructions.doubt": "Doubt: Challenged the previous bid if too high",
   "instructions.spotOn": "Spot On: Claim Bid is exactly correct (risky!) If true, the round resets.",
   "instructions.winRound": "Last player standing wins the round!",
-
   "settings.colorScheme": "Color Scheme",
   "settings.colorDefault": "Default",
   "settings.colorDark": "Dark",
   "settings.colorWhite": "White",
   "settings.fontSize": "Font Size",
-  "settings.animations": "Animations"
+  "settings.animations": "Animations",
+  "common.backToLobby": "Continue"
 }

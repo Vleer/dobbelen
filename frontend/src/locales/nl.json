@@ -1,7 +1,6 @@
 {
   "game.title": "Dobbelen",
   "game.subtitle": "Het klassieke bluffspel",
-
   "lobby.createGame": "Nieuw Spel",
   "lobby.privateGame": "Privéspel",
   "lobby.clickToCopyLink": "Klik hier om link te kopiëren",
@@ -26,7 +25,6 @@
   "lobby.pleaseEnterUsername": "Voer je gebruikersnaam in.",
   "lobby.failedToCreateGame": "Spel aanmaken mislukt",
   "lobby.failedToJoinGame": "Deelnemen aan spel mislukt",
-
   "lobby.shareLink": "Deel deze link",
   "lobby.copy": "Kopiëren",
   "lobby.players": "Spelers",
@@ -39,7 +37,6 @@
   "lobby.needAtLeastTwoPlayers": "Minimaal 2 spelers nodig om te starten",
   "lobby.gameStarting": "Spel start over...",
   "lobby.go": "Go!",
-
   "game.round": "Ronde {{roundNumber}}",
   "game.currentBid": "Huidige Bod",
   "game.noCurrentBid": "Geen huidig bod",
@@ -50,14 +47,12 @@
   "game.fours": "4en",
   "game.fives": "5en",
   "game.sixes": "6en",
-
   "game.makeYourBid": "Doe Je Bod",
   "game.yourTurn": "Jouw beurt",
   "game.waitingForTurn": "Wachten op je beurt...",
   "game.waitingForNextRound": "Wachten op volgende ronde...",
   "game.doubt": "Optillen",
   "game.spotOn": "Spot On",
-
   "game.dealer": "D",
   "game.dice": "dobbelstenen",
   "game.revealed": "Onthuld",
@@ -66,7 +61,6 @@
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Verborgen",
-
   "game.result.thereWere": "Er waren {{actualCount}} {{faceValue}}en",
   "game.result.bidWasCorrect": "Bod was correct ✓",
   "game.result.bidWasWrong": "Bod was fout ✗",
@@ -77,11 +71,11 @@
   "game.result.youWinRound": "Jij wint deze ronde! 🎉",
   "game.result.youLoseRound": "Jij verliest een dobbelsteen! 💀",
   "game.result.youWinGame": "Jij bent de Dobbelkoning! 👑",
+  "game.result.youLoseGame": "Je hebt verloren! 😢",
   "game.result.gameWinnerIs": "{{playerName}} wint het spel!",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",
   "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
-
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
   "game.leaveGame": "Spel verlaten",
@@ -89,17 +83,13 @@
   "game.leaveConfirmLeave": "Verlaten",
   "game.leaveConfirmCancel": "Annuleren",
   "game.playerLeftNotification": "{{playerName}} heeft het spel verlaten",
-
   "game.dobbelkoning": "Dobbelkoning",
-
   "errors.failedToAddPlayer": "AI speler toevoegen mislukt",
   "errors.failedToStart": "Spel starten mislukt",
   "errors.failedToRemove": "AI speler verwijderen mislukt",
-
   "common.playAgain": "Opnieuw Spelen",
   "common.state": "Status",
   "common.unknownPlayer": "Onbekende Speler",
-
   "game.history.title": "Geschiedenis",
   "game.history.currentHand": "Huidige Hand",
   "game.history.lastHand": "Laatste Hand",
@@ -125,7 +115,6 @@
   "game.history.noStatsYet": "Nog geen statistieken beschikbaar",
   "game.history.diceAnalysis": "Analyse",
   "game.history.noBidsYet": "Nog geen biedingen in deze hand",
-
   "instructions.title": "Hoe te Spelen",
   "instructions.rules": "Regels",
   "instructions.close": "Sluiten",
@@ -135,11 +124,11 @@
   "instructions.doubt": "Optillen: Daag het vorige bod uit als het te hoog is",
   "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (riskant!)",
   "instructions.winRound": "Laatste speler die overblijft wint de ronde",
-
   "settings.colorScheme": "Kleurenschema",
   "settings.colorDefault": "Standaard",
   "settings.colorDark": "Donker",
   "settings.colorWhite": "Wit",
   "settings.fontSize": "Lettergrootte",
-  "settings.animations": "Animaties"
+  "settings.animations": "Animaties",
+  "common.backToLobby": "Doorgaan"
 }

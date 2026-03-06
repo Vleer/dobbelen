@@ -1,7 +1,6 @@
 {
   "game.title": "Dadi del Menzognero",
   "game.subtitle": "Il classico gioco di bluff",
-
   "lobby.createGame": "Crea Nuova Partita",
   "lobby.privateGame": "Partita privata",
   "lobby.clickToCopyLink": "Clicca qui per copiare il link",
@@ -20,7 +19,6 @@
   "lobby.pleaseEnterUsername": "Per favore inserisci il tuo nome.",
   "lobby.failedToCreateGame": "Creazione partita fallita",
   "lobby.failedToJoinGame": "Unione alla partita fallita",
-
   "lobby.shareLink": "Condividi questo link per invitare i giocatori:",
   "lobby.copy": "Copia",
   "lobby.players": "Giocatori",
@@ -33,7 +31,6 @@
   "lobby.needAtLeastTwoPlayers": "Sono necessari almeno 2 giocatori per iniziare",
   "lobby.gameStarting": "La partita inizia tra...",
   "lobby.go": "Via!",
-
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Offerta Corrente",
   "game.noCurrentBid": "Nessuna offerta corrente",
@@ -44,14 +41,12 @@
   "game.fours": "Quattro",
   "game.fives": "Cinque",
   "game.sixes": "Sei",
-
   "game.makeYourBid": "Fai la tua offerta",
   "game.yourTurn": "Il tuo turno",
   "game.waitingForTurn": "In attesa del tuo turno...",
   "game.waitingForNextRound": "In attesa del prossimo round...",
   "game.doubt": "Dubita",
   "game.spotOn": "Esatto",
-
   "game.dealer": "D",
   "game.dice": "dadi",
   "game.revealed": "RIVELATO",
@@ -60,7 +55,6 @@
   "game.previousBid": "Offerta precedente: {{quantity}} di {{faceValue}}",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Nascosto",
-
   "game.result.thereWere": "C'erano {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "Offerta corretta ✓",
   "game.result.bidWasWrong": "Offerta sbagliata ✗",
@@ -71,11 +65,11 @@
   "game.result.youWinRound": "Vinci questo round! 🎉",
   "game.result.youLoseRound": "Perdi un dado! 💀",
   "game.result.youWinGame": "Sei il Dobbelkoning! 👑",
+  "game.result.youLoseGame": "Hai perso! 😢",
   "game.result.gameWinnerIs": "{{playerName}} vince la partita!",
   "game.action.doubt": "{{playerName}} dubita",
   "game.action.spotOn": "{{playerName}} dice esatto",
   "game.action.raise": "{{playerName}} rilancia",
-
   "game.continue": "Continua",
   "game.continuing": "Continuando...",
   "game.leaveGame": "Esci dal gioco",
@@ -83,17 +77,13 @@
   "game.leaveConfirmLeave": "Esci",
   "game.leaveConfirmCancel": "Annulla",
   "game.playerLeftNotification": "{{playerName}} ha lasciato la partita",
-
   "game.dobbelkoning": "Dobbelkoning",
-
   "errors.failedToAddPlayer": "Aggiunta giocatore IA fallita",
   "errors.failedToStart": "Avvio partita fallito",
   "errors.failedToRemove": "Rimozione giocatore IA fallita",
-
   "common.playAgain": "Gioca di nuovo",
   "common.state": "Stato",
   "common.unknownPlayer": "Giocatore Sconosciuto",
-
   "game.history.title": "Cronologia",
   "game.history.currentHand": "Mano Attuale",
   "game.history.lastHand": "Ultima Mano",
@@ -119,7 +109,6 @@
   "game.history.noStatsYet": "Nessuna statistica ancora disponibile",
   "game.history.diceAnalysis": "Analisi dei Dadi",
   "game.history.noBidsYet": "Nessuna offerta ancora in questa mano",
-
   "instructions.title": "Come Giocare",
   "instructions.rules": "Regole",
   "instructions.close": "Chiudi",
@@ -129,11 +118,11 @@
   "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
   "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
   "instructions.winRound": "L'ultimo giocatore in piedi vince il round",
-
   "settings.colorScheme": "Schema colori",
   "settings.colorDefault": "Predefinito",
   "settings.colorDark": "Scuro",
   "settings.colorWhite": "Bianco",
   "settings.fontSize": "Dimensione carattere",
-  "settings.animations": "Animazioni"
+  "settings.animations": "Animazioni",
+  "common.backToLobby": "Continua"
 }

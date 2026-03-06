@@ -85,6 +85,20 @@ module.exports = {
           '75%':  { transform: 'scale(0.9) rotate(-5deg)' },
           '100%': { transform: 'scale(1) rotate(0deg)',   opacity: '1' },
         },
+        'confetti-fall': {
+          '0%':   { transform: 'translateY(-20px) rotate(0deg)', opacity: '1' },
+          '80%':  { opacity: '1' },
+          '100%': { transform: 'translateY(110vh) rotate(720deg)', opacity: '0' },
+        },
+        'crown-pulse': {
+          '0%, 100%': { transform: 'scale(1) rotate(-5deg)', filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.6))' },
+          '50%':      { transform: 'scale(1.2) rotate(5deg)', filter: 'drop-shadow(0 0 24px rgba(251,191,36,1))' },
+        },
+        'lose-drop': {
+          '0%':   { transform: 'scale(0.7) translateY(-30px)', opacity: '0' },
+          '60%':  { transform: 'scale(1.05) translateY(4px)', opacity: '1' },
+          '100%': { transform: 'scale(1) translateY(0)',       opacity: '1' },
+        },
       },
       animation: {
         'dice-roll':      'dice-roll 0.13s linear infinite',
@@ -102,6 +116,9 @@ module.exports = {
         'fade-in':        'fade-in 0.4s ease-out forwards',
         'confetti-spin':  'confetti-spin 1.2s ease-out forwards',
         'star-burst':     'star-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        'confetti-fall':  'confetti-fall linear forwards',
+        'crown-pulse':    'crown-pulse 1.4s ease-in-out infinite',
+        'lose-drop':      'lose-drop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
       },
     },
   },

@@ -1,7 +1,6 @@
 {
   "game.title": "Perudo",
   "game.subtitle": "Le jeu classique de bluff",
-
   "lobby.createGame": "Créer une nouvelle partie",
   "lobby.privateGame": "Partie privée",
   "lobby.clickToCopyLink": "Cliquez ici pour copier le lien",
@@ -20,7 +19,6 @@
   "lobby.pleaseEnterUsername": "Veuillez entrer votre pseudo.",
   "lobby.failedToCreateGame": "Échec de la création de la partie",
   "lobby.failedToJoinGame": "Échec de la connexion à la partie",
-
   "lobby.shareLink": "Partagez ce lien pour inviter des joueurs :",
   "lobby.copy": "Copier",
   "lobby.players": "Joueurs",
@@ -33,7 +31,6 @@
   "lobby.needAtLeastTwoPlayers": "Au moins 2 joueurs requis pour démarrer",
   "lobby.gameStarting": "La partie commence dans...",
   "lobby.go": "Go!",
-
   "game.round": "Manche {{roundNumber}}",
   "game.currentBid": "Enchère actuelle",
   "game.noCurrentBid": "Pas d'enchère",
@@ -44,14 +41,12 @@
   "game.fours": "Quatre",
   "game.fives": "Cinq",
   "game.sixes": "Six",
-
   "game.makeYourBid": "Faites votre enchère",
   "game.yourTurn": "Votre tour",
   "game.waitingForTurn": "En attente de votre tour...",
   "game.waitingForNextRound": "En attente du prochain tour...",
   "game.doubt": "Doute",
   "game.spotOn": "Exact",
-
   "game.dealer": "D",
   "game.dice": "dés",
   "game.revealed": "RÉVÉLÉ",
@@ -60,7 +55,6 @@
   "game.previousBid": "Enchère précédente : {{quantity}} de {{faceValue}}",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Caché",
-
   "game.result.thereWere": "Il y avait {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "L'enchère était correcte ✓",
   "game.result.bidWasWrong": "L'enchère était incorrecte ✗",
@@ -71,11 +65,11 @@
   "game.result.youWinRound": "Vous gagnez cette manche ! 🎉",
   "game.result.youLoseRound": "Vous perdez un dé ! 💀",
   "game.result.youWinGame": "Vous êtes le Roi du dé ! 👑",
+  "game.result.youLoseGame": "Vous avez perdu ! 😢",
   "game.result.gameWinnerIs": "{{playerName}} gagne la partie !",
   "game.action.doubt": "{{playerName}} doute",
   "game.action.spotOn": "{{playerName}} dit exact",
   "game.action.raise": "{{playerName}} surenchérit",
-
   "game.continue": "Continuer",
   "game.continuing": "En cours...",
   "game.leaveGame": "Quitter la partie",
@@ -83,17 +77,13 @@
   "game.leaveConfirmLeave": "Quitter",
   "game.leaveConfirmCancel": "Annuler",
   "game.playerLeftNotification": "{{playerName}} a quitté la partie",
-
   "game.dobbelkoning": "Roi du dé",
-
   "errors.failedToAddPlayer": "Échec de l'ajout du joueur IA",
   "errors.failedToStart": "Échec du démarrage de la partie",
   "errors.failedToRemove": "Échec de la suppression du joueur IA",
-
   "common.playAgain": "Rejouer",
   "common.state": "État",
   "common.unknownPlayer": "Joueur inconnu",
-
   "game.history.title": "Historique",
   "game.history.currentHand": "Main Actuelle",
   "game.history.lastHand": "Dernière Main",
@@ -119,7 +109,6 @@
   "game.history.noStatsYet": "Aucune statistique disponible pour le moment",
   "game.history.diceAnalysis": "Analyse des Dés",
   "game.history.noBidsYet": "Aucune enchère encore dans cette main",
-
   "instructions.title": "Comment Jouer",
   "instructions.rules": "Règles",
   "instructions.close": "Fermer",
@@ -129,11 +118,11 @@
   "instructions.doubt": "Doute: Contestez l'enchère précédente si trop haute",
   "instructions.spotOn": "Pile poil: Prétendez que l'enchère est exacte (risqué!)",
   "instructions.winRound": "Le dernier joueur debout gagne la manche",
-
   "settings.colorScheme": "Schéma de couleurs",
   "settings.colorDefault": "Défaut",
   "settings.colorDark": "Sombre",
   "settings.colorWhite": "Blanc",
   "settings.fontSize": "Taille de police",
-  "settings.animations": "Animations"
+  "settings.animations": "Animations",
+  "common.backToLobby": "Continuer"
 }
