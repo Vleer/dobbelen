@@ -122,5 +122,11 @@
   "instructions.raise": "Rilancio: Clicca sul numero di dadi che credi ci siano in mano a tutti i giocatori",
   "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
   "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
-  "instructions.winRound": "L'ultimo giocatore in piedi vince il round"
+  "instructions.winRound": "L'ultimo giocatore in piedi vince il round",
+
+  "settings.colorScheme": "Schema colori",
+  "settings.colorDefault": "Predefinito",
+  "settings.colorDark": "Scuro",
+  "settings.colorWhite": "Bianco",
+  "settings.fontSize": "Dimensione carattere"
 }
