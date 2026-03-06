@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type ColorScheme = 'default' | 'dark' | 'white';
-export type FontSize = 'small' | 'medium' | 'large';
+export type FontSize = 'x-small' | 'small' | 'medium' | 'large' | 'x-large';
 
 const VALID_COLOR_SCHEMES: ColorScheme[] = ['default', 'dark', 'white'];
-const VALID_FONT_SIZES: FontSize[] = ['small', 'medium', 'large'];
+const VALID_FONT_SIZES: FontSize[] = ['x-small', 'small', 'medium', 'large', 'x-large'];
 
 function isColorScheme(value: string | null): value is ColorScheme {
   return VALID_COLOR_SCHEMES.includes(value as ColorScheme);
@@ -49,7 +49,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Apply font size class to <html>
   useEffect(() => {
     const html = document.documentElement;
-    html.classList.remove('scale-small', 'scale-medium', 'scale-large');
+    html.classList.remove('scale-x-small', 'scale-small', 'scale-medium', 'scale-large', 'scale-x-large');
     html.classList.add(`scale-${fontSize}`);
     localStorage.setItem('fontSize', fontSize);
   }, [fontSize]);
