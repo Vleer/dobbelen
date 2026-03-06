@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
-    private static final long RECONNECT_TIMEOUT_MS = 60_000; // 60 seconds for current player to reconnect
+    private static final long RECONNECT_TIMEOUT_MS = 300_000; // 5 minutes for current player to reconnect
     private static final long HOST_INACTIVITY_TIMEOUT_MS = 3 * 60 * 60 * 1000L; // 3 hours for host when game has started
 
     private final Map<String, Game> games = new ConcurrentHashMap<>();

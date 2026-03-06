@@ -167,7 +167,7 @@ class GameServiceLeaveTest {
     }
 
     @Test
-    void checkDisconnectedCurrentPlayers_nonHostInactiveOver60Seconds_playerRemoved() {
+    void checkDisconnectedCurrentPlayers_nonHostInactiveUnder5Minutes_playerNotRemoved() {
         Player host = new Player("Alice", "blue");
         Player guest = new Player("Bob", "red");
         Player third = new Player("Carol", "green");
@@ -176,15 +176,37 @@ class GameServiceLeaveTest {
         game.setCurrentPlayerIndex(1);
         gamesMap.put(game.getId(), game);
 
-        // Record guest activity 90 seconds ago (over 60s threshold)
+        // Record guest activity 90 seconds ago (under 5-minute threshold)
         long ninetySecondsAgo = System.currentTimeMillis() - 90_000L;
         activityMap.put(game.getId() + ":" + guest.getId(), ninetySecondsAgo);
+
+        gameService.checkDisconnectedCurrentPlayers();
+
+        // Game and guest should still be present — 90 seconds is under the 5-minute threshold
+        assertNotNull(gamesMap.get(game.getId()), "Game should still exist when non-host player has been inactive for less than 5 minutes");
+        assertTrue(game.getPlayers().stream().anyMatch(p -> p.getId().equals(guest.getId())),
+                "Non-host player should not be removed after only 90s inactivity");
+    }
+
+    @Test
+    void checkDisconnectedCurrentPlayers_nonHostInactiveOver5Minutes_playerRemoved() {
+        Player host = new Player("Alice", "blue");
+        Player guest = new Player("Bob", "red");
+        Player third = new Player("Carol", "green");
+        Game game = buildInProgressGame(host, guest, third);
+        // Guest is current player (index 1)
+        game.setCurrentPlayerIndex(1);
+        gamesMap.put(game.getId(), game);
+
+        // Record guest activity 6 minutes ago (over 5-minute threshold)
+        long sixMinutesAgo = System.currentTimeMillis() - (6 * 60 * 1000L);
+        activityMap.put(game.getId() + ":" + guest.getId(), sixMinutesAgo);
 
         gameService.checkDisconnectedCurrentPlayers();
 
         // Game should still exist but guest should have been removed
         assertNotNull(gamesMap.get(game.getId()), "Game should continue after non-host player is removed");
         assertTrue(game.getPlayers().stream().noneMatch(p -> p.getId().equals(guest.getId())),
-                "Non-host player should be removed after 60s inactivity");
+                "Non-host player should be removed after 5 minutes of inactivity");
     }
 }
