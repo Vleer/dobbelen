@@ -229,20 +229,32 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
         <div className="p-2 md:p-4">
           {activeTab === 'instructions' && (
             <div className="text-amber-200">
-              <ul className="list-disc list-inside space-y-1 md:space-y-2 text-xs md:text-base">
-                {['raise', 'doubt', 'spotOn', 'winRound'].map((key) => {
-                  const text = t(`instructions.${key}`);
-                  const colonIdx = text.indexOf(': ');
-                  const action = colonIdx >= 0 ? text.slice(0, colonIdx) : text;
-                  const rest = colonIdx >= 0 ? text.slice(colonIdx + 2) : '';
-                  return (
-                    <li key={key}>
-                      <strong>{action}</strong>
-                      {rest && <span className="text-[0.85em] opacity-95">: {rest}</span>}
-                    </li>
-                  );
-                })}
-              </ul>
+              <table className="w-full text-xs md:text-base border-collapse">
+                <tbody>
+                  {['raise', 'doubt', 'spotOn', 'winRound'].map((key) => {
+                    const text = t(`instructions.${key}`);
+                    const colonIdx = text.indexOf(': ');
+                    const action = colonIdx >= 0 ? text.slice(0, colonIdx) : null;
+                    const rest = colonIdx >= 0 ? text.slice(colonIdx + 2) : text;
+                    return action ? (
+                      <tr key={key}>
+                        <td className="pr-2 py-0.5 md:py-1 font-bold whitespace-nowrap align-top">
+                          {action}:
+                        </td>
+                        <td className="py-0.5 md:py-1 align-top">
+                          {rest}
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={key}>
+                        <td colSpan={2} className="py-0.5 md:py-1 font-semibold align-top">
+                          {rest}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
