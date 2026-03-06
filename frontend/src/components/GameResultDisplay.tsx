@@ -61,27 +61,59 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
     }
   }, [isDragging, dragOffset, handleMouseMove]);
 
-  console.log("GameResultDisplay render:", {
-    showAllDice: game.showAllDice,
-    lastActualCount: game.lastActualCount,
-    lastBidQuantity: game.lastBidQuantity,
-    lastEliminatedPlayerId: game.lastEliminatedPlayerId,
-    winner: game.winner,
-    previousBid: game.previousBid,
-  });
-
   if (!game.showAllDice) {
-    console.log(
-      "🟠 ORANGE_WINDOW: Not rendering GameResultDisplay - showAllDice is false at",
-      new Date().toISOString()
-    );
     return null;
   }
 
-  console.log(
-    "🟠 ORANGE_WINDOW: Rendering GameResultDisplay - showAllDice is true at",
-    new Date().toISOString()
+  // Derive outcome information
+  const roundWinner = game.players.find((p) => p.id === game.winner);
+  const eliminatedPlayer = game.players.find(
+    (p) => p.id === game.lastEliminatedPlayerId
   );
+  const isCurrentPlayerWinner = !!currentPlayerId && game.winner === currentPlayerId;
+  const isCurrentPlayerEliminated =
+    !!currentPlayerId && game.lastEliminatedPlayerId === currentPlayerId;
+
+  // Determine bid correctness
+  const bidWasCorrect =
+    game.lastActualCount !== undefined &&
+    game.lastBidQuantity !== undefined &&
+    game.lastActualCount >= game.lastBidQuantity;
+
+  // Theme colours based on personal outcome
+  let borderColor = '#78350f';
+  let bgColor = '#3d1f0d';
+  let glowAnimation = '';
+  if (isCurrentPlayerWinner) {
+    borderColor = '#22c55e';
+    bgColor = '#052e16';
+    glowAnimation = 'pulse-green';
+  } else if (isCurrentPlayerEliminated) {
+    borderColor = '#ef4444';
+    bgColor = '#2d0a0a';
+    glowAnimation = 'pulse-red';
+  }
+
+  const getActionIcon = () => {
+    switch (game.lastActionType) {
+      case 'DOUBT':   return '🤔';
+      case 'SPOT_ON': return '🎯';
+      default:         return '🎲';
+    }
+  };
+
+  const getActionMessage = () => {
+    if (!game.lastActionType || !game.lastActionPlayerId) return '';
+    const actor =
+      game.players.find((p) => p.id === game.lastActionPlayerId)?.name ||
+      t('common.unknownPlayer');
+    switch (game.lastActionType) {
+      case 'DOUBT':   return t('game.action.doubt',  { playerName: actor });
+      case 'SPOT_ON': return t('game.action.spotOn', { playerName: actor });
+      case 'RAISE':   return t('game.action.raise',  { playerName: actor });
+      default:         return '';
+    }
+  };
 
   const getResultMessage = () => {
     if (
@@ -89,106 +121,153 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
       game.lastBidQuantity !== undefined &&
       game.lastBidFaceValue !== undefined
     ) {
-      // Use the stored face value from the last doubt/spot-on
       const faceValue = game.lastBidFaceValue;
       if (game.lastActualCount >= game.lastBidQuantity) {
-        return (
-          t("game.result.thereWere", {
-            actualCount: game.lastActualCount,
-            faceValue,
-          }) + " "
-        );
+        return t('game.result.thereWere', {
+          actualCount: game.lastActualCount,
+          faceValue,
+        });
       } else {
-        return (
-          t("game.result.thereWereOnly", {
-            actualCount: game.lastActualCount,
-            faceValue,
-          }) + " "
-        );
+        return t('game.result.thereWereOnly', {
+          actualCount: game.lastActualCount,
+          faceValue,
+        });
       }
     }
-    return "";
-  };
-
-  const getWinnerMessage = () => {
-    if (game.winner) {
-      const winner = game.players.find((p) => p.id === game.winner);
-      return winner
-        ? t("game.result.winsRound", { playerName: winner.name })
-        : t("game.result.roundEnded");
-    }
-    return "";
-  };
-
-  const getActionMessage = () => {
-    if (!game.lastActionType || !game.lastActionPlayerId) return "";
-    const actor =
-      game.players.find((p) => p.id === game.lastActionPlayerId)?.name ||
-      t("common.unknownPlayer");
-    switch (game.lastActionType) {
-      case "DOUBT":
-        return t("game.action.doubt", { playerName: actor });
-      case "SPOT_ON":
-        return t("game.action.spotOn", { playerName: actor });
-      case "RAISE":
-        return t("game.action.raise", { playerName: actor });
-      default:
-        return "";
-    }
+    return '';
   };
 
   // Detect mobile mode
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  // Animation helper: staggered fade-in via inline style
+  const stagger = (delayMs: number): React.CSSProperties =>
+    animationsEnabled
+      ? { animation: `fade-in 0.45s ease-out ${delayMs}ms forwards`, opacity: 0 }
+      : {};
 
   return (
     <div
       className="absolute z-50"
       style={{
-        left: position.x || "50%",
-        top: position.y || "50%",
-        transform: position.x ? "none" : "translate(-50%, -50%)",
-        cursor: isDragging ? "grabbing" : "grab",
+        left: position.x || '50%',
+        top: position.y || '50%',
+        transform: position.x ? 'none' : 'translate(-50%, -50%)',
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
     >
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`border-4 rounded-3xl p-8 shadow-2xl text-center min-w-96 select-none ${animationsEnabled ? 'animate-bounce-in' : ''}`}
-        style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+        className="border-4 rounded-3xl p-6 shadow-2xl text-center min-w-80 max-w-lg select-none"
+        style={{
+          backgroundColor: bgColor,
+          borderColor,
+          ...(animationsEnabled
+            ? {
+                animation: glowAnimation
+                  ? `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, ${glowAnimation} 1.6s ease-in-out 0.5s infinite`
+                  : 'bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              }
+            : {}),
+        }}
       >
-        {/* Result Status */}
-        <div className="text-2xl font-bold text-amber-200 mb-4">
-          {getActionMessage()}
-        </div>
-        <div className="text-xl font-semibold text-amber-100 mb-4">
-          {getResultMessage()}
+        {/* ── Action header ──────────────────────────────────────────── */}
+        <div
+          className="text-2xl font-bold text-amber-200 mb-3 flex items-center justify-center gap-2"
+          style={stagger(0)}
+        >
+          <span className="text-3xl">{getActionIcon()}</span>
+          <span>{getActionMessage()}</span>
         </div>
 
-        {/* Winner Message */}
-        {getWinnerMessage() && (
-          <div className="text-3xl font-bold text-green-400 mb-4">
-            {getWinnerMessage()}
+        {/* ── Dice count result ──────────────────────────────────────── */}
+        {getResultMessage() && (
+          <div
+            className="text-lg font-semibold text-amber-100 mb-2"
+            style={stagger(80)}
+          >
+            {getResultMessage()}
           </div>
         )}
 
-        {/* Eliminated Player - hidden in mobile mode */}
-        {!isMobile && game.lastEliminatedPlayerId && (
-          <div className="text-xl font-bold text-red-900 mb-4">
-            {t("game.result.isEliminated", {
-              playerName:
-                game.players.find((p) => p.id === game.lastEliminatedPlayerId)
-                  ?.name || "Unknown Player",
-            })}
+        {/* ── Bid correctness badge ─────────────────────────────────── */}
+        {game.lastActualCount !== undefined && (
+          <div
+            className={`inline-block px-4 py-1 rounded-full text-sm font-bold mb-4 ${
+              bidWasCorrect
+                ? 'bg-green-800 text-green-300 border border-green-500'
+                : 'bg-red-900 text-red-300 border border-red-600'
+            }`}
+            style={stagger(160)}
+          >
+            {bidWasCorrect
+              ? t('game.result.bidWasCorrect')
+              : t('game.result.bidWasWrong')}
           </div>
         )}
 
-        {/* Analysis Section - Always Visible on Desktop */}
-        {!isMobile && <DiceAnalysisChart game={game} />}
+        {/* ── Round winner banner ────────────────────────────────────── */}
+        {roundWinner && (
+          <div
+            className="flex items-center justify-center gap-2 mb-3"
+            style={stagger(260)}
+          >
+            <span
+              className={animationsEnabled ? 'animate-float inline-block' : 'inline-block'}
+              style={{ fontSize: '2rem' }}
+            >
+              🏆
+            </span>
+            <span className="text-2xl font-extrabold text-amber-400">
+              {t('game.result.winsRound', { playerName: roundWinner.name })}
+            </span>
+          </div>
+        )}
 
-        {/* Action Buttons section removed */}
+        {/* ── Personal outcome highlight ────────────────────────────── */}
+        {(isCurrentPlayerWinner || isCurrentPlayerEliminated) && (
+          <div
+            className={`rounded-2xl px-5 py-3 mb-3 text-xl font-extrabold tracking-wide ${
+              isCurrentPlayerWinner
+                ? 'bg-green-800 text-green-300 border-2 border-green-500'
+                : 'bg-red-900 text-red-300 border-2 border-red-600'
+            }`}
+            style={stagger(340)}
+          >
+            {isCurrentPlayerWinner
+              ? t('game.result.youWinRound')
+              : t('game.result.youLoseRound')}
+          </div>
+        )}
+
+        {/* ── Eliminated player ─────────────────────────────────────── */}
+        {!isMobile && eliminatedPlayer && (
+          <div
+            className={`text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1 ${
+              animationsEnabled ? 'animate-shake' : ''
+            }`}
+            style={stagger(420)}
+          >
+            <span>💀</span>
+            <span>
+              {t('game.result.isEliminated', {
+                playerName: eliminatedPlayer.name,
+              })}
+            </span>
+          </div>
+        )}
+
+        {/* ── Dice analysis chart ───────────────────────────────────── */}
+        {!isMobile && (
+          <div style={stagger(500)}>
+            <DiceAnalysisChart game={game} />
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default GameResultDisplay;
+
