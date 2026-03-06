@@ -655,11 +655,87 @@ const GameTable: React.FC<GameTableProps> = ({
   if (game.gameWinner) {
     const winner = game.players.find((p) => p.id === game.gameWinner);
     const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
+    const handleContinue = () => (onBack ? onBack() : window.location.reload());
 
+    if (!isCurrentPlayerGameWinner) {
+      // ── LOSER SCREEN ──────────────────────────────────────────────
+      return (
+        <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0d0606' }}>
+          {/* Background */}
+          <div
+            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
+            style={{ backgroundImage: "url(resources/bg.webp)" }}
+          />
+          {/* Dark vignette overlay */}
+          <div className="absolute inset-0 bg-black bg-opacity-70" />
+
+          {/* Loser card */}
+          <div
+            className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
+            style={{
+              backgroundColor: '#1a0505',
+              borderColor: '#ef4444',
+              ...(animationsEnabled
+                ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-red 1.6s ease-in-out 0.6s infinite' }
+                : {}),
+            }}
+          >
+            {/* Skull emoji */}
+            <div
+              className={`text-7xl mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
+              style={animationsEnabled ? { animationDelay: '0.3s' } : {}}
+            >
+              💀
+            </div>
+
+            {/* Dobbelkoning title — shows who won */}
+            <h1
+              className="text-4xl font-extrabold mb-2"
+              style={{
+                color: '#ef4444',
+                ...(animationsEnabled
+                  ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
+                  : {}),
+              }}
+            >
+              {t('game.dobbelkoning')}
+            </h1>
+
+            {/* Winner name */}
+            <h2
+              className="text-2xl font-bold text-white mb-4"
+              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
+            >
+              {winner?.name || t('common.unknownPlayer')}
+            </h2>
+
+            {/* You lost message */}
+            <div
+              className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-red-300 bg-red-950 border-red-500"
+              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
+            >
+              {t('game.result.youLoseGame')}
+            </div>
+
+            {/* Continue button */}
+            <button
+              onClick={handleContinue}
+              className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-red-700 hover:bg-red-600 text-white"
+              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
+            >
+              {t('game.continue')}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── WINNER SCREEN (Dobbelkoning) ───────────────────────────────
     // Confetti particles (deterministic positions to avoid hydration issues)
-    const confettiItems = ['⭐', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🎊', '✨', '🎉'];
-    const confettiPositions = [6, 12, 20, 30, 40, 50, 60, 68, 75, 82, 88, 14, 35, 55, 78, 44];
-    const confettiDelays = [0, 0.3, 0.15, 0.6, 0.45, 0.9, 0.2, 0.75, 1.0, 0.5, 0.35, 0.8, 0.1, 0.65, 0.25, 0.55];
+    const confettiItems = ['👑', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎆', '🏆', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎇', '👑', '🎊', '✨', '🎉', '🌟', '🎈'];
+    const confettiPositions = [4, 10, 17, 25, 33, 42, 50, 58, 66, 74, 81, 88, 7, 19, 30, 44, 56, 68, 79, 91, 13, 37, 62, 86];
+    const confettiDelays = [0, 0.3, 0.15, 0.6, 0.45, 0.9, 0.2, 0.75, 1.0, 0.5, 0.35, 0.8, 0.1, 0.65, 0.25, 0.55, 0.4, 0.7, 0.05, 0.85, 0.95, 0.4, 0.7, 0.3];
+    const confettiSizes = [28, 22, 18, 24, 20, 26, 22, 28, 18, 24, 20, 22, 28, 24, 18, 26, 20, 22, 28, 18, 24, 20, 26, 22];
 
     return (
       <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0d1a0d' }}>
@@ -678,13 +754,14 @@ const GameTable: React.FC<GameTableProps> = ({
             {confettiItems.map((emoji, i) => (
               <span
                 key={i}
-                className="absolute text-2xl animate-float"
+                className="absolute animate-float"
                 style={{
                   left: `${confettiPositions[i]}%`,
-                  top: `${10 + (i % 5) * 15}%`,
+                  top: `${4 + (i % 6) * 14}%`,
                   animationDelay: `${confettiDelays[i]}s`,
-                  animationDuration: `${2.2 + (i % 3) * 0.4}s`,
-                  opacity: 0.85,
+                  animationDuration: `${2.0 + (i % 4) * 0.35}s`,
+                  fontSize: `${confettiSizes[i]}px`,
+                  opacity: 0.9,
                 }}
               >
                 {emoji}
@@ -695,34 +772,33 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* Victory card */}
         <div
-          className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${
-            animationsEnabled ? 'animate-bounce-in' : ''
-          }`}
+          className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
           style={{
-            backgroundColor: isCurrentPlayerGameWinner ? '#052e16' : '#1c1208',
-            borderColor: isCurrentPlayerGameWinner ? '#22c55e' : '#fbbf24',
+            backgroundColor: '#052e16',
+            borderColor: '#22c55e',
             ...(animationsEnabled
-              ? {
-                  animation: isCurrentPlayerGameWinner
-                    ? 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 1.6s ease-in-out 0.6s infinite'
-                    : 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, winner-glow 1.6s ease-in-out 0.6s infinite',
-                }
+              ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 1.6s ease-in-out 0.6s infinite' }
               : {}),
           }}
         >
-          {/* Animated trophy */}
+          {/* Animated crown — larger and with float delay for extra drama */}
           <div
-            className={`text-7xl mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
-            style={animationsEnabled ? { animationDelay: '0.3s' } : {}}
+            className={`mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
+            style={{
+              fontSize: '5.5rem',
+              lineHeight: 1,
+              ...(animationsEnabled ? { animationDelay: '0.2s', animationDuration: '1.8s' } : {}),
+            }}
           >
-            {isCurrentPlayerGameWinner ? '👑' : '🏆'}
+            👑
           </div>
 
-          {/* Dobbelkoning title */}
+          {/* Dobbelkoning title with golden glow */}
           <h1
             className="text-4xl font-extrabold mb-2"
             style={{
               color: '#fbbf24',
+              textShadow: '0 0 18px rgba(251, 191, 36, 0.85), 0 0 36px rgba(251, 191, 36, 0.45)',
               ...(animationsEnabled
                 ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
                 : {}),
@@ -734,48 +810,26 @@ const GameTable: React.FC<GameTableProps> = ({
           {/* Winner name */}
           <h2
             className="text-2xl font-bold text-white mb-4"
-            style={
-              animationsEnabled
-                ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 }
-                : {}
-            }
+            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
           >
             {winner?.name || t('common.unknownPlayer')}
           </h2>
 
-          {/* Personal result message */}
+          {/* You win message */}
           <div
-            className={`text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 ${
-              isCurrentPlayerGameWinner
-                ? 'text-green-300 bg-green-900 border-green-500'
-                : 'text-amber-300 bg-amber-950 border-amber-600'
-            }`}
-            style={
-              animationsEnabled
-                ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 }
-                : {}
-            }
+            className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-green-300 bg-green-900 border-green-500"
+            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
           >
-            {isCurrentPlayerGameWinner
-              ? t('game.result.youWinGame')
-              : t('game.result.gameWinnerIs', { playerName: winner?.name || t('common.unknownPlayer') })}
+            {t('game.result.youWinGame')}
           </div>
 
-          {/* Play Again button */}
+          {/* Continue button */}
           <button
-            onClick={() => window.location.reload()}
-            className={`px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 ${
-              isCurrentPlayerGameWinner
-                ? 'bg-green-600 hover:bg-green-500 text-white'
-                : 'bg-amber-500 hover:bg-amber-400 text-amber-950'
-            }`}
-            style={
-              animationsEnabled
-                ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 }
-                : {}
-            }
+            onClick={handleContinue}
+            className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-green-600 hover:bg-green-500 text-white"
+            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
           >
-            {t('common.playAgain')}
+            {t('game.continue')}
           </button>
         </div>
       </div>

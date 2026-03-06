@@ -71,6 +71,7 @@
   "game.result.youWinRound": "Vinci questo round! 🎉",
   "game.result.youLoseRound": "Perdi un dado! 💀",
   "game.result.youWinGame": "Sei il Dobbelkoning! 👑",
+  "game.result.youLoseGame": "Hai perso! 💀",
   "game.result.gameWinnerIs": "{{playerName}} vince la partita!",
   "game.action.doubt": "{{playerName}} dubita",
   "game.action.spotOn": "{{playerName}} dice esatto",

@@ -77,6 +77,7 @@
   "game.result.youWinRound": "Jij wint deze ronde! 🎉",
   "game.result.youLoseRound": "Jij verliest een dobbelsteen! 💀",
   "game.result.youWinGame": "Jij bent de Dobbelkoning! 👑",
+  "game.result.youLoseGame": "Je hebt verloren! 💀",
   "game.result.gameWinnerIs": "{{playerName}} wint het spel!",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",

@@ -71,6 +71,7 @@
   "game.result.youWinRound": "Vous gagnez cette manche ! 🎉",
   "game.result.youLoseRound": "Vous perdez un dé ! 💀",
   "game.result.youWinGame": "Vous êtes le Roi du dé ! 👑",
+  "game.result.youLoseGame": "Vous avez perdu ! 💀",
   "game.result.gameWinnerIs": "{{playerName}} gagne la partie !",
   "game.action.doubt": "{{playerName}} doute",
   "game.action.spotOn": "{{playerName}} dit exact",
