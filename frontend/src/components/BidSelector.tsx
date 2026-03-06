@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Bid } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
-import DiceHand from './DiceHand';
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidSelectorProps {
@@ -137,14 +136,14 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       "w-12 h-12 flex items-center justify-center text-sm font-bold rounded-lg border-2 transition-all duration-200";
 
     if (disabled) {
-      return `${baseClass} bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed`;
+      return `${baseClass} bg-gray-100 dark:bg-dk-bid-inactive border-gray-300 dark:border-dk-border text-gray-400 dark:text-dk-bid-inactive-t cursor-not-allowed`;
     }
 
     if (isBidValid(quantity, faceValue)) {
-      return `${baseClass} bg-blue-500 border-blue-600 text-white hover:bg-blue-600 hover:scale-105 cursor-pointer shadow-md`;
+      return `${baseClass} bg-blue-500 dark:bg-dk-bid-active border-blue-600 dark:border-dk-bid-active text-white hover:bg-blue-600 dark:hover:bg-blue-500 hover:scale-105 cursor-pointer shadow-md`;
     }
 
-    return `${baseClass} bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed`;
+    return `${baseClass} bg-gray-200 dark:bg-dk-bid-inactive border-gray-300 dark:border-dk-border text-gray-500 dark:text-dk-bid-inactive-t cursor-not-allowed`;
   };
 
   // Drag functionality
@@ -200,13 +199,13 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isMobile) {
     return (
       <div
         ref={containerRef}
-        className="bg-green-950 p-2 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm w-full select-none relative z-10"
+        className="bg-green-950 dark:bg-dk-panel p-2 rounded-2xl shadow-lg border-4 border-green-700 dark:border-dk-panel-border max-w-sm w-full select-none relative z-10"
         onMouseDown={handleMouseDown}
         style={{
           cursor: isDragging ? "grabbing" : "grab",
@@ -272,7 +271,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={disabled || noBidToChallenge}
-            className="flex-1 py-1.5 bg-green-950 text-white rounded-xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200"
+            className="flex-1 py-1.5 bg-green-950 dark:bg-dk-accent-dim text-white rounded-xl hover:bg-green-900 dark:hover:bg-dk-accent hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 dark:border-dk-panel-border transition-all duration-200"
           >
             {t("game.spotOn")}
           </button>
@@ -282,7 +281,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               toggleExpanded();
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-10 h-8 bg-green-950 hover:bg-green-900 rounded-xl hover:scale-105 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
+            className="w-10 h-8 bg-green-950 dark:bg-dk-panel hover:bg-green-900 dark:hover:bg-dk-surface-alt rounded-xl hover:scale-105 font-bold text-xs shadow-lg border-2 border-green-700 dark:border-dk-panel-border transition-all duration-200 flex items-center justify-center text-white"
           >
             {isExpanded ? "−" : "+"}
           </button>
@@ -294,7 +293,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   return (
     <div
       ref={containerRef}
-      className="bg-green-950 p-3 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm select-none relative z-10"
+      className="bg-green-950 dark:bg-dk-panel p-3 rounded-2xl shadow-lg border-4 border-green-700 dark:border-dk-panel-border max-w-sm select-none relative z-10"
       style={{
         position: "fixed",
         left: position.x,
@@ -366,7 +365,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             onSpotOn?.();
           }}
           disabled={disabled || noBidToChallenge}
-          className="flex-1 py-2 bg-green-950 text-white rounded-2xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200"
+          className="flex-1 py-2 bg-green-950 dark:bg-dk-accent-dim text-white rounded-2xl hover:bg-green-900 dark:hover:bg-dk-accent hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 dark:border-dk-panel-border transition-all duration-200"
         >
           {t("game.spotOn")}
         </button>
@@ -375,7 +374,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             e.stopPropagation();
             toggleExpanded();
           }}
-          className="w-12 h-10 bg-green-950 hover:bg-green-900 rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
+          className="w-12 h-10 bg-green-950 dark:bg-dk-panel hover:bg-green-900 dark:hover:bg-dk-surface-alt rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-700 dark:border-dk-panel-border transition-all duration-200 flex items-center justify-center text-white"
         >
           {isExpanded ? "−" : "+"}
         </button>

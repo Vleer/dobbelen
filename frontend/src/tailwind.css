@@ -9,12 +9,53 @@ html.scale-small  { font-size: 12px; }
 html.scale-medium { font-size: 16px; }
 html.scale-large  { font-size: 20px; }
 
+/* ── Dice SVG colors (consumed by DiceSVG.tsx via fill="var(...)") ── */
+/* Default theme */
+:root,
+html.theme-default {
+  --dice-face-start: #ffffff;
+  --dice-face-end:   #f3f4f6;
+  --dice-border:     #d1d5db;
+  --dice-dot:        #1f2937;
+}
+
+/* Dark theme */
+html.theme-dark {
+  --dice-face-start: #1e2d3d;
+  --dice-face-end:   #253548;
+  --dice-border:     #334155;
+  --dice-dot:        #c9d1d9;
+}
+
 /* ── Color-scheme themes ─────────────────────────────────────────── */
-/* Default theme: no overrides, original colours */
+
+/* Default theme: no overrides */
 html.theme-default #root { filter: none; }
 
-/* Dark theme: desaturate and darken */
-html.theme-dark #root { filter: brightness(0.6) saturate(0.6); }
+/* Dark theme: proper CSS-variable overrides instead of a blunt filter.
+   The Tailwind `dark:` utilities (activated via `html.theme-dark`)
+   handle component-level color swaps; the rules below cover any
+   remaining global surfaces (body background, scrollbar, selection). */
+html.theme-dark {
+  color-scheme: dark;
+  background-color: #0d1117;
+}
+html.theme-dark body {
+  background-color: #0d1117;
+}
+html.theme-dark #root { filter: none; }
 
-/* White theme: greyscale + invert → black-and-white light look */
-html.theme-white #root { filter: grayscale(1) invert(1) contrast(1.2) brightness(0.92); }
+/* Scrollbar tinting in dark mode (Chromium) */
+html.theme-dark ::-webkit-scrollbar { background-color: #161b22; }
+html.theme-dark ::-webkit-scrollbar-thumb { background-color: #30363d; border-radius: 6px; }
+html.theme-dark ::selection { background-color: #1f6feb66; color: #e6edf3; }
+
+/* White theme: completely white backgrounds, black text and lines */
+html.theme-white #root { filter: none; }
+
+html.theme-white #root,
+html.theme-white #root * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}

@@ -176,7 +176,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   if (isMobile) {
     return (
       <div
-        className={`bg-green-950 rounded-lg shadow-lg border-2 select-none ${
+        className={`bg-green-950 dark:bg-dk-panel rounded-lg shadow-lg border-2 select-none ${
           isMyTurn ? "border-green-300" : playerColorClass
         } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0`}
       >
@@ -228,7 +228,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg border-4 select-none ${playerColorClass} ${
+        className={`w-40 h-48 bg-green-950 dark:bg-dk-panel rounded-2xl shadow-lg border-4 select-none ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
         } ${
           position === 0

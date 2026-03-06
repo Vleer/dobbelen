@@ -84,16 +84,16 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-800 select-none">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-6 text-green-800">
+    <div className="flex items-center justify-center min-h-screen bg-green-800 dark:bg-dk-table select-none">
+      <div className="bg-white dark:bg-dk-surface p-8 rounded-lg shadow-lg max-w-md w-full">
+        <h1 className="text-3xl font-bold text-center mb-6 text-green-800 dark:text-dk-accent">
           Liar's Dice - Endurance Round
         </h1>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dk-text-muted mb-2">
               Your Username
             </label>
             <input
@@ -101,14 +101,14 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded bg-white dark:bg-dk-input border-gray-300 dark:border-dk-input-border text-gray-900 dark:text-dk-text placeholder-gray-400 dark:placeholder-dk-text-faint"
               required
             />
           </div>
 
           {/* AI Difficulty Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dk-text-muted mb-2">
               AI Difficulty
             </label>
             <div className="flex space-x-2">
@@ -117,8 +117,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                 onClick={() => updateAiDifficulty('easy')}
                 className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
                   aiDifficulty === 'easy'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-green-600 dark:bg-dk-accent-dim text-white'
+                    : 'bg-gray-200 dark:bg-dk-surface-alt text-gray-700 dark:text-dk-text-muted hover:bg-gray-300 dark:hover:bg-dk-border'
                 }`}
               >
                 <div className="text-lg">🎲 Easy AI</div>
@@ -130,7 +130,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                 className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
                   aiDifficulty === 'medium'
                     ? 'bg-purple-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    : 'bg-gray-200 dark:bg-dk-surface-alt text-gray-700 dark:text-dk-text-muted hover:bg-gray-300 dark:hover:bg-dk-border'
                 }`}
               >
                 <div className="text-lg">🧠 Medium AI</div>
@@ -140,7 +140,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dk-text-muted mb-2">
               Number of AI Players (1-6)
             </label>
             <div className="flex space-x-2 mb-4">
@@ -151,8 +151,8 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                   onClick={() => updateAiCount(count)}
                   className={`px-3 py-2 rounded ${
                     aiCount === count
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'bg-green-600 dark:bg-dk-accent-dim text-white'
+                      : 'bg-gray-200 dark:bg-dk-surface-alt text-gray-700 dark:text-dk-text-muted hover:bg-gray-300 dark:hover:bg-dk-border'
                   }`}
                 >
                   {count}
@@ -163,7 +163,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
             <div className="space-y-2">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center space-x-2">
-                  <span className="flex-1 p-2 border rounded bg-gray-50">{name}</span>
+                  <span className="flex-1 p-2 border rounded bg-gray-50 dark:bg-dk-surface-alt dark:border-dk-border dark:text-dk-text-muted">{name}</span>
                   <button
                     type="button"
                     onClick={() => removePlayer(index)}
@@ -182,44 +182,44 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
               value={newPlayerName}
               onChange={(e) => setNewPlayerName(e.target.value)}
               placeholder="Add custom AI name"
-              className="flex-1 p-2 border rounded"
+              className="flex-1 p-2 border rounded bg-white dark:bg-dk-input border-gray-300 dark:border-dk-input-border text-gray-900 dark:text-dk-text placeholder-gray-400 dark:placeholder-dk-text-faint"
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addPlayer())}
             />
             <button
               type="button"
               onClick={addPlayer}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-blue-500 dark:bg-dk-bid-active text-white rounded hover:bg-blue-600"
             >
               Add
             </button>
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
+            <div className="text-red-500 dark:text-red-400 text-sm text-center">{error}</div>
           )}
 
           <button
             type="submit"
             disabled={playerNames.length < 1 || isLoading || !username.trim()}
-            className="w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full py-2 px-4 bg-green-600 dark:bg-dk-accent-dim text-white rounded hover:bg-green-700 dark:hover:bg-dk-accent disabled:bg-gray-400 dark:disabled:bg-dk-surface-alt disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating Game...' : 'Start AI Game'}
           </button>
         </form>
 
-        <div className="mt-4 text-sm text-gray-600 text-center">
+        <div className="mt-4 text-sm text-gray-600 dark:text-dk-text-muted text-center">
           <p>Each player starts with 5 dice.</p>
           <p>Take turns bidding, doubting, or calling spot-on!</p>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dk-border">
           <button
             onClick={onMultiplayer}
             className="w-full py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-lg"
           >
             🎮 Play Multiplayer Online
           </button>
-          <p className="text-xs text-gray-500 text-center mt-2">
+          <p className="text-xs text-gray-500 dark:text-dk-text-faint text-center mt-2">
             Create or join a game with friends using a shareable link
           </p>
         </div>
