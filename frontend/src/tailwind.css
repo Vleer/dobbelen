@@ -22,5 +22,12 @@ html.theme-default #root { filter: none; }
 /* Dark theme: desaturate and darken */
 html.theme-dark #root { filter: brightness(0.6) saturate(0.6); }
 
-/* White theme: greyscale + invert → black-and-white light look */
-html.theme-white #root { filter: grayscale(1) invert(1) contrast(1.2) brightness(0.92); }
+/* White theme: completely white backgrounds, black text and lines */
+html.theme-white #root { filter: none; }
+
+html.theme-white #root,
+html.theme-white #root * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}

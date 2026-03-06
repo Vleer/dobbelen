@@ -6,6 +6,7 @@ import { webSocketService } from '../services/websocketService';
 import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStatistics } from '../contexts/StatisticsContext';
+import { useSettings } from '../contexts/SettingsContext';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
@@ -34,6 +35,14 @@ const GameTable: React.FC<GameTableProps> = ({
 }) => {
   const { t } = useLanguage();
   const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
+  const { colorScheme } = useSettings();
+  const isWhiteTheme = colorScheme === 'white';
+  const panelStyle = isWhiteTheme
+    ? { backgroundColor: '#ffffff', borderColor: '#000000' }
+    : { backgroundColor: '#3d1f0d', borderColor: '#78350f' };
+  const cancelBtnStyle = isWhiteTheme
+    ? { backgroundColor: '#ffffff', borderColor: '#000000', color: '#000000' }
+    : { backgroundColor: '#5a2810', borderColor: '#78350f', color: '#fef3c7' };
   const { isMobile, isTablet } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
   const [game, setGame] = useState<Game | null>(initialGame || null);
@@ -851,7 +860,7 @@ const GameTable: React.FC<GameTableProps> = ({
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
             <div className="px-2 py-1">
-              <div className="rounded-2xl p-2 md:p-3 shadow-2xl border-4" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+              <div className="rounded-2xl p-2 md:p-3 shadow-2xl border-4" style={panelStyle}>
                 {/* Compact Header - Action and Who */}
                 <div className="text-center mb-1 md:mb-2">
                   <div className="text-sm md:text-base font-bold text-amber-200">
@@ -1193,7 +1202,7 @@ const GameTable: React.FC<GameTableProps> = ({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4 bg-black/50">
           <div
             className="border-2 rounded-xl px-4 py-3 md:px-6 md:py-5 shadow-2xl min-w-[240px] max-w-md"
-            style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+            style={panelStyle}
           >
             <p className="text-amber-200 text-center text-sm md:text-lg mb-3 md:mb-5">
               {t("game.leaveConfirmMessage")}
@@ -1218,7 +1227,7 @@ const GameTable: React.FC<GameTableProps> = ({
               <button
                 onClick={() => setShowLeaveConfirm(false)}
                 className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
-                style={{ backgroundColor: '#5a2810', borderColor: '#78350f', color: '#fef3c7' }}
+                style={cancelBtnStyle}
               >
                 {t("game.leaveConfirmCancel")}
               </button>
@@ -1231,7 +1240,7 @@ const GameTable: React.FC<GameTableProps> = ({
       {playerLeftNotification && (
         <div
           className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] border-2 rounded-xl px-3 py-2 md:px-6 md:py-4 shadow-2xl max-w-[95vw]"
-          style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+          style={panelStyle}
         >
           <p className="text-amber-200 text-center text-sm md:text-lg font-medium">
             {t("game.playerLeftNotification", { playerName: playerLeftNotification })}

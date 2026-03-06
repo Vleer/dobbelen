@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from "../contexts/LanguageContext";
+import { useSettings } from '../contexts/SettingsContext';
 import DiceHandSVG from './DiceHandSVG';
 
 interface BidDisplayProps {
@@ -16,6 +17,11 @@ interface BidDisplayProps {
 
 const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, infoPanelBottom }) => {
   const { t } = useLanguage();
+  const { colorScheme } = useSettings();
+  const isWhiteTheme = colorScheme === 'white';
+  const panelStyle = isWhiteTheme
+    ? { backgroundColor: '#ffffff', borderColor: '#000000' }
+    : { backgroundColor: '#3d1f0d', borderColor: '#78350f' };
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
@@ -78,7 +84,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className="border-2 rounded-xl px-2 py-1.5 shadow-lg" style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+      <div className="border-2 rounded-xl px-2 py-1.5 shadow-lg" style={panelStyle}>
         <div className="flex items-center justify-center gap-2">
           <span className="text-sm font-bold text-white truncate">{bidderName}</span>
           <div className="flex items-center flex-shrink-0">
@@ -110,8 +116,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       ref={containerRef}
       className="border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative"
       style={{
-        backgroundColor: '#3d1f0d',
-        borderColor: '#78350f',
+        ...panelStyle,
         position: "fixed",
         ...(isCentered ? getDefaultPosition() : { left: position.x, top: position.y }),
         zIndex: 1000,
