@@ -1159,6 +1159,7 @@ const GameTable: React.FC<GameTableProps> = ({
             {/* Settings gear button */}
             <div className="relative">
               <button
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => setShowSettings((s) => !s)}
                 className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
                 aria-label="Settings"
