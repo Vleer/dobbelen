@@ -33,9 +33,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
   ];
 
   const fontOptions: { value: FontSize; label: string; sizeClass: string }[] = [
-    { value: 'small', label: 'Aa', sizeClass: 'text-xs' },
+    { value: 'x-small', label: 'Aa', sizeClass: 'text-xs' },
+    { value: 'small', label: 'Aa', sizeClass: 'text-sm' },
     { value: 'medium', label: 'Aa', sizeClass: 'text-base' },
-    { value: 'large', label: 'Aa', sizeClass: 'text-xl' },
+    { value: 'large', label: 'Aa', sizeClass: 'text-lg' },
+    { value: 'x-large', label: 'Aa', sizeClass: 'text-xl' },
   ];
 
   return (

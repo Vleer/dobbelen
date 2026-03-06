@@ -5,9 +5,11 @@
 /* ── Scale (font-size / element size) ───────────────────────────── */
 /* Change the root font-size so all rem-based sizes scale, while     */
 /* the body and background remain full viewport size.               */
-html.scale-small  { font-size: 12px; }
+html.scale-x-small { font-size: 12px; }
+html.scale-small  { font-size: 14px; }
 html.scale-medium { font-size: 16px; }
-html.scale-large  { font-size: 20px; }
+html.scale-large  { font-size: 18px; }
+html.scale-x-large { font-size: 21px; }
 
 /* ── Color-scheme themes ─────────────────────────────────────────── */
 /* Default theme: no overrides, original colours */
