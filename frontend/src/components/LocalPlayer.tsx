@@ -168,14 +168,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           isMyTurn ? "border-t-[6px] border-green-300" : `border-t-4 ${playerColorClass}`
         } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
-        {/* YOUR TURN badge - mobile */}
-        {isMyTurn && !player.eliminated && (
-          <div className="flex justify-center mb-1.5">
-            <span className={`bg-green-400 text-green-950 font-bold text-xs px-3 py-0.5 rounded-full tracking-wide ${animationsEnabled ? 'animate-bounce-in' : ''}`}>
-              🎲 {t("game.yourTurn")}
-            </span>
-          </div>
-        )}
         {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
         <div className="flex items-center gap-1.5 min-w-0">
           <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
@@ -246,14 +238,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     >
       {/* Relative wrapper for badge + card */}
       <div className="relative">
-        {/* YOUR TURN badge - desktop */}
-        {isMyTurn && !player.eliminated && (
-          <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <span className={`bg-green-400 text-green-950 font-bold text-sm px-5 py-1.5 rounded-full shadow-lg whitespace-nowrap tracking-wide ${animationsEnabled ? 'animate-bounce-in' : ''}`}>
-              🎲 {t("game.yourTurn")}
-            </span>
-          </div>
-        )}
         {/* Player Container */}
         <div
           ref={containerRef}
