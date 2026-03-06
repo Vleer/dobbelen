@@ -216,6 +216,8 @@ public class GameService {
             copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
             copy.setEliminated(player.isEliminated());
             copy.setWinTokens(player.getWinTokens());
+            copy.setColor(player.getColor()); // Copy color so it's available even if player leaves
+            copy.setAiType(player.getAiType()); // Copy aiType for completeness
             previousPlayers.add(copy);
         }
         game.setPreviousRoundPlayers(previousPlayers);
@@ -332,6 +334,8 @@ public class GameService {
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
                 copy.setEliminated(player.isEliminated());
                 copy.setWinTokens(player.getWinTokens());
+                copy.setColor(player.getColor()); // Copy color so it's available even if player leaves
+                copy.setAiType(player.getAiType()); // Copy aiType for completeness
                 previousPlayers.add(copy);
             }
             game.setPreviousRoundPlayers(previousPlayers);
@@ -387,6 +391,8 @@ public class GameService {
                 copy.setDice(new ArrayList<>(player.getDice())); // Copy dice values
                 copy.setEliminated(player.isEliminated());
                 copy.setWinTokens(player.getWinTokens());
+                copy.setColor(player.getColor()); // Copy color so it's available even if player leaves
+                copy.setAiType(player.getAiType()); // Copy aiType for completeness
                 previousPlayers.add(copy);
             }
             game.setPreviousRoundPlayers(previousPlayers);
