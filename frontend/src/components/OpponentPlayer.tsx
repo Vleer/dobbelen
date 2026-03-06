@@ -18,6 +18,7 @@ interface OpponentPlayerProps {
   previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
   playerIndex?: number; // Index for color coding
+  lastEliminatedPlayerId?: string; // ID of the most recently eliminated player
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
@@ -30,6 +31,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   previousRoundPlayer,
   isMobile = false,
   playerIndex = 0,
+  lastEliminatedPlayerId,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -41,8 +43,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showDiceAnim, setShowDiceAnim] = useState(false);
+  const [showElimAnim, setShowElimAnim] = useState(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevShowDiceRef = useRef(showDice);
+  const prevLastEliminatedPlayerIdRef = useRef(lastEliminatedPlayerId);
   const getDefaultPosition = () => {
     // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
     const playerWidth = 180;
@@ -78,6 +82,20 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     }
     prevIsMyTurnRef.current = isMyTurn;
   }, [isMyTurn, animationsEnabled]);
+
+  // Animate the container briefly in red when this player is eliminated
+  useEffect(() => {
+    if (
+      animationsEnabled &&
+      lastEliminatedPlayerId === player.id &&
+      lastEliminatedPlayerId !== prevLastEliminatedPlayerIdRef.current
+    ) {
+      setShowElimAnim(true);
+      const timer = setTimeout(() => setShowElimAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevLastEliminatedPlayerIdRef.current = lastEliminatedPlayerId;
+  }, [lastEliminatedPlayerId, player.id, animationsEnabled]);
 
   // Animate dice when they become visible (round reveal)
   useEffect(() => {
@@ -202,8 +220,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     return (
       <div
         className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
-          isMyTurn ? "border-[3px] border-green-300" : `border-2 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+          showElimAnim && animationsEnabled
+            ? "border-[3px] border-red-500"
+            : isMyTurn ? "border-[3px] border-green-300" : `border-2 ${playerColorClass}`
+        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${showElimAnim && animationsEnabled ? 'animate-shake' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
         <div className="flex items-center gap-1 min-w-0">
@@ -268,10 +288,12 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         ref={containerRef}
         onMouseDown={handleMouseDown}
         className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg select-none transition-all duration-300 ${
-          isMyTurn ? "border-[6px] border-green-300" : `border-4 ${playerColorClass}`
+          showElimAnim && animationsEnabled
+            ? "border-[6px] border-red-500"
+            : isMyTurn ? "border-[6px] border-green-300" : `border-4 ${playerColorClass}`
         } ${
           player.eliminated ? "opacity-50" : ""
-        } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${
+        } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${showElimAnim && animationsEnabled ? 'animate-shake' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${
           position === 0
             ? "transform -rotate-90"
             : position === 1

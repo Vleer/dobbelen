@@ -15,9 +15,10 @@ interface LocalPlayerProps {
   showDice?: boolean; // Show dice when revealed at end of round
   previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
+  lastEliminatedPlayerId?: string; // ID of the most recently eliminated player
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, lastEliminatedPlayerId }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
@@ -28,9 +29,11 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   });
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const [showTurnAnim, setShowTurnAnim] = useState(false);
+  const [showElimAnim, setShowElimAnim] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
+  const prevLastEliminatedPlayerIdRef = useRef(lastEliminatedPlayerId);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -92,6 +95,20 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     }
     prevIsMyTurnRef.current = isMyTurn;
   }, [isMyTurn, animationsEnabled]);
+
+  // Animate the container briefly in red when this player is eliminated
+  useEffect(() => {
+    if (
+      animationsEnabled &&
+      lastEliminatedPlayerId === player.id &&
+      lastEliminatedPlayerId !== prevLastEliminatedPlayerIdRef.current
+    ) {
+      setShowElimAnim(true);
+      const timer = setTimeout(() => setShowElimAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevLastEliminatedPlayerIdRef.current = lastEliminatedPlayerId;
+  }, [lastEliminatedPlayerId, player.id, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -165,8 +182,10 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     return (
       <div
         className={`w-full bg-green-950 p-2 shadow-2xl select-none transition-all duration-300 ${
-          isMyTurn ? "border-t-[6px] border-green-300" : `border-t-4 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+          showElimAnim && animationsEnabled
+            ? "border-t-[6px] border-red-500"
+            : isMyTurn ? "border-t-[6px] border-green-300" : `border-t-4 ${playerColorClass}`
+        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${showElimAnim && animationsEnabled ? 'animate-shake' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
         {/* YOUR TURN badge - mobile */}
         {isMyTurn && !player.eliminated && (
@@ -259,10 +278,12 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           ref={containerRef}
           onMouseDown={handleMouseDown}
           className={`bg-green-950 p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
-            isMyTurn ? "border-[6px] border-green-300 scale-[1.03]" : `border-4 ${playerColorClass}`
+            showElimAnim && animationsEnabled
+              ? `border-[6px] border-red-500${isMyTurn ? ' scale-[1.03]' : ''}`
+              : isMyTurn ? "border-[6px] border-green-300 scale-[1.03]" : `border-4 ${playerColorClass}`
           } ${
             player.eliminated ? "opacity-50" : ""
-          } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+          } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${showElimAnim && animationsEnabled ? 'animate-shake' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
         style={{
           width: "340px", // fixed width
           minHeight: "180px", // minimum height, allow to grow if needed

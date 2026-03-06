@@ -828,6 +828,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     previousRoundPlayer={previousRoundPlayer}
                     isMobile={useMobileLayout}
                     playerIndex={originalIndex}
+                    lastEliminatedPlayerId={game.lastEliminatedPlayerId}
                   />
                 );
               })}
@@ -1014,6 +1015,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 (p) => p.id === localPlayer.id
               )}
               isMobile={useMobileLayout}
+              lastEliminatedPlayerId={game.lastEliminatedPlayerId}
             />
           </div>
         )}
@@ -1039,6 +1041,7 @@ const GameTable: React.FC<GameTableProps> = ({
             previousRoundPlayer={game.previousRoundPlayers?.find(
               (p) => p.id === localPlayer.id
             )}
+            lastEliminatedPlayerId={game.lastEliminatedPlayerId}
           />
         )}
 
@@ -1083,6 +1086,7 @@ const GameTable: React.FC<GameTableProps> = ({
               previousBid={game.previousBid}
               previousRoundPlayer={previousRoundPlayer}
               playerIndex={originalIndex}
+              lastEliminatedPlayerId={game.lastEliminatedPlayerId}
             />
           );
         })}
