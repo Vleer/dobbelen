@@ -67,24 +67,6 @@ const GameTable: React.FC<GameTableProps> = ({
     gameRef.current = game;
   }, [game]);
 
-  // Smart game state update: once showAllDice is true for a round, prevent stale polling
-  // responses from reverting it back to false (which would cause the result panel to flicker).
-  // This guards against out-of-order updates where a poll response that was in-flight before
-  // the WebSocket reveal arrives AFTER the reveal and would otherwise hide the result panel.
-  const applyGameUpdate = useCallback((incoming: Game) => {
-    setGame(prev => {
-      if (!prev) return incoming;
-      // Keep showAllDice=true if the current state already has it for the same (or older)
-      // round number. A later round will have a higher roundNumber, so that case passes through.
-      if (prev.showAllDice && !incoming.showAllDice &&
-          incoming.roundNumber <= prev.roundNumber) {
-        console.log('🔒 Preventing stale update from hiding showAllDice for round', prev.roundNumber);
-        return { ...incoming, showAllDice: true };
-      }
-      return incoming;
-    });
-  }, []);
-
   // Measure the bottom of the history panel so the BidDisplay can avoid overlapping it
   useEffect(() => {
     if (!isHistoryOpen || !historyPanelRef.current) {
@@ -267,7 +249,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
-            applyGameUpdate(updatedGame);
+            setGame(updatedGame);
           },
           onPlayerLeft: (playerName) => {
             setPlayerLeftNotification(playerName);
@@ -293,11 +275,9 @@ const GameTable: React.FC<GameTableProps> = ({
         hasLocalPlayerId: !!localPlayerId,
       });
     }
-  }, [gameId, localPlayerId, applyGameUpdate]);
+  }, [gameId, localPlayerId]);
 
-  // Handle bid display and betting delay when round ends or showAllDice changes.
-  // Depend only on the fields we actually care about so that each polling tick does NOT
-  // reset the 6-second timer (which would prevent it from ever firing while polling is on).
+  // Handle bid display and betting delay when round ends or showAllDice changes
   useEffect(() => {
     if (game?.state === 'ROUND_ENDED' || game?.showAllDice) {
       setShowBidDisplay(false);
@@ -306,8 +286,8 @@ const GameTable: React.FC<GameTableProps> = ({
         setShowBidDisplay(true);
         setBettingDisabled(false);
         // Clear round tracking when the delay ends and new round starts
-        if (gameId) {
-          aiService.clearRoundTracking(gameId);
+        if (game) {
+          aiService.clearRoundTracking(game.id);
         }
       }, 6000); // 6 second delay
       return () => clearTimeout(timer);
@@ -315,11 +295,11 @@ const GameTable: React.FC<GameTableProps> = ({
       setShowBidDisplay(true);
       setBettingDisabled(false);
       // Also clear round tracking when showAllDice becomes false (new round started)
-      if (gameId) {
-        aiService.clearRoundTracking(gameId);
+      if (game) {
+        aiService.clearRoundTracking(game.id);
       }
     }
-  }, [game?.state, game?.showAllDice, gameId]);
+  }, [game]);
 
   // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
   useEffect(() => {
@@ -383,8 +363,9 @@ const GameTable: React.FC<GameTableProps> = ({
             );
           }
 
-          applyGameUpdate(updatedGame);
+          setGame(updatedGame);
         } catch (err: unknown) {
+          console.error("Error polling game updates:", err);
           // Game was removed (e.g. cancelled after last player left) -> return to lobby
           if (err && typeof err === 'object' && 'response' in err) {
             const axErr = err as { response?: { status?: number } };
@@ -405,7 +386,7 @@ const GameTable: React.FC<GameTableProps> = ({
         hasLocalPlayerId: !!localPlayerId,
       });
     }
-  }, [gameId, localPlayerId, applyGameUpdate]);
+  }, [gameId, localPlayerId]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
@@ -518,11 +499,11 @@ const GameTable: React.FC<GameTableProps> = ({
 
     try {
       const gameResponse = await gameApi.getGame(game.id);
-      applyGameUpdate(gameResponse);
+      setGame(gameResponse);
     } catch (err) {
       console.error("Error refreshing game:", err);
     }
-  }, [game, applyGameUpdate]);
+  }, [game]);
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;
@@ -557,33 +538,6 @@ const GameTable: React.FC<GameTableProps> = ({
       // Use WebSocket for multiplayer; fallback to REST if socket isn't connected yet
       const actionName = action === "spotOn" ? "SPOT_ON" : action.toUpperCase();
 
-      // Optimistic updates: immediately reflect the user's action in the UI so there
-      // is no visible lag between clicking a button and the server confirming the move.
-      if (action === 'bid' && data) {
-        // Show the bid the player just placed right away (the server will confirm it).
-        const optimisticBid = {
-          playerId: localPlayerId,
-          quantity: data.quantity,
-          faceValue: data.faceValue,
-          type: 'RAISE' as const,
-        };
-        setGame(prev => prev ? {
-          ...prev,
-          currentBid: optimisticBid,
-          previousBid: prev.currentBid,
-        } : prev);
-      } else if (action === 'doubt' || action === 'spotOn') {
-        // Immediately show the result panel with the action info. The actual count data
-        // will be filled in once the server responds; until then the panel shows a
-        // loading-style state so the user has instant feedback.
-        setGame(prev => prev ? {
-          ...prev,
-          showAllDice: true,
-          lastActionType: actionName as 'SPOT_ON' | 'DOUBT',
-          lastActionPlayerId: localPlayerId,
-        } : prev);
-      }
-
       const sentViaWebSocket = webSocketService.sendAction(actionName, data, localPlayerId);
 
       if (!sentViaWebSocket) {
@@ -595,17 +549,17 @@ const GameTable: React.FC<GameTableProps> = ({
             faceValue: data.faceValue,
           });
           if (response?.game) {
-            applyGameUpdate(response.game);
+            setGame(response.game);
           }
         } else if (action === 'doubt') {
           const response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            applyGameUpdate(response.game);
+            setGame(response.game);
           }
         } else if (action === 'spotOn') {
           const response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            applyGameUpdate(response.game);
+            setGame(response.game);
           }
         }
       }
