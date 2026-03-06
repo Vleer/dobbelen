@@ -122,5 +122,11 @@
   "instructions.raise": "Erhöhen: Klicke auf die Anzahl der Würfel, die du glaubst, dass alle Spieler zusammen haben",
   "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
   "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
-  "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde"
+  "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde",
+
+  "settings.colorScheme": "Farbschema",
+  "settings.colorDefault": "Standard",
+  "settings.colorDark": "Dunkel",
+  "settings.colorWhite": "Weiß",
+  "settings.fontSize": "Schriftgröße"
 }

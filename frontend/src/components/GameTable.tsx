@@ -13,6 +13,7 @@ import BidSelector from './BidSelector';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
+import SettingsPanel from './SettingsPanel';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
@@ -47,6 +48,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [pendingAction, setPendingAction] = useState<{playerId: string, actionType: 'DOUBT' | 'SPOT_ON'} | null>(null);
   const [lastTrackedAction, setLastTrackedAction] = useState<string | null>(null);
   const [previousRoundNumber, setPreviousRoundNumber] = useState<number>(1);
@@ -1102,6 +1104,21 @@ const GameTable: React.FC<GameTableProps> = ({
             >
               {t("game.info")}
             </button>
+
+            {/* Settings gear button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSettings((s) => !s)}
+                className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
+                aria-label="Settings"
+              >
+                ⚙
+              </button>
+              <SettingsPanel
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+              />
+            </div>
 
             {/* Language Selector - Desktop only */}
             <div className="hidden lg:block bg-black bg-opacity-50 text-white rounded-lg shadow-lg">

@@ -122,5 +122,11 @@
   "instructions.raise": "Relancer: Cliquez sur le nombre de dés que vous croyez être dans toutes les mains des joueurs",
   "instructions.doubt": "Doute: Contestez l'enchère précédente si trop haute",
   "instructions.spotOn": "Pile poil: Prétendez que l'enchère est exacte (risqué!)",
-  "instructions.winRound": "Le dernier joueur debout gagne la manche"
+  "instructions.winRound": "Le dernier joueur debout gagne la manche",
+
+  "settings.colorScheme": "Schéma de couleurs",
+  "settings.colorDefault": "Défaut",
+  "settings.colorDark": "Sombre",
+  "settings.colorWhite": "Blanc",
+  "settings.fontSize": "Taille de police"
 }

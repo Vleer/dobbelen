@@ -128,5 +128,11 @@
   "instructions.raise": "Verhogen: Klik op het aantal dobbelstenen dat je denkt dat alle spelers samen hebben",
   "instructions.doubt": "Optillen: Daag het vorige bod uit als het te hoog is",
   "instructions.spotOn": "Spot On: Beweer dat bod exact klopt (riskant!)",
-  "instructions.winRound": "Laatste speler die overblijft wint de ronde"
+  "instructions.winRound": "Laatste speler die overblijft wint de ronde",
+
+  "settings.colorScheme": "Kleurenschema",
+  "settings.colorDefault": "Standaard",
+  "settings.colorDark": "Donker",
+  "settings.colorWhite": "Wit",
+  "settings.fontSize": "Lettergrootte"
 }

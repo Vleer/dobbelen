@@ -126,5 +126,11 @@
   "instructions.raise": "Raise: Click on the number of dice you believe is in all player's hands combined",
   "instructions.doubt": "Doubt: Challenged the previous bid if too high",
   "instructions.spotOn": "Spot On: Claim Bid is exactly correct (risky!) If true, the round resets.",
-  "instructions.winRound": "Last player standing wins the round!"
+  "instructions.winRound": "Last player standing wins the round!",
+
+  "settings.colorScheme": "Color Scheme",
+  "settings.colorDefault": "Default",
+  "settings.colorDark": "Dark",
+  "settings.colorWhite": "White",
+  "settings.fontSize": "Font Size"
 }
