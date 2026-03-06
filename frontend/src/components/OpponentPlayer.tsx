@@ -201,13 +201,17 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   if (isMobile) {
     return (
       <div
-        className={`bg-green-950 rounded-lg shadow-lg border-2 select-none transition-all duration-300 ${
-          isMyTurn ? "border-green-300" : playerColorClass
+        className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
+          isMyTurn ? "border-[3px] border-green-300" : `border-2 ${playerColorClass}`
         } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
         <div className="flex items-center gap-1 min-w-0">
           <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
+            {/* Turn arrow indicator - mobile */}
+            {isMyTurn && (
+              <span className="text-green-400 font-bold text-[10px] flex-shrink-0">▶</span>
+            )}
             <span className={`font-bold text-[11px] truncate ${playerTextClass}`}>{player.name}</span>
             {isDealer && (
               <div className="w-3 h-3 bg-white border border-black rounded-full flex items-center justify-center flex-shrink-0">
@@ -263,7 +267,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg border-4 select-none transition-all duration-300 ${playerColorClass} ${
+        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg select-none transition-all duration-300 ${
+          isMyTurn ? "border-[6px] border-green-300" : `border-4 ${playerColorClass}`
+        } ${
           player.eliminated ? "opacity-50" : ""
         } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${
           position === 0
@@ -283,6 +289,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
               : ""
           } w-full h-full flex flex-col items-center justify-center`}
         >
+          {/* Turn indicator badge - inside counter-rotated content */}
+          {isMyTurn && !player.eliminated && (
+            <div className="mb-1">
+              <span className={`bg-green-400 text-green-950 font-bold text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${animationsEnabled ? 'animate-bounce-in' : ''}`}>
+                ▶ {t("game.yourTurn")}
+              </span>
+            </div>
+          )}
           {/* Username with Dealer Button and Win Tokens */}
           <div className="text-center mb-2">
             <div className="flex items-center justify-center space-x-1">

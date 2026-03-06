@@ -20,14 +20,14 @@ module.exports = {
         },
         'turn-start': {
           '0%':   { transform: 'scale(1)' },
-          '30%':  { transform: 'scale(1.05)' },
-          '60%':  { transform: 'scale(0.97)' },
-          '80%':  { transform: 'scale(1.02)' },
+          '25%':  { transform: 'scale(1.10)' },
+          '60%':  { transform: 'scale(0.96)' },
+          '80%':  { transform: 'scale(1.04)' },
           '100%': { transform: 'scale(1)' },
         },
         'turn-glow': {
-          '0%, 100%': { 'box-shadow': '0 0 0 0 rgba(134, 239, 172, 0.0)' },
-          '50%':       { 'box-shadow': '0 0 18px 6px rgba(134, 239, 172, 0.45)' },
+          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(134, 239, 172, 0.25)' },
+          '50%':       { 'box-shadow': '0 0 32px 12px rgba(134, 239, 172, 0.80)' },
         },
         'bounce-in': {
           '0%':   { transform: 'scale(0.65)', opacity: '0' },
@@ -90,7 +90,7 @@ module.exports = {
         'dice-roll':      'dice-roll 0.13s linear infinite',
         'dice-land':      'dice-land 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'turn-start':     'turn-start 0.55s ease-out',
-        'turn-glow':      'turn-glow 2s ease-in-out infinite',
+        'turn-glow':      'turn-glow 1.4s ease-in-out infinite',
         'bounce-in':      'bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'slide-up':       'slide-up 0.32s ease-out forwards',
         'shake':          'shake 0.45s ease-in-out',
