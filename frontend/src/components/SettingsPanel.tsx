@@ -45,6 +45,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
       ref={panelRef}
       className="absolute right-0 mt-1 w-64 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl z-[9999] p-4 text-white"
     >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors duration-150 leading-none"
+        aria-label="Close settings"
+      >
+        ✕
+      </button>
+
       {/* Color Scheme */}
       <div className="mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
