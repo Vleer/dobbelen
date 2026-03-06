@@ -1,3 +1,288 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── App-level zoom for font size setting ── */
+:root {
+  --app-zoom: 1;
+}
+#app-root {
+  zoom: var(--app-zoom);
+}
+
+/* ── Color schemes ── */
+
+/* Default scheme: existing amber/brown theme — no overrides needed */
+html.scheme-default {
+  /* uses the default Tailwind classes in components */
+}
+
+/* Dark scheme: deep dark, muted accents */
+html.scheme-dark {
+  --cs-bg: #0a0a0f;
+  --cs-surface: #111118;
+  --cs-surface2: #1a1a24;
+  --cs-border: #2a2a3a;
+  --cs-text: #c8c8e0;
+  --cs-text-muted: #6060a0;
+  --cs-accent: #4a4aaa;
+  --cs-accent-hover: #5a5abb;
+  --cs-button-bg: rgba(255, 255, 255, 0.06);
+  --cs-button-hover: rgba(255, 255, 255, 0.12);
+}
+
+/* White scheme: black and white only */
+html.scheme-white {
+  --cs-bg: #ffffff;
+  --cs-surface: #f0f0f0;
+  --cs-surface2: #e0e0e0;
+  --cs-border: #aaaaaa;
+  --cs-text: #111111;
+  --cs-text-muted: #555555;
+  --cs-accent: #222222;
+  --cs-accent-hover: #444444;
+  --cs-button-bg: rgba(0, 0, 0, 0.08);
+  --cs-button-hover: rgba(0, 0, 0, 0.16);
+}
+
+/* ── Apply color-scheme variables to background ── */
+html.scheme-dark body,
+html.scheme-white body {
+  background-color: var(--cs-bg);
+  color: var(--cs-text);
+}
+
+html.scheme-dark .bg-gray-900,
+html.scheme-dark .bg-gray-800 {
+  background-color: var(--cs-bg) !important;
+}
+
+html.scheme-white .bg-gray-900,
+html.scheme-white .bg-gray-800 {
+  background-color: var(--cs-surface) !important;
+}
+
+/* Green lobby background */
+html.scheme-dark .bg-green-800,
+html.scheme-dark .bg-green-700,
+html.scheme-dark .bg-green-600 {
+  background-color: var(--cs-surface) !important;
+}
+html.scheme-white .bg-green-800,
+html.scheme-white .bg-green-700,
+html.scheme-white .bg-green-600 {
+  background-color: var(--cs-surface2) !important;
+}
+
+/* White card background */
+html.scheme-dark .bg-white {
+  background-color: var(--cs-surface2) !important;
+  color: var(--cs-text) !important;
+}
+html.scheme-white .bg-white {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+}
+
+/* Gray surfaces */
+html.scheme-dark .bg-gray-100,
+html.scheme-dark .bg-gray-200,
+html.scheme-dark .bg-gray-50 {
+  background-color: var(--cs-surface) !important;
+}
+html.scheme-white .bg-gray-100,
+html.scheme-white .bg-gray-200,
+html.scheme-white .bg-gray-50 {
+  background-color: #eeeeee !important;
+}
+
+/* Gray text */
+html.scheme-dark .text-gray-700,
+html.scheme-dark .text-gray-800,
+html.scheme-dark .text-gray-900 {
+  color: var(--cs-text) !important;
+}
+html.scheme-white .text-gray-700,
+html.scheme-white .text-gray-800,
+html.scheme-white .text-gray-900 {
+  color: var(--cs-text) !important;
+}
+
+/* Input borders */
+html.scheme-dark input,
+html.scheme-dark textarea,
+html.scheme-dark select {
+  background-color: var(--cs-surface) !important;
+  color: var(--cs-text) !important;
+  border-color: var(--cs-border) !important;
+}
+html.scheme-white input,
+html.scheme-white textarea,
+html.scheme-white select {
+  background-color: #f8f8f8 !important;
+  color: #111111 !important;
+  border-color: #aaaaaa !important;
+}
+
+/* Amber/brown surface overrides */
+html.scheme-dark .bg-amber-900,
+html.scheme-dark .bg-amber-800 {
+  background-color: var(--cs-surface2) !important;
+}
+html.scheme-dark .bg-amber-700 {
+  background-color: var(--cs-surface) !important;
+}
+html.scheme-dark .bg-amber-600 {
+  background-color: var(--cs-accent) !important;
+}
+html.scheme-dark .hover\:bg-amber-600:hover,
+html.scheme-dark .hover\:bg-amber-700:hover {
+  background-color: var(--cs-accent-hover) !important;
+}
+
+html.scheme-white .bg-amber-900,
+html.scheme-white .bg-amber-800 {
+  background-color: var(--cs-surface2) !important;
+}
+html.scheme-white .bg-amber-700 {
+  background-color: var(--cs-border) !important;
+}
+html.scheme-white .bg-amber-600 {
+  background-color: var(--cs-accent) !important;
+}
+html.scheme-white .hover\:bg-amber-600:hover,
+html.scheme-white .hover\:bg-amber-700:hover {
+  background-color: var(--cs-accent-hover) !important;
+}
+
+/* Text color overrides */
+html.scheme-dark .text-amber-200,
+html.scheme-dark .text-amber-300,
+html.scheme-dark .text-amber-400 {
+  color: var(--cs-text) !important;
+}
+html.scheme-dark .text-white {
+  color: var(--cs-text) !important;
+}
+html.scheme-dark .text-gray-300,
+html.scheme-dark .text-gray-400,
+html.scheme-dark .text-gray-500 {
+  color: var(--cs-text-muted) !important;
+}
+
+html.scheme-white .text-amber-200,
+html.scheme-white .text-amber-300,
+html.scheme-white .text-amber-400 {
+  color: var(--cs-text) !important;
+}
+html.scheme-white .text-white {
+  color: var(--cs-text) !important;
+}
+html.scheme-white .text-gray-300,
+html.scheme-white .text-gray-400,
+html.scheme-white .text-gray-500 {
+  color: var(--cs-text-muted) !important;
+}
+
+/* White scheme: force grayscale on everything for true B&W */
+html.scheme-white #app-root {
+  filter: grayscale(1);
+}
+
+/* Border overrides */
+html.scheme-dark .border-amber-700,
+html.scheme-dark .border-amber-600,
+html.scheme-dark .border-gray-300,
+html.scheme-dark .border-black {
+  border-color: var(--cs-border) !important;
+}
+html.scheme-white .border-amber-700,
+html.scheme-white .border-amber-600,
+html.scheme-white .border-gray-300,
+html.scheme-white .border-black {
+  border-color: var(--cs-border) !important;
+}
+
+/* Black bg opacity buttons */
+html.scheme-dark .bg-black {
+  background-color: var(--cs-surface) !important;
+}
+html.scheme-white .bg-black {
+  background-color: var(--cs-text) !important;
+}
+
+/* ── Settings panel styles (scheme-aware) ── */
+.settings-panel {
+  background-color: #292215;
+  border-color: #78501c;
+  color: #fde68a;
+}
+
+html.scheme-dark .settings-panel {
+  background-color: var(--cs-surface2);
+  border-color: var(--cs-border);
+  color: var(--cs-text);
+}
+
+html.scheme-white .settings-panel {
+  background-color: #ffffff;
+  border-color: #aaaaaa;
+  color: #111111;
+}
+
+.settings-label {
+  color: inherit;
+}
+
+.settings-segment-border {
+  border-color: #78501c;
+}
+html.scheme-dark .settings-segment-border {
+  border-color: var(--cs-border);
+}
+html.scheme-white .settings-segment-border {
+  border-color: #aaaaaa;
+}
+
+.settings-segment-btn {
+  background: transparent;
+  color: inherit;
+}
+
+.settings-segment-active {
+  background-color: #78501c;
+  color: #fde68a;
+}
+html.scheme-dark .settings-segment-active {
+  background-color: var(--cs-accent);
+  color: var(--cs-text);
+}
+html.scheme-white .settings-segment-active {
+  background-color: #222222;
+  color: #ffffff;
+}
+
+.settings-segment-inactive {
+  background: transparent;
+  opacity: 0.7;
+}
+.settings-segment-inactive:hover {
+  opacity: 1;
+  background-color: rgba(120, 80, 28, 0.3);
+}
+html.scheme-dark .settings-segment-inactive:hover {
+  background-color: var(--cs-button-hover);
+}
+html.scheme-white .settings-segment-inactive:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.settings-segment-divider {
+  border-left: 1px solid #78501c;
+}
+html.scheme-dark .settings-segment-divider {
+  border-left-color: var(--cs-border);
+}
+html.scheme-white .settings-segment-divider {
+  border-left-color: #aaaaaa;
+}
