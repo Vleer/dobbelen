@@ -8,7 +8,7 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
-  const { colorScheme, setColorScheme, fontSize, setFontSize } = useSettings();
+  const { colorScheme, setColorScheme, fontSize, setFontSize, animationsEnabled, setAnimationsEnabled } = useSettings();
   const { t } = useLanguage();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +70,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* Font Size */}
-      <div>
+      <div className="mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
           {t('settings.fontSize')}
         </p>
@@ -91,6 +91,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Animations Toggle */}
+      <div>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          {t('settings.animations')}
+        </p>
+        <button
+          onClick={() => setAnimationsEnabled(!animationsEnabled)}
+          className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none"
+          style={{ backgroundColor: animationsEnabled ? '#22c55e' : '#4b5563' }}
+          role="switch"
+          aria-checked={animationsEnabled}
+          aria-label={t('settings.animations')}
+        >
+          <span
+            className="inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200"
+            style={{ transform: animationsEnabled ? 'translateX(28px)' : 'translateX(4px)' }}
+          />
+        </button>
       </div>
     </div>
   );

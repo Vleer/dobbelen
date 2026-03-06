@@ -79,6 +79,7 @@ const StatisticsDisplay: React.FC<StatisticsDisplayProps> = ({ isOpen, onClose }
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDragging, dragOffset]);
 
   if (!isOpen) return null;

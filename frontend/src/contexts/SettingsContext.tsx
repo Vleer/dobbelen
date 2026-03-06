@@ -19,6 +19,8 @@ interface SettingsContextType {
   setColorScheme: (scheme: ColorScheme) => void;
   fontSize: FontSize;
   setFontSize: (size: FontSize) => void;
+  animationsEnabled: boolean;
+  setAnimationsEnabled: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -38,6 +40,11 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     return isFontSize(saved) ? saved : 'medium';
   });
 
+  const [animationsEnabled, setAnimationsEnabledState] = useState<boolean>(() => {
+    const saved = localStorage.getItem('animationsEnabled');
+    return saved !== null ? saved === 'true' : true;
+  });
+
   // Apply color scheme class to <html>
   useEffect(() => {
     const html = document.documentElement;
@@ -54,6 +61,11 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     localStorage.setItem('fontSize', fontSize);
   }, [fontSize]);
 
+  // Persist animations enabled
+  useEffect(() => {
+    localStorage.setItem('animationsEnabled', String(animationsEnabled));
+  }, [animationsEnabled]);
+
   const setColorScheme = (scheme: ColorScheme) => {
     setColorSchemeState(scheme);
   };
@@ -62,8 +74,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setFontSizeState(size);
   };
 
+  const setAnimationsEnabled = (enabled: boolean) => {
+    setAnimationsEnabledState(enabled);
+  };
+
   return (
-    <SettingsContext.Provider value={{ colorScheme, setColorScheme, fontSize, setFontSize }}>
+    <SettingsContext.Provider value={{ colorScheme, setColorScheme, fontSize, setFontSize, animationsEnabled, setAnimationsEnabled }}>
       {children}
     </SettingsContext.Provider>
   );

@@ -134,5 +134,6 @@
   "settings.colorDefault": "Standaard",
   "settings.colorDark": "Donker",
   "settings.colorWhite": "Wit",
-  "settings.fontSize": "Lettergrootte"
+  "settings.fontSize": "Lettergrootte",
+  "settings.animations": "Animaties"
 }
