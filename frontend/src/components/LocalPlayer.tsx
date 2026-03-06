@@ -149,7 +149,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   if (isMobile) {
     return (
       <div
-        className={`w-full bg-green-950 p-2 shadow-2xl border-t-4 select-none ${
+        className={`w-full bg-green-950 dark:bg-dk-panel p-2 shadow-2xl border-t-4 select-none ${
           isMyTurn ? "border-green-300" : playerColorClass
         } ${player.eliminated ? "opacity-70" : ""}`}
       >
@@ -225,7 +225,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className={`bg-green-950 p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
+        className={`bg-green-950 dark:bg-dk-panel p-6 rounded-3xl shadow-2xl border-4 select-none transition-all duration-300 ${playerColorClass} ${
           player.eliminated ? "opacity-50" : ""
         }`}
         style={{

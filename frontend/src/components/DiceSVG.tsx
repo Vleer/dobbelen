@@ -72,7 +72,7 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
         cx={dot.x}
         cy={dot.y}
         r={dotSize}
-        fill="#1f2937"
+        fill="var(--dice-dot)"
         className="drop-shadow-sm"
       />
     ));
@@ -88,8 +88,8 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
       {/* Dice background with gradient */}
       <defs>
         <linearGradient id={`diceGradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#f3f4f6" />
+          <stop offset="0%" stopColor="var(--dice-face-start)" />
+          <stop offset="100%" stopColor="var(--dice-face-end)" />
         </linearGradient>
         <filter id={`shadow-${uniqueId}`}>
           <feDropShadow dx="1" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.2"/>
@@ -105,7 +105,7 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
         rx={sizePx * 0.12}
         ry={sizePx * 0.12}
         fill={`url(#diceGradient-${uniqueId})`}
-        stroke="#d1d5db"
+        stroke="var(--dice-border)"
         strokeWidth="1"
         filter={`url(#shadow-${uniqueId})`}
       />
@@ -119,7 +119,7 @@ const DiceSVG: React.FC<DiceSVGProps> = ({ value, size = 'md' }) => {
         rx={sizePx * 0.1}
         ry={sizePx * 0.1}
         fill="none"
-        stroke="#e5e7eb"
+        stroke="var(--dice-border)"
         strokeWidth="0.5"
       />
       

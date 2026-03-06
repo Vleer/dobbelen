@@ -741,7 +741,7 @@ const GameTable: React.FC<GameTableProps> = ({
   if (game.gameWinner) {
     const winner = game.players.find((p) => p.id === game.gameWinner);
     return (
-      <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden flex items-center justify-center">
+      <div className="game-table relative w-full h-screen bg-green-800 dark:bg-dk-table overflow-hidden flex items-center justify-center">
         {/* Background */}
         <div
           className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
@@ -749,18 +749,18 @@ const GameTable: React.FC<GameTableProps> = ({
         />
 
         {/* Victory Screen */}
-        <div className="relative z-10 text-center bg-yellow-400 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600">
-          <h1 className="text-5xl font-bold text-green-800 mb-4">
+        <div className="relative z-10 text-center bg-yellow-400 dark:bg-amber-900 p-12 rounded-3xl shadow-2xl border-4 border-yellow-600 dark:border-amber-700">
+          <h1 className="text-5xl font-bold text-green-800 dark:text-amber-200 mb-4">
             {t("game.dobbelkoning")}
           </h1>
-          <h2 className="text-3xl font-bold text-green-700 mb-8">
+          <h2 className="text-3xl font-bold text-green-700 dark:text-amber-300 mb-8">
             {t("game.result.winsRound", {
               playerName: winner?.name || "Unknown Player",
             })}
           </h2>
           <button
             onClick={() => window.location.reload()}
-            className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold text-xl shadow-lg"
+            className="px-8 py-4 bg-green-600 dark:bg-dk-accent-dim text-white rounded-xl hover:bg-green-700 dark:hover:bg-dk-accent font-bold text-xl shadow-lg"
           >
             {t("common.playAgain")}
           </button>
@@ -777,7 +777,7 @@ const GameTable: React.FC<GameTableProps> = ({
       : null;
 
   return (
-    <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden select-none">
+    <div className="game-table relative w-full h-screen bg-green-800 dark:bg-dk-table overflow-hidden select-none">
       {/* Background */}
       <div
         className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-30"
