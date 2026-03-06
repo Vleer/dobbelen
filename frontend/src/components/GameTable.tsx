@@ -47,6 +47,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [openedForGameStart, setOpenedForGameStart] = useState(false);
+  const [showRulesTooltip, setShowRulesTooltip] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
@@ -63,6 +64,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
+  const rulesTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gameId = game?.id;
 
   useEffect(() => {
@@ -116,13 +118,21 @@ const GameTable: React.FC<GameTableProps> = ({
       audioService.playGameStart();
       setHasPlayedGameStart(true);
 
-      // Open the Info panel on game start with Rules tab
-      setOpenedForGameStart(true);
-      setIsHistoryOpen(true);
+      // Show a tooltip pointing to the Info button for 3 seconds
+      setShowRulesTooltip(true);
+      if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
+      rulesTooltipTimerRef.current = setTimeout(() => setShowRulesTooltip(false), 3000);
     }
     
     setPreviousGameState(game.state);
   }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
+
+  // Clean up rules tooltip timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
+    };
+  }, []);
 
   // Play sounds based on game state changes
   useEffect(() => {
@@ -1146,15 +1156,26 @@ const GameTable: React.FC<GameTableProps> = ({
               {t("game.leaveGame")}
             </button>
             {/* Info button - opens Rules / Current Hand / Last Hand / Stats */}
-            <button
-              onClick={() => {
-                audioService.playRaise();
-                setIsHistoryOpen(!isHistoryOpen);
-              }}
-              className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
-            >
-              {t("game.info")}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => {
+                  audioService.playRaise();
+                  setIsHistoryOpen(!isHistoryOpen);
+                  setShowRulesTooltip(false);
+                }}
+                className="bg-black bg-opacity-50 text-white px-2 py-1 md:px-3 md:py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-xs md:text-sm transition-all duration-200"
+              >
+                {t("game.info")}
+              </button>
+              {showRulesTooltip && (
+                <div className="absolute right-0 top-full mt-2 z-50 animate-bounce-in pointer-events-none">
+                  <div className="relative bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap">
+                    <span className="absolute -top-1.5 right-3 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-amber-400" />
+                    {t("game.viewRulesHere")}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Settings gear button */}
             <div className="relative">
