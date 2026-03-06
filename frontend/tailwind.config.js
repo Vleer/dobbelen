@@ -85,6 +85,10 @@ module.exports = {
           '75%':  { transform: 'scale(0.9) rotate(-5deg)' },
           '100%': { transform: 'scale(1) rotate(0deg)',   opacity: '1' },
         },
+        'flash': {
+          '0%, 100%': { opacity: '1' },
+          '50%':       { opacity: '0.4' },
+        },
       },
       animation: {
         'dice-roll':      'dice-roll 0.13s linear infinite',
@@ -102,6 +106,7 @@ module.exports = {
         'fade-in':        'fade-in 0.4s ease-out forwards',
         'confetti-spin':  'confetti-spin 1.2s ease-out forwards',
         'star-burst':     'star-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        'flash':          'flash 0.8s ease-in-out infinite',
       },
     },
   },

@@ -233,7 +233,11 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
                 ? 'bg-green-800 text-green-300 border-2 border-green-500'
                 : 'bg-red-900 text-red-300 border-2 border-red-600'
             }`}
-            style={stagger(340)}
+            style={animationsEnabled ? {
+              // bounce-in starts at 340 ms; flash starts after bounce completes (~840 ms)
+              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 340ms both, flash 0.8s ease-in-out 860ms infinite`,
+              opacity: 0,
+            } : {}}
           >
             {isCurrentPlayerWinner
               ? t('game.result.youWinRound')
@@ -244,10 +248,12 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
         {/* ── Eliminated player ─────────────────────────────────────── */}
         {!isMobile && eliminatedPlayer && (
           <div
-            className={`text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1 ${
-              animationsEnabled ? 'animate-shake' : ''
-            }`}
-            style={stagger(420)}
+            className="text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1"
+            style={animationsEnabled ? {
+              // bounce-in starts at 420 ms; flash starts after bounce completes (~920 ms)
+              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 420ms both, flash 0.8s ease-in-out 940ms infinite`,
+              opacity: 0,
+            } : {}}
           >
             <span>💀</span>
             <span>

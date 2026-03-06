@@ -11,6 +11,33 @@ html.scale-medium { font-size: 16px; }
 html.scale-large  { font-size: 18px; }
 html.scale-x-large { font-size: 21px; }
 
+/* ── Animation keyframes used via inline styles ─────────────────── */
+/* Tailwind only emits @keyframes for animation utilities it finds   */
+/* in the content scan; keyframes used only in JS inline-style       */
+/* `animation:` strings must be declared here explicitly.            */
+/* NOTE: flash is also defined in tailwind.config.js for the         */
+/* `animate-flash` utility; keep both definitions in sync.           */
+@keyframes fade-in {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.35); }
+  50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 18px 4px rgba(239, 68, 68, 0.35); }
+  50%       { box-shadow: 0 0 44px 14px rgba(239, 68, 68, 0.85); }
+}
+@keyframes winner-glow {
+  0%, 100% { box-shadow: 0 0 20px 4px rgba(251, 191, 36, 0.35); }
+  50%       { box-shadow: 0 0 50px 18px rgba(251, 191, 36, 0.85); }
+}
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 /* ── Color-scheme themes ─────────────────────────────────────────── */
 /* Default theme: no overrides, original colours */
 html.theme-default #root { filter: none; }
