@@ -28,9 +28,11 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   });
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const [showTurnAnim, setShowTurnAnim] = useState(false);
+  const [showElimAnim, setShowElimAnim] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
+  const prevEliminatedRef = useRef(player.eliminated);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -92,6 +94,16 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     }
     prevIsMyTurnRef.current = isMyTurn;
   }, [isMyTurn, animationsEnabled]);
+
+  // Animate the container when this player gets eliminated
+  useEffect(() => {
+    if (animationsEnabled && player.eliminated && !prevEliminatedRef.current) {
+      setShowElimAnim(true);
+      const timer = setTimeout(() => setShowElimAnim(false), 700);
+      return () => clearTimeout(timer);
+    }
+    prevEliminatedRef.current = player.eliminated;
+  }, [player.eliminated, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -166,7 +178,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       <div
         className={`w-full bg-green-950 p-2 shadow-2xl select-none transition-all duration-300 ${
           isMyTurn ? "border-t-[6px] border-green-300" : `border-t-4 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${showElimAnim && animationsEnabled ? 'animate-elim-flash' : ''}`}
       >
         {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
         <div className="flex items-center gap-1.5 min-w-0">

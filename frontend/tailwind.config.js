@@ -89,6 +89,13 @@ module.exports = {
           '0%, 100%': { opacity: '1' },
           '50%':       { opacity: '0.4' },
         },
+        'elim-flash': {
+          '0%':   { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(239, 68, 68, 0)' },
+          '25%':  { transform: 'scale(1.10)', boxShadow: '0 0 40px 14px rgba(239, 68, 68, 0.85)' },
+          '60%':  { transform: 'scale(0.96)', boxShadow: '0 0 20px 6px rgba(239, 68, 68, 0.45)' },
+          '80%':  { transform: 'scale(1.04)', boxShadow: '0 0 10px 3px rgba(239, 68, 68, 0.20)' },
+          '100%': { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(239, 68, 68, 0)' },
+        },
       },
       animation: {
         'dice-roll':      'dice-roll 0.13s linear infinite',
@@ -107,6 +114,7 @@ module.exports = {
         'confetti-spin':  'confetti-spin 1.2s ease-out forwards',
         'star-burst':     'star-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'flash':          'flash 0.8s ease-in-out infinite',
+        'elim-flash':     'elim-flash 0.7s ease-out forwards',
       },
     },
   },
