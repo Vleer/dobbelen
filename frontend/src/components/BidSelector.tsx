@@ -253,7 +253,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-1.5 flex gap-1 w-full">
+        <div className="mt-1.5 flex gap-1 w-[298px] mx-auto">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -348,7 +348,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-2 flex gap-2 w-full">
+      <div className="mt-2 flex gap-2 w-[308px] mx-auto">
         <button
           onClick={(e) => {
             e.stopPropagation();
