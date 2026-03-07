@@ -51,6 +51,13 @@ html.scale-x-large { font-size: 21px; }
   80%  { transform: scale(1.04); box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.20); }
   100% { transform: scale(1);    box-shadow: 0 0 0px 0px rgba(239, 68, 68, 0); }
 }
+@keyframes trophy-pop {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  45%  { transform: scale(1.5) rotate(12deg);  opacity: 1; }
+  65%  { transform: scale(0.88) rotate(-6deg); }
+  82%  { transform: scale(1.12) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
 
 /* ── Color-scheme themes ─────────────────────────────────────────── */
 /* Default theme: no overrides, original colours */
