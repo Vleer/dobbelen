@@ -133,9 +133,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   useEffect(() => {
     if (isInitialized) return;
 
-    // Pre-fill with a random Dutch name
-    setPlayerName(getRandomDutchName());
-
     const urlParams = new URLSearchParams(window.location.search);
     const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
@@ -143,19 +140,23 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       if (saved) {
         try {
           const { playerName: savedName, isHost: savedHost } = JSON.parse(saved);
-          setGameId(urlGameId);
-          gameApi.getMultiplayerGame(urlGameId).then((fetched) => {
-            const name = savedName ?? getRandomDutchName();
-            const me = fetched.players.find((p) => p.name === name);
-            setGame(fetched);
-            setPlayerName(name);
-            setIsHost(!!savedHost);
-            setHasJoined(true);
-            setMyPlayerId(me?.id ?? null);
-          }).catch(() => {
+          if (!savedName) {
             sessionStorage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
-            window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
-          });
+            setGameId(urlGameId);
+          } else {
+            setGameId(urlGameId);
+            gameApi.getMultiplayerGame(urlGameId).then((fetched) => {
+              const me = fetched.players.find((p) => p.name === savedName);
+              setGame(fetched);
+              setPlayerName(savedName);
+              setIsHost(!!savedHost);
+              setHasJoined(true);
+              setMyPlayerId(me?.id ?? null);
+            }).catch(() => {
+              sessionStorage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
+              window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
+            });
+          }
         } catch {
           setGameId(urlGameId);
           window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
@@ -168,25 +169,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
 
     setIsInitialized(true);
   }, [isInitialized]);
-
-  // Auto-select text in the player name input on initial load only
-  useEffect(() => {
-    if (isInitialized && playerName) {
-      // Small delay to ensure the input is focused and rendered
-      const timer = setTimeout(() => {
-        const input = document.querySelector(
-          'input[type="text"]'
-        ) as HTMLInputElement;
-        if (input && input.value === playerName) {
-          input.focus();
-          input.select();
-        }
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized]); // Only run once on initialization, not when playerName changes
 
   // Countdown ticker when game is in COUNTDOWN state (visible to all players)
   useEffect(() => {
