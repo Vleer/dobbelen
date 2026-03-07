@@ -69,7 +69,7 @@
   "game.result.roundEnded": "Manche terminée !",
   "game.result.isEliminated": "{{playerName}} est éliminé !",
   "game.result.youWinRound": "Vous gagnez cette manche ! 🎉",
-  "game.result.youLoseRound": "Vous perdez un dé ! 💀",
+  "game.result.youLoseRound": "Vous êtes éliminé ! 💀",
   "game.result.youWinGame": "Vous êtes le Roi du dé ! 👑",
   "game.result.youLoseGame": "Vous avez perdu ! 💀",
   "game.result.gameWinnerIs": "{{playerName}} gagne la partie !",

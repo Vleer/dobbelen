@@ -69,7 +69,7 @@
   "game.result.roundEnded": "Runde beendet!",
   "game.result.isEliminated": "{{playerName}} ist eliminiert!",
   "game.result.youWinRound": "Du gewinnst diese Runde! 🎉",
-  "game.result.youLoseRound": "Du verlierst einen Würfel! 💀",
+  "game.result.youLoseRound": "Du bist eliminiert! 💀",
   "game.result.youWinGame": "Du bist der Würfelkönig! 👑",
   "game.result.youLoseGame": "Du hast verloren! 💀",
   "game.result.gameWinnerIs": "{{playerName}} gewinnt das Spiel!",
