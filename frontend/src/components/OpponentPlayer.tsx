@@ -243,7 +243,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     return (
       <div
         className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
-          activeTurn ? 'border-[3px] border-green-300' : isRoundWinner ? 'border-[3px] border-green-400' : `border-2 ${playerColorClass}`
+          activeTurn ? 'border-[3px] border-blue-300' : isRoundWinner ? 'border-[3px] border-green-400' : `border-2 ${playerColorClass}`
         } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${animClasses}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
@@ -309,7 +309,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         ref={containerRef}
         onMouseDown={handleMouseDown}
         className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg select-none transition-all duration-300 ${
-          activeTurn ? 'border-[6px] border-green-300' : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
+          activeTurn ? 'border-[6px] border-blue-300' : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
         } ${
           player.eliminated ? "opacity-50" : ""
         } ${animClasses} ${
