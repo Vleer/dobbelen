@@ -831,6 +831,52 @@ public class GameService {
         System.out.println("CANCEL GAME: Removed game " + gameId + " (host cancelled)");
     }
 
+    /**
+     * Record that a player has clicked "Continue" on the game-over screen.
+     * AI players are automatically counted as continued.
+     * When all human players have continued, the game resets to WAITING_FOR_PLAYERS.
+     */
+    public GameResponse playerContinue(String gameId, String playerId) {
+        Game game = games.get(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found: " + gameId);
+        }
+        if (game.getState() != GameState.GAME_ENDED) {
+            throw new IllegalArgumentException("Game is not in GAME_ENDED state");
+        }
+
+        // Add the clicking player to continued list (idempotent)
+        if (!game.getPlayersContinued().contains(playerId)) {
+            game.getPlayersContinued().add(playerId);
+            System.out.println("CONTINUE: Player " + playerId + " continued in game " + gameId);
+        }
+
+        // Auto-continue all AI players
+        for (com.example.backend.model.Player p : game.getPlayers()) {
+            if (p.isAI() && !game.getPlayersContinued().contains(p.getId())) {
+                game.getPlayersContinued().add(p.getId());
+                System.out.println("CONTINUE: Auto-continuing AI player " + p.getName() + " in game " + gameId);
+            }
+        }
+
+        // Check if all human players have now continued
+        List<String> humanIds = game.getPlayers().stream()
+                .filter(p -> !p.isAI())
+                .map(com.example.backend.model.Player::getId)
+                .collect(java.util.stream.Collectors.toList());
+
+        boolean allHumansContinued = !humanIds.isEmpty() &&
+                humanIds.stream().allMatch(id -> game.getPlayersContinued().contains(id));
+
+        if (allHumansContinued) {
+            System.out.println("CONTINUE: All human players continued in game " + gameId + " – resetting for new game");
+            game.resetForNewGame();
+        }
+
+        broadcastGameUpdate(gameId);
+        return getGameResponse(gameId);
+    }
+
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {

@@ -65,11 +65,28 @@ const GameTable: React.FC<GameTableProps> = ({
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
   const rulesTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevGameStateRef = useRef<string>('');
+  const onBackRef = useRef(onBack);
   const gameId = game?.id;
 
   useEffect(() => {
     gameRef.current = game;
   }, [game]);
+
+  // Keep onBackRef current
+  useEffect(() => {
+    onBackRef.current = onBack;
+  }, [onBack]);
+
+  // Detect GAME_ENDED → WAITING_FOR_PLAYERS transition (all players clicked continue → rematch)
+  useEffect(() => {
+    const prev = prevGameStateRef.current;
+    const curr = game?.state ?? '';
+    prevGameStateRef.current = curr;
+    if (prev === 'GAME_ENDED' && curr === 'WAITING_FOR_PLAYERS') {
+      onBackRef.current?.();
+    }
+  }, [game?.state]);
 
   // Measure the bottom of the history panel so the BidDisplay can avoid overlapping it
   useEffect(() => {
@@ -655,7 +672,72 @@ const GameTable: React.FC<GameTableProps> = ({
   if (game.gameWinner) {
     const winner = game.players.find((p) => p.id === game.gameWinner);
     const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
-    const handleContinue = () => (onBack ? onBack() : window.location.reload());
+    const playersContinued = game.playersContinued ?? [];
+    const currentPlayerHasContinued = playersContinued.includes(localPlayerId);
+
+    // Show "waiting for others to continue" screen after the local player clicked continue
+    if (currentPlayerHasContinued) {
+      const humanPlayers = game.players.filter(
+        (p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI ')
+      );
+      return (
+        <div
+          className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center"
+          style={{ backgroundColor: isCurrentPlayerGameWinner ? '#0d1a0d' : '#0d0606' }}
+        >
+          <div
+            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
+            style={{ backgroundImage: "url(resources/bg.webp)" }}
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-60" />
+          <div
+            className="relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4"
+            style={{
+              backgroundColor: isCurrentPlayerGameWinner ? '#052e16' : '#1a0505',
+              borderColor: isCurrentPlayerGameWinner ? '#22c55e' : '#ef4444',
+            }}
+          >
+            <div className="text-5xl mb-4">⏳</div>
+            <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
+            <div className="space-y-3">
+              {humanPlayers.map((p) => {
+                const hasContinued = playersContinued.includes(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
+                      hasContinued ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
+                    }`}
+                  >
+                    <span className="text-xl">{hasContinued ? '✅' : '⏳'}</span>
+                    <span className="font-semibold">{p.name}</span>
+                    {!hasContinued && (
+                      <span className="ml-auto text-xs opacity-70">{t('game.waitingForPlayerLabel')}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const handleContinue = async () => {
+      if (!game.id || !localPlayerId) {
+        // Fallback for non-multiplayer or missing state
+        onBack ? onBack() : window.location.reload();
+        return;
+      }
+      try {
+        await gameApi.playerContinue(game.id, localPlayerId);
+        // Game state will be updated via WebSocket/polling
+      } catch (e) {
+        console.error('Failed to record continue:', e);
+        // Fallback: just go back to lobby
+        onBack ? onBack() : window.location.reload();
+      }
+    };
 
     if (!isCurrentPlayerGameWinner) {
       // ── LOSER SCREEN ──────────────────────────────────────────────

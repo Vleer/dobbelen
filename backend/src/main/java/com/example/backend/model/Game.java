@@ -99,6 +99,8 @@ public class Game {
     private List<Bid> currentHandBidHistory;
     /** When state is COUNTDOWN, timestamp (ms) when the game will start */
     private Long countdownEndTime;
+    /** Players who have clicked "continue" after the game ended (to trigger a rematch) */
+    private List<String> playersContinued;
 
     public Game() {
         this.id = generateShortGameId();
@@ -123,6 +125,39 @@ public class Game {
         this.lastActionType = null;
         this.twoPlayerRoundStartIndex = null;
         this.currentHandBidHistory = new ArrayList<>();
+        this.playersContinued = new ArrayList<>();
+    }
+
+    /** Reset this game back to WAITING_FOR_PLAYERS so all players can start a new game. */
+    public void resetForNewGame() {
+        for (Player player : players) {
+            player.setWinTokens(0);
+            player.setEliminated(false);
+            player.getDice().clear();
+        }
+        eliminatedPlayers.clear();
+        currentBid = null;
+        previousBid = null;
+        winner = null;
+        gameWinner = null;
+        state = GameState.WAITING_FOR_PLAYERS;
+        isWaitingForPlayers = true;
+        roundNumber = 1;
+        showAllDice = false;
+        canContinue = false;
+        playersContinued = new ArrayList<>();
+        currentHandBidHistory = new ArrayList<>();
+        previousRoundPlayers = new ArrayList<>();
+        countdownEndTime = null;
+        twoPlayerRoundStartIndex = null;
+        lastActualCount = null;
+        lastBidQuantity = null;
+        lastBidFaceValue = null;
+        lastEliminatedPlayerId = null;
+        lastActionPlayerId = null;
+        lastActionType = null;
+        dealerIndex = 0;
+        currentPlayerIndex = 0;
     }
 
     private String generateShortGameId() {
@@ -360,6 +395,17 @@ public class Game {
 
     public void setCountdownEndTime(Long countdownEndTime) {
         this.countdownEndTime = countdownEndTime;
+    }
+
+    public List<String> getPlayersContinued() {
+        if (playersContinued == null) {
+            playersContinued = new ArrayList<>();
+        }
+        return playersContinued;
+    }
+
+    public void setPlayersContinued(List<String> playersContinued) {
+        this.playersContinued = playersContinued;
     }
 
     public void addBidToCurrentHand(Bid bid) {

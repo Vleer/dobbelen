@@ -42,6 +42,7 @@ export interface Game {
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
   currentHandBidHistory?: Bid[];
   countdownEndTime?: number | null;
+  playersContinued?: string[];
 }
 
 export interface CreateGameRequest {
