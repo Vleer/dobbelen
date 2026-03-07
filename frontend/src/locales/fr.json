@@ -18,6 +18,7 @@
   "lobby.joining": "Connexion en cours...",
   "lobby.pleaseEnterGameId": "Veuillez entrer un ID de partie.",
   "lobby.pleaseEnterUsername": "Veuillez entrer votre pseudo.",
+  "lobby.usernameInvalid": "Le pseudo doit contenir uniquement 1 à 12 lettres (a–z, A–Z).",
   "lobby.failedToCreateGame": "Échec de la création de la partie",
   "lobby.failedToJoinGame": "Échec de la connexion à la partie",
 

@@ -24,6 +24,7 @@
   "lobby.joining": "Joining...",
   "lobby.pleaseEnterGameId": "Please enter a Game ID.",
   "lobby.pleaseEnterUsername": "Please enter your username.",
+  "lobby.usernameInvalid": "Username must be 1–12 letters only (a–z, A–Z).",
   "lobby.failedToCreateGame": "Failed to create game",
   "lobby.failedToJoinGame": "Failed to join game",
 

@@ -18,6 +18,7 @@
   "lobby.joining": "Unione in corso...",
   "lobby.pleaseEnterGameId": "Per favore inserisci un ID Partita.",
   "lobby.pleaseEnterUsername": "Per favore inserisci il tuo nome.",
+  "lobby.usernameInvalid": "Il nome deve contenere solo 1–12 lettere (a–z, A–Z).",
   "lobby.failedToCreateGame": "Creazione partita fallita",
   "lobby.failedToJoinGame": "Unione alla partita fallita",
 

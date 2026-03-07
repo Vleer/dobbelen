@@ -64,6 +64,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     return DUTCH_NAMES[Math.floor(Math.random() * DUTCH_NAMES.length)];
   };
 
+  // Username must be 1–12 letters (a–z / A–Z), no digits or spaces
+  const isValidUsername = (name: string): boolean => /^[a-zA-Z]{1,12}$/.test(name);
+
   // Separate function to join game with a specific ID
   const handleAutoJoin = useCallback(
     async (
@@ -269,6 +272,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       setError(t("lobby.pleaseEnterUsername"));
       return;
     }
+    if (!isValidUsername(playerName)) {
+      setError(t("lobby.usernameInvalid"));
+      return;
+    }
 
     try {
       setIsCreating(true);
@@ -313,6 +320,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       setError(
         t("lobby.pleaseEnterGameId") + " " + t("lobby.pleaseEnterUsername")
       );
+      return;
+    }
+    if (!isValidUsername(playerName)) {
+      setError(t("lobby.usernameInvalid"));
       return;
     }
 
@@ -465,6 +476,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   onFocus={(e) => e.target.select()}
                   className="flex-1 min-w-0 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
                   placeholder={t("lobby.enterUsername")}
+                  maxLength={12}
                   autoFocus
                 />
                 <button
@@ -482,6 +494,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   />
                 </button>
               </div>
+              {playerName && !isValidUsername(playerName) && (
+                <p className="mt-1 text-xs text-red-600">{t("lobby.usernameInvalid")}</p>
+              )}
             </div>
 
             {/* Private game checkbox + New Game */}
@@ -500,7 +515,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   audioService.playRaise();
                   createGame();
                 }}
-                disabled={isCreating || !playerName.trim()}
+                disabled={isCreating || !playerName.trim() || !isValidUsername(playerName)}
                 className="w-full py-3 md:py-4 px-4 md:px-6 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:opacity-50 text-lg md:text-xl font-bold"
               >
                 {isCreating ? t("lobby.creating") : t("lobby.createGame")}
@@ -527,6 +542,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       e.key === "Enter" &&
                       gameId.trim() &&
                       playerName.trim() &&
+                      isValidUsername(playerName) &&
                       !isJoining
                     ) {
                       joinGame();
@@ -541,7 +557,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     audioService.playRaise();
                     joinGame();
                   }}
-                  disabled={isJoining || !gameId.trim() || !playerName.trim()}
+                  disabled={isJoining || !gameId.trim() || !playerName.trim() || !isValidUsername(playerName)}
                   className="flex-shrink-0 px-3 md:px-6 py-2 md:py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 font-bold text-sm md:text-base whitespace-nowrap"
                 >
                   {isJoining ? t("lobby.joining") : t("lobby.joinGame")}

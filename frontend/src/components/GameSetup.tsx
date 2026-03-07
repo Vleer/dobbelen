@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GameSetupProps {
   onCreateGame: (playerNames: string[], username: string) => void;
@@ -19,6 +20,7 @@ const DUTCH_NAMES = [
 ];
 
 const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLoading, error }) => {
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Henk', 'AI Jan']);
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -29,6 +31,9 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
   const getRandomDutchName = () => {
     return DUTCH_NAMES[Math.floor(Math.random() * DUTCH_NAMES.length)];
   };
+
+  // Username must be 1–12 letters (a–z / A–Z), no digits or spaces
+  const isValidUsername = (name: string): boolean => /^[a-zA-Z]{1,12}$/.test(name);
 
   const addPlayer = () => {
     if (newPlayerName.trim() && playerNames.length < 8) {
@@ -76,7 +81,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (playerNames.length >= 1 && username.trim()) {
+    if (playerNames.length >= 1 && username.trim() && isValidUsername(username)) {
       // Add the human player to the list with AI opponents
       const finalPlayerNames = [username.trim(), ...playerNames];
       onCreateGame(finalPlayerNames, username.trim());
@@ -102,8 +107,12 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
               className="w-full p-2 border rounded"
+              maxLength={12}
               required
             />
+            {username && !isValidUsername(username) && (
+              <p className="mt-1 text-xs text-red-600">{t("lobby.usernameInvalid")}</p>
+            )}
           </div>
 
           {/* AI Difficulty Selector */}
@@ -200,7 +209,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
 
           <button
             type="submit"
-            disabled={playerNames.length < 1 || isLoading || !username.trim()}
+            disabled={playerNames.length < 1 || isLoading || !username.trim() || !isValidUsername(username)}
             className="w-full py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Creating Game...' : 'Start AI Game'}

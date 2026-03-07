@@ -18,6 +18,7 @@
   "lobby.joining": "Beitritt...",
   "lobby.pleaseEnterGameId": "Bitte geben Sie eine Spiel-ID ein.",
   "lobby.pleaseEnterUsername": "Bitte geben Sie Ihren Benutzername ein.",
+  "lobby.usernameInvalid": "Der Benutzername muss aus 1–12 Buchstaben bestehen (a–z, A–Z).",
   "lobby.failedToCreateGame": "Spiel konnte nicht erstellt werden",
   "lobby.failedToJoinGame": "Spiel konnte nicht beigetreten werden",
 

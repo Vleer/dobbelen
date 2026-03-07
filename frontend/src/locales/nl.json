@@ -24,6 +24,7 @@
   "lobby.joining": "Deelnemen...",
   "lobby.pleaseEnterGameId": "Voer een Spel ID in.",
   "lobby.pleaseEnterUsername": "Voer je gebruikersnaam in.",
+  "lobby.usernameInvalid": "Gebruikersnaam moet 1–12 letters zijn (a–z, A–Z).",
   "lobby.failedToCreateGame": "Spel aanmaken mislukt",
   "lobby.failedToJoinGame": "Deelnemen aan spel mislukt",
 
