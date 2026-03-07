@@ -203,7 +203,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     return (
       <div
         className={`w-full bg-green-950 p-2 shadow-2xl select-none transition-all duration-300 ${
-          activeTurn ? `border-t-[6px] border-green-300` : isRoundWinner ? 'border-t-[6px] border-green-400' : `border-t-4 ${playerColorClass}`
+          activeTurn ? `border-t-[6px] border-blue-300` : isRoundWinner ? 'border-t-[6px] border-green-400' : `border-t-4 ${playerColorClass}`
         } ${player.eliminated ? "opacity-70" : ""} ${animClasses}`}
       >
         {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
@@ -281,7 +281,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           ref={containerRef}
           onMouseDown={handleMouseDown}
           className={`bg-green-950 p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
-            activeTurn ? `border-[6px] border-green-300 scale-[1.03]` : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
+            activeTurn ? `border-[6px] border-blue-300 scale-[1.03]` : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
           } ${
             player.eliminated ? "opacity-50" : ""
           } ${animClasses}`}

@@ -26,8 +26,8 @@ module.exports = {
           '100%': { transform: 'scale(1)' },
         },
         'turn-glow': {
-          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(134, 239, 172, 0.25)' },
-          '50%':       { 'box-shadow': '0 0 32px 12px rgba(134, 239, 172, 0.80)' },
+          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(96, 165, 250, 0.25)' },
+          '50%':       { 'box-shadow': '0 0 32px 12px rgba(96, 165, 250, 0.80)' },
         },
         'bounce-in': {
           '0%':   { transform: 'scale(0.65)', opacity: '0' },
@@ -59,8 +59,8 @@ module.exports = {
           '50%':      { transform: 'translateY(-10px)' },
         },
         'winner-glow': {
-          '0%, 100%': { boxShadow: '0 0 20px 4px rgba(251, 191, 36, 0.35)' },
-          '50%':      { boxShadow: '0 0 50px 18px rgba(251, 191, 36, 0.85)' },
+          '0%, 100%': { boxShadow: '0 0 20px 4px rgba(74, 222, 128, 0.35)' },
+          '50%':      { boxShadow: '0 0 50px 18px rgba(74, 222, 128, 0.85)' },
         },
         'pulse-green': {
           '0%, 100%': { boxShadow: '0 0 18px 4px rgba(74, 222, 128, 0.35)' },
