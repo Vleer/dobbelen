@@ -214,8 +214,17 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
             style={stagger(260)}
           >
             <span
-              className={animationsEnabled ? 'animate-float inline-block' : 'inline-block'}
-              style={{ fontSize: '2rem' }}
+              className="inline-block"
+              style={{
+                fontSize: '2rem',
+                ...(animationsEnabled
+                  ? {
+                      // trophy-pop: 280ms delay + 650ms duration = 930ms; float starts at 950ms
+                      animation:
+                        'trophy-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 280ms both, float 2.4s ease-in-out 950ms infinite',
+                    }
+                  : {}),
+              }}
             >
               🏆
             </span>
