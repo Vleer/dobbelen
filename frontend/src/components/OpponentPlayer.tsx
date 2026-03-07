@@ -41,8 +41,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showDiceAnim, setShowDiceAnim] = useState(false);
+  const [showElimAnim, setShowElimAnim] = useState(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevShowDiceRef = useRef(showDice);
+  const prevEliminatedRef = useRef(player.eliminated);
   const getDefaultPosition = () => {
     // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
     const playerWidth = 180;
@@ -88,6 +90,16 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     }
     prevShowDiceRef.current = showDice;
   }, [showDice, animationsEnabled]);
+
+  // Animate when this opponent gets eliminated
+  useEffect(() => {
+    if (animationsEnabled && player.eliminated && !prevEliminatedRef.current) {
+      setShowElimAnim(true);
+      const timer = setTimeout(() => setShowElimAnim(false), 700);
+      return () => clearTimeout(timer);
+    }
+    prevEliminatedRef.current = player.eliminated;
+  }, [player.eliminated, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -203,7 +215,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       <div
         className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
           isMyTurn ? "border-[3px] border-green-300" : `border-2 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${showElimAnim && animationsEnabled ? 'animate-elim-flash' : ''}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
         <div className="flex items-center gap-1 min-w-0">
