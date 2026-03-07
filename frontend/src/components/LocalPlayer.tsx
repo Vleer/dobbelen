@@ -33,11 +33,13 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
   const [showLoserAnim, setShowLoserAnim] = useState(false);
+  const [showTrophyAnim, setShowTrophyAnim] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
+  const prevIsRoundWinnerRef = useRef(false);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -119,6 +121,16 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     }
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
+
+  // Animate the trophy when this player wins a round
+  useEffect(() => {
+    if (animationsEnabled && isRoundWinner && !prevIsRoundWinnerRef.current) {
+      setShowTrophyAnim(true);
+      const timer = setTimeout(() => setShowTrophyAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevIsRoundWinnerRef.current = isRoundWinner;
+  }, [isRoundWinner, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -245,7 +257,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
               </button>
             )}
             {player.winTokens > 0 && (
-              <span className="text-yellow-300 font-bold text-[10px] flex-shrink-0">🏆 {player.winTokens}</span>
+              <span className="text-yellow-300 font-bold text-[10px] flex-shrink-0">
+                <span className={showTrophyAnim && animationsEnabled ? 'inline-block animate-trophy-pop' : 'inline-block'}>🏆</span> {player.winTokens}
+              </span>
             )}
           </div>
           <div className="flex items-center flex-1 min-w-0 flex-shrink overflow-hidden">
@@ -311,7 +325,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             {/* Win Tokens */}
             {player.winTokens > 0 && (
               <div className="text-yellow-300 font-bold text-sm">
-                🏆 {player.winTokens}
+                <span className={showTrophyAnim && animationsEnabled ? 'inline-block animate-trophy-pop' : 'inline-block'}>🏆</span> {player.winTokens}
               </div>
             )}
             {/* Eye toggle button - next to name */}

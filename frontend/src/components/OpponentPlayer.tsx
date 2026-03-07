@@ -49,10 +49,12 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const [showDiceAnim, setShowDiceAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
   const [showLoserAnim, setShowLoserAnim] = useState(false);
+  const [showTrophyAnim, setShowTrophyAnim] = useState(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevShowDiceRef = useRef(showDice);
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
+  const prevIsRoundWinnerRef = useRef(false);
   const getDefaultPosition = () => {
     // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
     const playerWidth = 180;
@@ -118,6 +120,16 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     }
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
+
+  // Animate the trophy when this player wins a round
+  useEffect(() => {
+    if (animationsEnabled && isRoundWinner && !prevIsRoundWinnerRef.current) {
+      setShowTrophyAnim(true);
+      const timer = setTimeout(() => setShowTrophyAnim(false), 600);
+      return () => clearTimeout(timer);
+    }
+    prevIsRoundWinnerRef.current = isRoundWinner;
+  }, [isRoundWinner, animationsEnabled]);
 
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
@@ -260,7 +272,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
               </div>
             )}
             {player.winTokens > 0 && (
-              <span className="text-amber-300 font-bold text-[10px]">🏆 {player.winTokens}</span>
+              <span className="text-amber-300 font-bold text-[10px]">
+                <span className={showTrophyAnim && animationsEnabled ? 'inline-block animate-trophy-pop' : 'inline-block'}>🏆</span> {player.winTokens}
+              </span>
             )}
           </div>
           {/* Dice next to name when revealed */}
@@ -353,7 +367,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
               {/* Win Tokens */}
               {player.winTokens > 0 && (
                 <div className="text-xs text-amber-300 font-bold">
-                  🏆 {player.winTokens}
+                  <span className={showTrophyAnim && animationsEnabled ? 'inline-block animate-trophy-pop' : 'inline-block'}>🏆</span> {player.winTokens}
                 </div>
               )}
             </div>

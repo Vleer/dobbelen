@@ -96,6 +96,14 @@ module.exports = {
           '80%':  { transform: 'scale(1.04)', boxShadow: '0 0 10px 3px rgba(239, 68, 68, 0.20)' },
           '100%': { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(239, 68, 68, 0)' },
         },
+        'trophy-pop': {
+          '0%':   { transform: 'scale(1) rotate(0deg)' },
+          '30%':  { transform: 'scale(1.5) rotate(-15deg)' },
+          '55%':  { transform: 'scale(1.2) rotate(8deg)' },
+          '75%':  { transform: 'scale(1.35) rotate(-5deg)' },
+          '90%':  { transform: 'scale(1.1) rotate(2deg)' },
+          '100%': { transform: 'scale(1) rotate(0deg)' },
+        },
       },
       animation: {
         'dice-roll':      'dice-roll 0.13s linear infinite',
@@ -115,6 +123,7 @@ module.exports = {
         'star-burst':     'star-burst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'flash':          'flash 0.8s ease-in-out infinite',
         'elim-flash':     'elim-flash 0.7s ease-out forwards',
+        'trophy-pop':     'trophy-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
       },
     },
   },
