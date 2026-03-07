@@ -15,9 +15,12 @@ interface LocalPlayerProps {
   showDice?: boolean; // Show dice when revealed at end of round
   previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
+  isRoundEnded?: boolean; // Round has ended – suppress turn-indicator animations
+  isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
+  isRoundWinner?: boolean; // This player won this round – glow green
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
@@ -29,10 +32,12 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
+  const [showLoserAnim, setShowLoserAnim] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevEliminatedRef = useRef(player.eliminated);
+  const prevIsRoundLoserRef = useRef(false);
   
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
@@ -105,6 +110,16 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     prevEliminatedRef.current = player.eliminated;
   }, [player.eliminated, animationsEnabled]);
 
+  // Flash red briefly when this player is the round loser (lost a die this round)
+  useEffect(() => {
+    if (animationsEnabled && isRoundLoser && !prevIsRoundLoserRef.current) {
+      setShowLoserAnim(true);
+      const timer = setTimeout(() => setShowLoserAnim(false), 700);
+      return () => clearTimeout(timer);
+    }
+    prevIsRoundLoserRef.current = isRoundLoser;
+  }, [isRoundLoser, animationsEnabled]);
+
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
     blue: 'border-indigo-500',
@@ -131,6 +146,17 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const playerColor = player.color || 'blue';
   const playerColorClass = colorBorderMap[playerColor] || colorBorderMap['blue'];
   const playerTextClass = colorTextMap[playerColor] || colorTextMap['blue'];
+
+  // Computed state flags
+  const activeTurn = isMyTurn && !isRoundEnded;
+
+  // Computed animation classes (shared between mobile and desktop)
+  const animClasses = [
+    showTurnAnim && animationsEnabled ? 'animate-turn-start' : '',
+    activeTurn && animationsEnabled ? 'animate-turn-glow' : '',
+    (showElimAnim || showLoserAnim) && animationsEnabled ? 'animate-elim-flash' : '',
+    isRoundWinner && animationsEnabled ? 'animate-pulse-green' : '',
+  ].filter(Boolean).join(' ');
 
   // Drag functionality (desktop only)
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -177,8 +203,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     return (
       <div
         className={`w-full bg-green-950 p-2 shadow-2xl select-none transition-all duration-300 ${
-          isMyTurn ? "border-t-[6px] border-green-300" : `border-t-4 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-70" : ""} ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${showElimAnim && animationsEnabled ? 'animate-elim-flash' : ''}`}
+          activeTurn ? `border-t-[6px] border-green-300` : isRoundWinner ? 'border-t-[6px] border-green-400' : `border-t-4 ${playerColorClass}`
+        } ${player.eliminated ? "opacity-70" : ""} ${animClasses}`}
       >
         {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
         <div className="flex items-center gap-1.5 min-w-0">
@@ -255,10 +281,10 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           ref={containerRef}
           onMouseDown={handleMouseDown}
           className={`bg-green-950 p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
-            isMyTurn ? "border-[6px] border-green-300 scale-[1.03]" : `border-4 ${playerColorClass}`
+            activeTurn ? `border-[6px] border-green-300 scale-[1.03]` : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
           } ${
             player.eliminated ? "opacity-50" : ""
-          } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''}`}
+          } ${animClasses}`}
         style={{
           width: "340px", // fixed width
           minHeight: "180px", // minimum height, allow to grow if needed
