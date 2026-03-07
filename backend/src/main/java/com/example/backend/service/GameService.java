@@ -603,6 +603,15 @@ public class GameService {
             throw new IllegalArgumentException("Cannot join game");
         }
 
+        // Validate human player name: letters and numbers only, max 12 characters
+        if (playerName == null || playerName.isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        boolean isAiPlayer = playerName.startsWith("AI ") || playerName.startsWith("🧠AI ");
+        if (!isAiPlayer && !playerName.matches("[a-zA-Z0-9]{1,12}")) {
+            throw new IllegalArgumentException("Username must be letters or numbers only, max 12 characters");
+        }
+
         // Check if player with this name already exists
         boolean playerExists = game.getPlayers().stream()
                 .anyMatch(p -> p.getName().equals(playerName));

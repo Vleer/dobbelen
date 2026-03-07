@@ -4,6 +4,7 @@ import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
 import { aiService } from '../services/aiService';
 import { audioService } from '../services/audioService';
+import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
@@ -461,10 +462,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                 <input
                   type="text"
                   value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
+                  onChange={(e) => setPlayerName(sanitizeUsername(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="flex-1 min-w-0 p-2 md:p-3 border rounded-lg focus:ring-2 focus:ring-green-500 text-base md:text-lg"
                   placeholder={t("lobby.enterUsername")}
+                  maxLength={MAX_USERNAME_LENGTH}
                   autoFocus
                 />
                 <button

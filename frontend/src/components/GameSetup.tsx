@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
 
 interface GameSetupProps {
   onCreateGame: (playerNames: string[], username: string) => void;
@@ -99,9 +100,10 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
             <input
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(sanitizeUsername(e.target.value))}
               placeholder="Enter your username"
               className="w-full p-2 border rounded"
+              maxLength={MAX_USERNAME_LENGTH}
               required
             />
           </div>
