@@ -210,4 +210,15 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping("/multiplayer/{gameId}/player-continue")
+    public ResponseEntity<GameResponse> playerContinue(@PathVariable String gameId,
+            @RequestBody ActionRequest request) {
+        try {
+            GameResponse response = gameService.playerContinue(gameId, request.getPlayerId());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

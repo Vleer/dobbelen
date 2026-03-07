@@ -33,6 +33,7 @@ public class GameResponse {
     private String lastActionType;
     private List<BidInfo> currentHandBidHistory;
     private Long countdownEndTime;
+    private List<String> playersContinued;
 
     public GameResponse() {}
 
@@ -69,6 +70,9 @@ public class GameResponse {
             ? game.getCurrentHandBidHistory().stream().map(BidInfo::new).toList()
             : new ArrayList<>();
         this.countdownEndTime = game.getCountdownEndTime();
+        this.playersContinued = game.getPlayersContinued() != null
+            ? new ArrayList<>(game.getPlayersContinued())
+            : new ArrayList<>();
     }
 
     // Getters and Setters
@@ -238,6 +242,14 @@ public class GameResponse {
 
     public void setCountdownEndTime(Long countdownEndTime) {
         this.countdownEndTime = countdownEndTime;
+    }
+
+    public List<String> getPlayersContinued() {
+        return playersContinued;
+    }
+
+    public void setPlayersContinued(List<String> playersContinued) {
+        this.playersContinued = playersContinued;
     }
 
     public static class PlayerInfo {

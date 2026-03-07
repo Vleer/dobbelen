@@ -103,4 +103,9 @@ export const gameApi = {
       params: { playerId },
     });
   },
+
+  playerContinue: async (gameId: string, playerId: string): Promise<import('../types/game').Game> => {
+    const response = await axiosInstance.post<import('../types/game').Game>(`/api/games/multiplayer/${gameId}/player-continue`, { playerId });
+    return response.data;
+  },
 };

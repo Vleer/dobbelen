@@ -79,6 +79,8 @@
 
   "game.continue": "Weiter",
   "game.continuing": "Weiter...",
+  "game.waitingForOthers": "Warten auf andere Spieler...",
+  "game.waitingForPlayerLabel": "Wartet...",
   "game.leaveGame": "Spiel verlassen",
   "game.leaveConfirmMessage": "Möchtest du das Spiel wirklich verlassen?",
   "game.leaveConfirmLeave": "Verlassen",

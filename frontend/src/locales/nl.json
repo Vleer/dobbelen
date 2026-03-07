@@ -85,6 +85,8 @@
 
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
+  "game.waitingForOthers": "Wachten op anderen...",
+  "game.waitingForPlayerLabel": "Wachten...",
   "game.leaveGame": "Spel verlaten",
   "game.leaveConfirmMessage": "Weet je zeker dat je het spel wilt verlaten?",
   "game.leaveConfirmLeave": "Verlaten",
