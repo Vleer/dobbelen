@@ -836,13 +836,13 @@ const GameTable: React.FC<GameTableProps> = ({
     );
   }
 
-
   const localPlayer = getLocalPlayer();
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
   const currentBidFromActivePlayer =
     game.currentBid && game.players.some((p) => p.id === game.currentBid!.playerId)
       ? game.currentBid
       : null;
+  const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED");
 
   return (
     <div className="game-table relative w-full h-screen bg-green-800 overflow-hidden select-none">
@@ -882,6 +882,9 @@ const GameTable: React.FC<GameTableProps> = ({
                     previousRoundPlayer={previousRoundPlayer}
                     isMobile={useMobileLayout}
                     playerIndex={originalIndex}
+                    isRoundEnded={roundEnded}
+                    isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
+                    isRoundWinner={game.winner === opponent.id}
                   />
                 );
               })}
@@ -1068,6 +1071,9 @@ const GameTable: React.FC<GameTableProps> = ({
                 (p) => p.id === localPlayer.id
               )}
               isMobile={useMobileLayout}
+              isRoundEnded={roundEnded}
+              isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
+              isRoundWinner={game.winner === localPlayer.id}
             />
           </div>
         )}
@@ -1093,6 +1099,9 @@ const GameTable: React.FC<GameTableProps> = ({
             previousRoundPlayer={game.previousRoundPlayers?.find(
               (p) => p.id === localPlayer.id
             )}
+            isRoundEnded={roundEnded}
+            isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
+            isRoundWinner={game.winner === localPlayer.id}
           />
         )}
 
@@ -1137,6 +1146,9 @@ const GameTable: React.FC<GameTableProps> = ({
               previousBid={game.previousBid}
               previousRoundPlayer={previousRoundPlayer}
               playerIndex={originalIndex}
+              isRoundEnded={roundEnded}
+              isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
+              isRoundWinner={game.winner === opponent.id}
             />
           );
         })}

@@ -18,6 +18,9 @@ interface OpponentPlayerProps {
   previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
   playerIndex?: number; // Index for color coding
+  isRoundEnded?: boolean; // Round has ended – suppress turn-indicator animations
+  isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
+  isRoundWinner?: boolean; // This player won this round – glow green
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
@@ -30,6 +33,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   previousRoundPlayer,
   isMobile = false,
   playerIndex = 0,
+  isRoundEnded = false,
+  isRoundLoser = false,
+  isRoundWinner = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -42,9 +48,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showDiceAnim, setShowDiceAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
+  const [showLoserAnim, setShowLoserAnim] = useState(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevShowDiceRef = useRef(showDice);
   const prevEliminatedRef = useRef(player.eliminated);
+  const prevIsRoundLoserRef = useRef(false);
   const getDefaultPosition = () => {
     // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
     const playerWidth = 180;
@@ -101,6 +109,16 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     prevEliminatedRef.current = player.eliminated;
   }, [player.eliminated, animationsEnabled]);
 
+  // Flash red briefly when this player is the round loser (lost a die this round)
+  useEffect(() => {
+    if (animationsEnabled && isRoundLoser && !prevIsRoundLoserRef.current) {
+      setShowLoserAnim(true);
+      const timer = setTimeout(() => setShowLoserAnim(false), 700);
+      return () => clearTimeout(timer);
+    }
+    prevIsRoundLoserRef.current = isRoundLoser;
+  }, [isRoundLoser, animationsEnabled]);
+
   // Map backend color to border and text colors - darker, classy jewel tones for poker table
   const colorBorderMap: Record<string, string> = {
     blue: "border-indigo-500",
@@ -127,6 +145,17 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const playerColor = player.color || "blue";
   const playerColorClass = colorBorderMap[playerColor] || colorBorderMap["blue"];
   const playerTextClass = colorTextMap[playerColor] || colorTextMap["blue"];
+
+  // Computed state flags
+  const activeTurn = isMyTurn && !isRoundEnded;
+
+  // Computed animation classes (shared between mobile and desktop)
+  const animClasses = [
+    showTurnAnim && animationsEnabled ? 'animate-turn-start' : '',
+    activeTurn && animationsEnabled ? 'animate-turn-glow' : '',
+    (showElimAnim || showLoserAnim) && animationsEnabled ? 'animate-elim-flash' : '',
+    isRoundWinner && animationsEnabled ? 'animate-pulse-green' : '',
+  ].filter(Boolean).join(' ');
 
   // Debug logging
   console.log(`OpponentPlayer ${player.name}:`, {
@@ -214,8 +243,8 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     return (
       <div
         className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
-          isMyTurn ? "border-[3px] border-green-300" : `border-2 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${showElimAnim && animationsEnabled ? 'animate-elim-flash' : ''}`}
+          activeTurn ? 'border-[3px] border-green-300' : isRoundWinner ? 'border-[3px] border-green-400' : `border-2 ${playerColorClass}`
+        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${animClasses}`}
       >
         {/* One row: name + dice next to each other (dice when revealed) */}
         <div className="flex items-center gap-1 min-w-0">
@@ -280,10 +309,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         ref={containerRef}
         onMouseDown={handleMouseDown}
         className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg select-none transition-all duration-300 ${
-          isMyTurn ? "border-[6px] border-green-300" : `border-4 ${playerColorClass}`
+          activeTurn ? 'border-[6px] border-green-300' : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
         } ${
           player.eliminated ? "opacity-50" : ""
-        } ${showTurnAnim && animationsEnabled ? 'animate-turn-start' : ''} ${isMyTurn && animationsEnabled ? 'animate-turn-glow' : ''} ${
+        } ${animClasses} ${
           position === 0
             ? "transform -rotate-90"
             : position === 1
