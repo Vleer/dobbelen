@@ -75,7 +75,7 @@
   "game.result.roundEnded": "Round ended!",
   "game.result.isEliminated": "{{playerName}} is eliminated!",
   "game.result.youWinRound": "You win this round! 🎉",
-  "game.result.youLoseRound": "You lose a die! 💀",
+  "game.result.youLoseRound": "You are eliminated! 💀",
   "game.result.youWinGame": "You are the Dobbelkoning! 👑",
   "game.result.youLoseGame": "You Lost! 💀",
   "game.result.gameWinnerIs": "{{playerName}} wins the game!",

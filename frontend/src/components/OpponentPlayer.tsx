@@ -312,32 +312,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           activeTurn ? 'border-[6px] border-blue-300' : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
         } ${
           player.eliminated ? "opacity-50" : ""
-        } ${animClasses} ${
-          position === 0
-            ? "transform -rotate-90"
-            : position === 1
-            ? "transform rotate-90"
-            : ""
-        } flex flex-col items-center justify-center p-3`}
+        } ${animClasses} flex flex-col items-center justify-center p-3`}
       >
-        {/* Content with counter-rotation for text readability */}
         <div
-          className={`${
-            position === 0
-              ? "transform rotate-90"
-              : position === 1
-              ? "transform -rotate-90"
-              : ""
-          } w-full h-full flex flex-col items-center justify-center`}
+          className="w-full h-full flex flex-col items-center justify-center"
         >
-          {/* Turn indicator badge - inside counter-rotated content */}
-          {isMyTurn && !player.eliminated && (
-            <div className="mb-1">
-              <span className={`bg-green-400 text-green-950 font-bold text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${animationsEnabled ? 'animate-bounce-in' : ''}`}>
-                ▶ {t("game.yourTurn")}
-              </span>
-            </div>
-          )}
           {/* Username with Dealer Button and Win Tokens */}
           <div className="text-center mb-2">
             <div className="flex items-center justify-center space-x-1">
