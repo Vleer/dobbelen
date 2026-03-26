@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { aiService } from '../services/aiService';
 import { audioService } from '../services/audioService';
 import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
+import { getSessionLikeStorage } from '../config/storage';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
@@ -21,6 +22,7 @@ const DUTCH_NAMES = [
 
 const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack }) => {
   const { t } = useLanguage();
+  const storage = getSessionLikeStorage();
   const [gameId, setGameId] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -40,8 +42,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
     if (gameIdToClear) {
-      sessionStorage.removeItem(`lobby_${gameIdToClear}`);
-      sessionStorage.removeItem("game_session");
+      storage.removeItem(`lobby_${gameIdToClear}`);
+      storage.removeItem("game_session");
       window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
     }
     setGame(null);
@@ -51,7 +53,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     setError("");
     setIsJoining(false);
     setMyPlayerId(null);
-  }, []);
+  }, [storage]);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -137,12 +139,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     const urlParams = new URLSearchParams(window.location.search);
     const urlGameId = urlParams.get("gameId");
     if (urlGameId) {
-      const saved = sessionStorage.getItem(LOBBY_STORAGE_KEY(urlGameId));
+      const saved = storage.getItem(LOBBY_STORAGE_KEY(urlGameId));
       if (saved) {
         try {
           const { playerName: savedName, isHost: savedHost } = JSON.parse(saved);
           if (!savedName) {
-            sessionStorage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
+            storage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
             setGameId(urlGameId);
           } else {
             setGameId(urlGameId);
@@ -154,7 +156,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               setHasJoined(true);
               setMyPlayerId(me?.id ?? null);
             }).catch(() => {
-              sessionStorage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
+              storage.removeItem(LOBBY_STORAGE_KEY(urlGameId));
               window.history.replaceState({}, "", `${window.location.origin}${window.location.pathname}`);
             });
           }
@@ -169,7 +171,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     }
 
     setIsInitialized(true);
-  }, [isInitialized]);
+  }, [isInitialized, storage]);
 
   // Countdown ticker when game is in COUNTDOWN state (visible to all players)
   useEffect(() => {
@@ -292,7 +294,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       setIsHost(true);
       setHasJoined(true);
       setMyPlayerId(me?.id ?? null);
-      sessionStorage.setItem(`lobby_${updatedGame.id}`, JSON.stringify({ playerName, isHost: true }));
+      storage.setItem(`lobby_${updatedGame.id}`, JSON.stringify({ playerName, isHost: true }));
 
       // Update URL with game ID (keep in URL so refresh restores lobby)
       const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${updatedGame.id}`;
@@ -336,7 +338,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       setIsHost(false);
       setHasJoined(true);
       setMyPlayerId(me?.id ?? null);
-      sessionStorage.setItem(`lobby_${gameId}`, JSON.stringify({ playerName, isHost: false }));
+      storage.setItem(`lobby_${gameId}`, JSON.stringify({ playerName, isHost: false }));
 
       // Update URL with game ID (keep in URL so refresh restores lobby)
       const newUrl = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;

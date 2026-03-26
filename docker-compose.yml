@@ -29,6 +29,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_ADDRESS=0.0.0.0
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
+      - APP_ALLOWED_ORIGINS=https://898944.xyz,http://localhost,http://localhost:3000,https://localhost,http://127.0.0.1,capacitor://localhost,http://192.168.0.150
     networks:
       - dobbelen-network
     depends_on:

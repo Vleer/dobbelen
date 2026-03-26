@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dobbelen</string>
+    <string name="title_activity_main">Dobbelen</string>
+    <string name="package_name">com.vleer.dobbelen</string>
+    <string name="custom_url_scheme">com.vleer.dobbelen</string>
+</resources>

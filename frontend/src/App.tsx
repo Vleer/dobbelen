@@ -8,6 +8,7 @@ import { StatisticsProvider } from "./contexts/StatisticsContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { Game } from "./types/game";
 import { gameApi } from "./api/gameApi";
+import { getSessionLikeStorage } from "./config/storage";
 
 const GAME_SESSION_KEY = "game_session";
 
@@ -26,7 +27,8 @@ function App() {
   useEffect(() => {
     if (restored) return;
     setRestored(true);
-    const raw = sessionStorage.getItem(GAME_SESSION_KEY);
+    const storage = getSessionLikeStorage();
+    const raw = storage.getItem(GAME_SESSION_KEY);
     if (!raw) return;
     try {
       const { gameId, playerId: savedPlayerId, username: savedUsername } = JSON.parse(raw);
@@ -39,17 +41,17 @@ function App() {
             setUsername(savedUsername);
             setAppState("game");
           } else {
-            sessionStorage.removeItem(GAME_SESSION_KEY);
+            storage.removeItem(GAME_SESSION_KEY);
           }
         })
-        .catch(() => sessionStorage.removeItem(GAME_SESSION_KEY));
+        .catch(() => storage.removeItem(GAME_SESSION_KEY));
     } catch {
-      sessionStorage.removeItem(GAME_SESSION_KEY);
+      getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
     }
   }, [restored]);
 
   const handleGameStart = (gameData: Game, userPlayerId: string, userUsername: string) => {
-    sessionStorage.setItem(GAME_SESSION_KEY, JSON.stringify({
+    getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
       gameId: gameData.id,
       playerId: userPlayerId,
       username: userUsername,
@@ -61,7 +63,7 @@ function App() {
   };
 
   const handleBackToLobby = () => {
-    sessionStorage.removeItem(GAME_SESSION_KEY);
+    getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
     setAppState('lobby');
     setGame(null);
     setUsername('');

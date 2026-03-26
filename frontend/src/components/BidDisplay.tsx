@@ -82,7 +82,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   }, [isDragging, dragOffset]);
 
   if (!currentBid) {
-    return "";
+    return null;
   }
 
   // Get the player name who made the bid
