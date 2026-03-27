@@ -187,11 +187,27 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                     e.stopPropagation();
                     handleToggleDiceVisibility();
                   }}
-                  className="p-1 rounded-md border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
-                  style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent", borderColor: 'var(--game-border-strong)', backgroundColor: 'var(--game-surface-soft)', color: 'var(--game-accent-text)' }}
+                  className={
+                    landscapeMobile
+                      ? "p-0.5 rounded border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation flex items-center justify-center"
+                      : "p-1 rounded-md border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
+                  }
+                  style={{
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
+                    borderColor: "var(--game-border-strong)",
+                    backgroundColor: landscapeMobile ? "var(--game-surface)" : "var(--game-surface-soft)",
+                    color: "var(--game-accent-text)",
+                  }}
                   aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
                 >
-                  <div className="pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3">
+                  <div
+                    className={
+                      landscapeMobile
+                        ? "pointer-events-none flex items-center justify-center [&_svg]:w-[13px] [&_svg]:h-[13px]"
+                        : "pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3"
+                    }
+                  >
                     {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
                   </div>
                 </button>
@@ -293,22 +309,25 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="rounded-md border transition-all cursor-pointer z-50 relative"
+                className={`border transition-all cursor-pointer z-50 relative ${
+                  compactDesktopLandscape ? "rounded p-0.5" : "rounded-md"
+                }`}
                 style={{
                   pointerEvents: "auto",
-                  padding: 4,
-                  minWidth: 30,
-                  minHeight: 30,
+                  padding: compactDesktopLandscape ? 2 : 4,
+                  minWidth: compactDesktopLandscape ? 22 : 30,
+                  minHeight: compactDesktopLandscape ? 22 : 30,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  borderColor: 'var(--game-border-strong)',
-                  backgroundColor: 'var(--game-surface-soft)',
-                  color: 'var(--game-accent-text)',
+                  borderColor: "var(--game-border-strong)",
+                  backgroundColor: compactDesktopLandscape ? "var(--game-surface)" : "var(--game-surface-soft)",
+                  color: "var(--game-accent-text)",
                 }}
                 aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
                 <span
+                  className={compactDesktopLandscape ? "[&_svg]:w-[13px] [&_svg]:h-[13px]" : ""}
                   style={{
                     position: "relative",
                     zIndex: 1,

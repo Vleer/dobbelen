@@ -1201,7 +1201,7 @@ const GameTable: React.FC<GameTableProps> = ({
           !game.showAllDice &&
           game.state !== "ROUND_ENDED" && (
             <div
-              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-2 pointer-events-none bottom-28 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
+              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-1 pointer-events-none bottom-[6.5rem] w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
             >
               {currentBidFromActivePlayer && (
                 <div className="pointer-events-auto w-full">
@@ -1242,7 +1242,7 @@ const GameTable: React.FC<GameTableProps> = ({
           !localPlayer.eliminated &&
           !tabletLandscapeStack && (
             <div
-              className={`fixed bottom-28 left-0 right-0 z-45 flex ${portraitTablet ? "justify-center" : ""} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
+              className={`fixed left-0 right-0 z-45 flex ${portraitTablet ? "bottom-[6.5rem] justify-center" : "bottom-28"} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
             >
               <BidSelector
                 currentBid={game.currentBid}
@@ -1383,8 +1383,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
       <div
-        className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-3 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
-        style={{ bottom: "min(22rem, 38vh)" }}
+        className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-2 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
+        style={{ bottom: "min(18rem, 30vh)" }}
       >
         {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
           <div className="pointer-events-auto w-full flex justify-center">

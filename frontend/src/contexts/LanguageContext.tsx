@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Language = 'en' | 'nl' | 'fr' | 'de' | 'it';
+export type Language = 'en' | 'nl' | 'fr' | 'de' | 'it' | 'es' | 'cs';
 
 export interface LanguageConfig {
   code: Language;
@@ -27,6 +27,14 @@ export const LANGUAGES: LanguageConfig[] = [
   {
     code: 'it',
     nativeName: 'Italiano'
+  },
+  {
+    code: 'es',
+    nativeName: 'Español'
+  },
+  {
+    code: 'cs',
+    nativeName: 'Čeština'
   }
 ];
 
@@ -99,6 +107,18 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
                           fullLocale.includes('italy') ||
                           timezone.includes('Rome') ||
                           allLanguages.some(lang => lang.includes('it'));
+
+    const isSpanishRegion =
+      fullLocale.includes('es') ||
+      fullLocale.includes('spanish') ||
+      timezone.includes('Madrid') ||
+      allLanguages.some((lang) => lang.startsWith('es'));
+
+    const isCzechRegion =
+      fullLocale.includes('cs') ||
+      fullLocale.includes('cz') ||
+      timezone.includes('Prague') ||
+      allLanguages.some((lang) => lang.startsWith('cs'));
     // Debug logging
     console.log('Language detection:', {
       saved: saved,
@@ -134,6 +154,16 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     if (isItalianRegion) {
       console.log('Setting Italian as default language for Italian region');
       return 'it';
+    }
+
+    if (isSpanishRegion) {
+      console.log('Setting Spanish as default language for Spanish region');
+      return 'es';
+    }
+
+    if (isCzechRegion) {
+      console.log('Setting Czech as default language for Czech region');
+      return 'cs';
     }
     
     // Otherwise check if browser language is supported
