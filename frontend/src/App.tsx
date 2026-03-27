@@ -9,6 +9,7 @@ import { SettingsProvider } from "./contexts/SettingsContext";
 import { Game } from "./types/game";
 import { gameApi } from "./api/gameApi";
 import { getSessionLikeStorage } from "./config/storage";
+import { audioService } from "./services/audioService";
 
 const GAME_SESSION_KEY = "game_session";
 
@@ -22,6 +23,7 @@ function App() {
   const [restored, setRestored] = useState(false);
   const [lobbyKey, setLobbyKey] = useState(0);
   const [showLobbySettings, setShowLobbySettings] = useState(false);
+  const [isLobbyMuted, setIsLobbyMuted] = useState(false);
 
   // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
   useEffect(() => {
@@ -71,6 +73,10 @@ function App() {
     setLobbyKey((k) => k + 1);
   };
 
+  useEffect(() => {
+    audioService.setMuted(isLobbyMuted);
+  }, [isLobbyMuted]);
+
   return (
     <LanguageProvider>
       <StatisticsProvider>
@@ -78,12 +84,21 @@ function App() {
           <div className="min-h-screen relative" style={{ backgroundColor: 'var(--felt-bg)' }}>
             {/* Language Selector + Settings - Only show in lobby */}
             {appState === 'lobby' && (
-              <div className="absolute top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-[#365844] bg-[#0f2a1b]/95 p-1.5 shadow-2xl">
+              <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
+                <div className="mx-auto rounded-full menu-shell menu-header-shell shadow-2xl">
+                  <div className="menu-header-row">
+                  <button
+                    onClick={() => setIsLobbyMuted((m) => !m)}
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                    aria-label={isLobbyMuted ? "Unmute" : "Mute"}
+                  >
+                    {isLobbyMuted ? "🔇" : "🔊"}
+                  </button>
                 <div className="relative">
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => setShowLobbySettings((s) => !s)}
-                    className="h-9 min-w-9 px-3 rounded-full bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] font-medium shadow text-sm transition-all duration-200"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
                     aria-label="Settings"
                   >
                     ⚙
@@ -93,7 +108,9 @@ function App() {
                     onClose={() => setShowLobbySettings(false)}
                   />
                 </div>
-                <LanguageSelector buttonClassName="h-9 px-3 bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] shadow" compact />
+                <LanguageSelector buttonClassName="menu-pill menu-pill-fixed menu-pill-label shadow text-[13px]" compact />
+                  </div>
+                </div>
               </div>
             )}
 

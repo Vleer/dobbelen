@@ -44,11 +44,11 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           setIsOpen(nextOpen);
           onOpenChange?.(nextOpen);
         }}
-        className={`flex items-center gap-2 px-3 py-2 text-sm rounded-full transition-all ${buttonClassName}`}
+        className={`flex items-center gap-2 rounded-full transition-all ${buttonClassName || 'px-3 py-2 text-sm'}`}
         aria-label="Select language"
       >
         <div className="w-6 h-4"><Flag code={currentLangConfig!.code} /></div>
-        <span className="font-semibold text-sm">{currentLangConfig?.code.toUpperCase()}</span>
+        <span className="font-semibold leading-none">{currentLangConfig?.code.toUpperCase()}</span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -72,14 +72,14 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           />
           
           {/* Dropdown */}
-          <div className={`absolute right-0 top-full mt-2 ${compact ? 'w-44' : 'w-48'} bg-[#0f2a1b] rounded-xl shadow-2xl border border-[#8a6a1d] z-20`}>
+          <div className={`absolute right-0 top-full mt-2 ${compact ? 'w-44' : 'w-48'} rounded-xl shadow-2xl z-20 menu-dropdown`}>
             <div className="py-1.5">
               {availableLanguages.map((language) => (
                 <button
                   key={language.code}
                   onClick={() => handleLanguageChange(language.code)}
                   className={`w-full flex items-center space-x-3 px-4 py-2.5 text-left transition-colors ${
-                    currentLanguage === language.code ? 'bg-[#1f3f2b] text-[#f5d98f]' : 'text-[#f9f3e5] hover:bg-[#1a3424]'
+                    currentLanguage === language.code ? 'menu-dropdown-item-active' : 'menu-dropdown-item'
                   }`}
                 >
                   <div className="w-8 h-5"><Flag code={language.code} /></div>
@@ -87,7 +87,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                     <span className="font-medium">{language.nativeName}</span>
                   </div>
                   {currentLanguage === language.code && (
-                    <svg className="w-5 h-5 text-[#e7be5c] ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 ml-auto" style={{ color: 'var(--menu-dropdown-active-text)' }} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}

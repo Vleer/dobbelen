@@ -12,21 +12,13 @@ interface BidDisplayProps {
   winner?: string;
   playerName?: string;
   isMobile?: boolean;
-  infoPanelBottom?: number;
 }
 
-const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, infoPanelBottom }) => {
+const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showSlideAnim, setShowSlideAnim] = useState(false);
   const prevBidKeyRef = useRef('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
-    const saved = localStorage.getItem('bidDisplayPosition');
-    return saved ? JSON.parse(saved) : null; // null = center of screen
-  });
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Animate whenever the bid changes
   useEffect(() => {
@@ -40,46 +32,6 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     }
     prevBidKeyRef.current = newKey;
   }, [currentBid, animationsEnabled]);
-
-  // Drag functionality (desktop)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.drag-handle')) {
-      setIsDragging(true);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-        });
-      }
-    }
-  };
-
-  React.useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const newPosition = {
-          x: e.clientX - dragOffset.x,
-          y: e.clientY - dragOffset.y,
-        };
-        setPosition(newPosition);
-        localStorage.setItem("bidDisplayPosition", JSON.stringify(newPosition));
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isDragging, dragOffset]);
 
   if (!currentBid) {
     return null;
@@ -95,9 +47,9 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
+      <div className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-bold text-[#f7f3e8] truncate">{bidderName}</span>
+          <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}</span>
           <div className="flex items-center flex-shrink-0">
             <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
           </div>
@@ -106,38 +58,21 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     );
   }
 
-  const isCentered = position === null;
-
-  // When the info panel is open and the bid has no saved position, place the bid
-  // just below the info panel so it doesn't overlap with it.
-  // BID_DISPLAY_MIN_BOTTOM_CLEARANCE reserves enough room at the viewport bottom
-  // for the local player panel and basic padding.
-  const BID_DISPLAY_MIN_BOTTOM_CLEARANCE = 120;
-  const getDefaultPosition = (): React.CSSProperties => {
-    if (infoPanelBottom && infoPanelBottom > 0) {
-      const marginBelow = 12;
-      const safeTop = Math.min(infoPanelBottom + marginBelow, window.innerHeight - BID_DISPLAY_MIN_BOTTOM_CLEARANCE);
-      return { left: '50%', top: safeTop, transform: 'translateX(-50%)' };
-    }
-    return { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' };
-  };
-
   return (
     <div
-      ref={containerRef}
       className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
       style={{
-        backgroundColor: '#0f2a1b',
-        borderColor: '#8a6a1d',
+        backgroundColor: 'var(--game-surface)',
+        borderColor: 'var(--game-border-strong)',
         position: "fixed",
-        ...(isCentered ? getDefaultPosition() : { left: position.x, top: position.y }),
-        zIndex: 1000,
-        cursor: isDragging ? "grabbing" : "grab",
+        left: "50%",
+        top: "calc(50% + 64px)",
+        transform: "translateX(-50%)",
+        zIndex: 1000
       }}
-      onMouseDown={handleMouseDown}
     >
-      <div className="flex items-center justify-center space-x-6 drag-handle">
-        <div className="text-xl font-bold text-[#f7f3e8]">{bidderName}</div>
+      <div className="flex items-center justify-center space-x-6">
+        <div className="text-xl font-bold" style={{ color: 'var(--game-text)' }}>{bidderName}</div>
 
         {/* Dice Visualization */}
         <div className="flex items-center space-x-2">

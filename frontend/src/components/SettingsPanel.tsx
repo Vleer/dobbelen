@@ -53,7 +53,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     <div
       ref={panelRef}
       className={[
-        "rounded-2xl border border-[#365844] bg-[#0f2a1b]/95 shadow-2xl z-[9999] p-4 text-[#f7f3e8]",
+        "rounded-2xl shadow-2xl z-[9999] p-4",
+        "menu-dropdown",
         mobileCentered
           ? "fixed left-1/2 top-1/2 w-[min(92vw,22rem)] -translate-x-1/2 -translate-y-1/2"
           : "absolute right-0 mt-1 w-64",
@@ -62,7 +63,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-2 right-2 text-[#a7b9ac] hover:text-[#f7f3e8] transition-colors duration-150 leading-none"
+        className="absolute top-2 right-2 transition-colors duration-150 leading-none"
+        style={{ color: 'var(--menu-close-text)' }}
         aria-label="Close settings"
       >
         ✕
@@ -70,21 +72,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* Color Scheme */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--accent-gold)' }}>
           {t('settings.colorScheme')}
         </p>
-        <div className="flex rounded-lg overflow-hidden border border-[#365844]">
+        <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--menu-border)' }}>
           {colorOptions.map((option, idx) => (
             <button
               key={option.value}
               onClick={() => setColorScheme(option.value)}
               className={[
                 'flex-1 py-1.5 text-xs font-medium transition-all duration-150',
-                idx === 0 ? '' : 'border-l border-[#365844]',
+                idx === 0 ? '' : 'border-l',
                 colorScheme === option.value
-                  ? 'bg-[#2e2417] text-[#f5d98f] font-bold'
-                  : 'bg-[#12352b] text-[#d2dfd6] hover:bg-[#1b452f]',
+                  ? 'font-bold'
+                  : '',
               ].join(' ')}
+              style={{
+                borderColor: idx === 0 ? undefined : 'var(--menu-border)',
+                backgroundColor: colorScheme === option.value ? 'var(--menu-dropdown-active-bg)' : 'var(--menu-button-bg)',
+                color: colorScheme === option.value ? 'var(--menu-dropdown-active-text)' : 'var(--menu-button-text)',
+              }}
             >
               {option.label}
             </button>
@@ -94,21 +101,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* Font Size */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--accent-gold)' }}>
           {t('settings.fontSize')}
         </p>
-        <div className="flex rounded-lg overflow-hidden border border-[#365844]">
+        <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--menu-border)' }}>
           {fontOptions.map((option, idx) => (
             <button
               key={option.value}
               onClick={() => setFontSize(option.value)}
               className={[
                 'flex-1 py-1.5 font-medium transition-all duration-150 flex items-center justify-center',
-                idx === 0 ? '' : 'border-l border-[#365844]',
+                idx === 0 ? '' : 'border-l',
                 fontSize === option.value
-                  ? 'bg-[#2e2417] text-[#f5d98f] font-bold'
-                  : 'bg-[#12352b] text-[#d2dfd6] hover:bg-[#1b452f]',
+                  ? 'font-bold'
+                  : '',
               ].join(' ')}
+              style={{
+                borderColor: idx === 0 ? undefined : 'var(--menu-border)',
+                backgroundColor: fontSize === option.value ? 'var(--menu-dropdown-active-bg)' : 'var(--menu-button-bg)',
+                color: fontSize === option.value ? 'var(--menu-dropdown-active-text)' : 'var(--menu-button-text)',
+              }}
             >
               <span className={option.sizeClass}>{option.label}</span>
             </button>
@@ -118,20 +130,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {/* Animations Toggle */}
       <div className="mb-3">
-        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--accent-gold)' }}>
           {t('settings.animations')}
         </p>
         <button
           onClick={() => setAnimationsEnabled(!animationsEnabled)}
           className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none"
-          style={{ backgroundColor: animationsEnabled ? '#8a6a1d' : '#365844' }}
+          style={{ backgroundColor: animationsEnabled ? 'var(--menu-toggle-on)' : 'var(--menu-toggle-off)' }}
           role="switch"
           aria-checked={animationsEnabled}
           aria-label={t('settings.animations')}
         >
           <span
-            className="inline-block h-4 w-4 transform rounded-full bg-[#f7f3e8] shadow-md transition-transform duration-200"
-            style={{ transform: animationsEnabled ? 'translateX(28px)' : 'translateX(4px)' }}
+            className="inline-block h-4 w-4 transform rounded-full shadow-md transition-transform duration-200"
+            style={{ backgroundColor: 'var(--menu-toggle-thumb)', transform: animationsEnabled ? 'translateX(28px)' : 'translateX(4px)' }}
           />
         </button>
       </div>
@@ -142,7 +154,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             onClose();
             onLeaveGame();
           }}
-          className="w-full mt-1 px-3 py-2 rounded-lg bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d] text-sm font-semibold transition-colors"
+          className="w-full mt-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors menu-pill border"
+          style={{ borderColor: 'var(--menu-dropdown-border)' }}
         >
           {leaveGameLabel || t('game.leaveGame')}
         </button>
