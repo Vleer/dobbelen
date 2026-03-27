@@ -117,7 +117,7 @@ public class Game {
         this.dealerIndex = 0;
         this.isMultiplayer = false;
         this.isPrivate = false;
-        this.maxPlayers = 6;
+        this.maxPlayers = 4;
         this.isWaitingForPlayers = true;
         this.showAllDice = false;
         this.canContinue = false;

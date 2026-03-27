@@ -66,6 +66,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const historyPanelRef = useRef<HTMLDivElement>(null);
+  const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
   const rulesTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1387,9 +1388,9 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
 
             {/* Settings gear button */}
-            <div className="relative">
+            <div className="relative" ref={gameSettingsAnchorRef}>
               <button
-                onMouseDown={(e) => e.stopPropagation()}
+                type="button"
                 onClick={() =>
                   setShowSettings((prev) => {
                     const next = !prev;
@@ -1402,17 +1403,19 @@ const GameTable: React.FC<GameTableProps> = ({
                     return next;
                   })
                 }
-                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                 aria-label="Settings"
+                aria-expanded={showSettings}
               >
                 ⚙
               </button>
               <SettingsPanel
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
-                onLeaveGame={() => setShowLeaveConfirm(true)}
+                onLeaveGame={game.isMultiplayer ? () => setShowLeaveConfirm(true) : undefined}
                 leaveGameLabel={t("game.leaveGame")}
                 mobileCentered={useMobileLayout}
+                anchorRef={gameSettingsAnchorRef}
               />
             </div>
 

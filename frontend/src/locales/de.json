@@ -136,7 +136,7 @@
   "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde",
 
   "settings.colorScheme": "Farbschema",
-  "settings.colorDefault": "Standard",
+  "settings.colorLight": "Hell",
   "settings.colorDark": "Dunkel",
   "settings.colorWhite": "Weiß",
   "settings.fontSize": "Schriftgröße",

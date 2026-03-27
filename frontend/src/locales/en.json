@@ -140,7 +140,7 @@
   "instructions.winRound": "Last player standing wins the round!",
 
   "settings.colorScheme": "Color Scheme",
-  "settings.colorDefault": "Default",
+  "settings.colorLight": "Light",
   "settings.colorDark": "Dark",
   "settings.colorWhite": "White",
   "settings.fontSize": "Font Size",

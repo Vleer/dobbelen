@@ -565,7 +565,7 @@ public class GameService {
         Game game = new Game();
         game.setMultiplayer(true);
         game.setPrivate(isPrivate);
-        game.setMaxPlayers(6);
+        game.setMaxPlayers(4);
         game.setWaitingForPlayers(true);
         game.setState(GameState.WAITING_FOR_PLAYERS);
         games.put(game.getId(), game);
@@ -926,7 +926,7 @@ public class GameService {
         game.setEliminatedPlayers(new ArrayList<>());
         game.setRoundNumber(1);
         game.setMultiplayer(true);
-        game.setMaxPlayers(6);
+        game.setMaxPlayers(4);
         game.setCountdownEndTime(null);
         Player initialCurrent = game.getCurrentPlayer();
         if (initialCurrent != null) recordActivity(gameId, initialCurrent.getId());

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import GameTable from "./components/GameTable";
 import MultiplayerLobby from "./components/MultiplayerLobby";
 import LanguageSelector from "./components/LanguageSelector";
@@ -24,6 +24,18 @@ function App() {
   const [lobbyKey, setLobbyKey] = useState(0);
   const [showLobbySettings, setShowLobbySettings] = useState(false);
   const [isLobbyMuted, setIsLobbyMuted] = useState(false);
+  const lobbySettingsAnchorRef = useRef<HTMLDivElement>(null);
+  const [lobbyMenuNarrow, setLobbyMenuNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setLobbyMenuNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
   useEffect(() => {
@@ -84,28 +96,31 @@ function App() {
           <div className="min-h-screen relative" style={{ backgroundColor: 'var(--felt-bg)' }}>
             {/* Language Selector + Settings - Only show in lobby */}
             {appState === 'lobby' && (
-              <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
+              <div className="absolute top-0 left-0 right-0 z-50 px-2 pt-1.5 pb-1 md:px-3 md:pt-2 md:pb-1.5">
                 <div className="mx-auto rounded-full menu-shell menu-header-shell shadow-2xl">
                   <div className="menu-header-row">
                   <button
                     onClick={() => setIsLobbyMuted((m) => !m)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label={isLobbyMuted ? "Unmute" : "Mute"}
                   >
                     {isLobbyMuted ? "🔇" : "🔊"}
                   </button>
-                <div className="relative">
+                <div className="relative" ref={lobbySettingsAnchorRef}>
                   <button
-                    onMouseDown={(e) => e.stopPropagation()}
+                    type="button"
                     onClick={() => setShowLobbySettings((s) => !s)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label="Settings"
+                    aria-expanded={showLobbySettings}
                   >
                     ⚙
                   </button>
                   <SettingsPanel
                     isOpen={showLobbySettings}
                     onClose={() => setShowLobbySettings(false)}
+                    anchorRef={lobbySettingsAnchorRef}
+                    mobileCentered={lobbyMenuNarrow}
                   />
                 </div>
                 <LanguageSelector buttonClassName="menu-pill menu-pill-fixed menu-pill-label shadow text-[13px]" compact />

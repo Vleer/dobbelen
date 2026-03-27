@@ -136,7 +136,7 @@
   "instructions.winRound": "L'ultimo giocatore in piedi vince il round",
 
   "settings.colorScheme": "Schema colori",
-  "settings.colorDefault": "Predefinito",
+  "settings.colorLight": "Chiaro",
   "settings.colorDark": "Scuro",
   "settings.colorWhite": "Bianco",
   "settings.fontSize": "Dimensione carattere",

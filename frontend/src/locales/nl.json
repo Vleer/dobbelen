@@ -32,7 +32,7 @@
   "lobby.players": "Spelers",
   "lobby.host": "(Host)",
   "lobby.ai": "(AI)",
-  "lobby.addAiPlayer": "➕ AI Speler Toevoegen",
+  "lobby.addAiPlayer": "AI Speler Toevoegen",
   "lobby.maxPlayersReached": "Maximum van {{maxPlayers}} spelers bereikt.",
   "lobby.startGame": "Spel Starten",
   "lobby.waitingForHost": "Wachten tot de host het spel start...",
@@ -142,7 +142,7 @@
   "instructions.winRound": "Laatste speler die overblijft wint de ronde",
 
   "settings.colorScheme": "Kleurenschema",
-  "settings.colorDefault": "Standaard",
+  "settings.colorLight": "Licht",
   "settings.colorDark": "Donker",
   "settings.colorWhite": "Wit",
   "settings.fontSize": "Lettergrootte",

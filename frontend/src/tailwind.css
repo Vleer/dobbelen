@@ -111,9 +111,13 @@ html.scale-x-large { font-size: 21px; }
   --game-text: #f7f3e8;
   --game-text-muted: #b9cbbf;
   --game-accent-text: #f5d98f;
+  --menu-leave-bg: #3d1218;
+  --menu-leave-hover-bg: #5a1a22;
+  --menu-leave-border: #7a2a32;
+  --menu-leave-text: #f5dcdc;
 }
 
-/* Default theme now uses previous "white" (light green) palette */
+/* Light theme (lighter felt; internal class name theme-default) */
 html.theme-default {
   --felt-bg: #2b5a3d;
   --felt-bg-soft: #356b48;
@@ -148,9 +152,13 @@ html.theme-default {
   --game-text: #f7f3e8;
   --game-text-muted: #e5eee8;
   --game-accent-text: #f7f3e8;
+  --menu-leave-bg: #4a1218;
+  --menu-leave-hover-bg: #5e1a22;
+  --menu-leave-border: #8a3a44;
+  --menu-leave-text: #fff0f0;
 }
 
-/* Dark theme now uses previous default palette */
+/* Dark theme (app default) */
 html.theme-dark {
   --felt-bg: #0b2a1a;
   --felt-bg-soft: #0f2a1b;
@@ -185,6 +193,10 @@ html.theme-dark {
   --game-text: #f7f3e8;
   --game-text-muted: #b9cbbf;
   --game-accent-text: #f5d98f;
+  --menu-leave-bg: #3d1218;
+  --menu-leave-hover-bg: #5a1a22;
+  --menu-leave-border: #7a2a32;
+  --menu-leave-text: #f5dcdc;
 }
 
 /* White theme is monochrome (mostly white, no color accents) */
@@ -222,6 +234,10 @@ html.theme-white {
   --game-text: #111111;
   --game-text-muted: #5a5a5a;
   --game-accent-text: #000000;
+  --menu-leave-bg: #6b1818;
+  --menu-leave-hover-bg: #7f1f1f;
+  --menu-leave-border: #450a0a;
+  --menu-leave-text: #fef2f2;
 }
 
 .menu-shell {
@@ -292,3 +308,14 @@ html.theme-white {
   background-color: var(--menu-dropdown-active-bg);
   color: var(--menu-dropdown-active-text);
 }
+
+/* Leave game (settings) — dark red, theme-aware */
+.settings-leave-game-btn {
+  background-color: var(--menu-leave-bg);
+  border-color: var(--menu-leave-border);
+  color: var(--menu-leave-text);
+}
+.settings-leave-game-btn:hover {
+  background-color: var(--menu-leave-hover-bg);
+}
+

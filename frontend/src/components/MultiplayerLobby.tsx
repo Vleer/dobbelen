@@ -13,6 +13,8 @@ interface MultiplayerLobbyProps {
 }
 
 // Dutch names for random selection
+const MAX_PLAYERS_PER_GAME = 4;
+
 const DUTCH_NAMES = [
   'Henk', 'Jan', 'Piet', 'Klaas', 'Willem', 'Dirk', 'Frits', 'Gerard', 'Hendrik', 'Kees',
   'Maarten', 'Niels', 'Otto', 'Paul', 'Rik', 'Sander', 'Tom', 'Vincent', 'Wouter', 'Yuri',
@@ -218,8 +220,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         // Register AI players when game is updated
         updatedGame.players.forEach((player) => {
           if (
-            player.name.startsWith("AI ") ||
-            player.name.startsWith("🧠AI ")
+            player.name.startsWith("ez AI ") ||
+            player.name.startsWith("🧠 AI ")
           ) {
             aiService.registerAIPlayer(player.id, player.name);
             console.log("Registered AI player:", player.name, player.id);
@@ -431,11 +433,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   return (
     <div className="flex flex-col min-h-screen select-none" style={{ backgroundColor: 'var(--felt-bg)' }}>
       {/* Spacer for shared top menu in App.tsx */}
-      <div className="flex-shrink-0 h-14 flex items-center justify-between px-4" style={{ backgroundColor: 'var(--felt-bg)' }}>
+      <div className="flex-shrink-0 h-12 md:h-[3.25rem] flex items-center justify-between px-2" style={{ backgroundColor: 'var(--felt-bg)' }}>
         <div />
       </div>
 
-      <div className="flex-1 flex items-start md:items-center justify-center p-4 pt-2 md:pt-4 overflow-auto">
+      <div className="flex-1 flex items-start md:items-center justify-center px-3 pb-3 pt-1 md:px-4 md:pb-4 md:pt-2 overflow-auto">
         <div className="p-4 md:p-8 rounded-3xl shadow-2xl max-w-sm md:max-w-lg w-full border-2" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--panel-border)', color: 'var(--text-main)' }}>
         {!game ? (
           <div className="space-y-4 md:space-y-6">
@@ -573,7 +575,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                             >
                               <span className="flex items-center justify-between">
                                 <span className="font-mono font-bold" style={{ color: 'var(--accent-gold)' }}>{g.id}</span>
-                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{g.players?.length ?? 0}/6</span>
+                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{g.players?.length ?? 0}/{g.maxPlayers ?? MAX_PLAYERS_PER_GAME}</span>
                               </span>
                               {(g.players?.length ?? 0) > 0 && (
                                 <span className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }} title={g.players?.map((p) => p.name).join(", ")}>
@@ -758,7 +760,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     }}
                     className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
                     style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
-                    disabled={game.players.length >= 6}
+                    disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
                   >
                     🎲 Easy AI
                   </button>
@@ -769,13 +771,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                     }}
                     className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
                     style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
-                    disabled={game.players.length >= 6}
+                    disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
                   >
                     🧠 Medium AI
                   </button>
                 </div>
                 <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                  ({game.players.length}/6 players)
+                  ({game.players.length}/{game.maxPlayers ?? MAX_PLAYERS_PER_GAME} players)
                 </p>
                 <button
                   onClick={async () => {
@@ -798,7 +800,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                   disabled={game.players.length < 2}
                 >
-                  🚀 {t("lobby.startGame")}
+                  {t("lobby.startGame")}
                 </button>
                 {game.players.length < 2 && (
                   <p className="mt-1 text-xs text-center" style={{ color: 'var(--accent-gold)' }}>

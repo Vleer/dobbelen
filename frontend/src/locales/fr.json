@@ -136,7 +136,7 @@
   "instructions.winRound": "Le dernier joueur debout gagne la manche",
 
   "settings.colorScheme": "Schéma de couleurs",
-  "settings.colorDefault": "Défaut",
+  "settings.colorLight": "Clair",
   "settings.colorDark": "Sombre",
   "settings.colorWhite": "Blanc",
   "settings.fontSize": "Taille de police",
