@@ -49,6 +49,13 @@ public class Game {
         }
     }
 
+    // Pass dealer button to the next player in sequence
+    public void passDealerToNextPlayer() {
+        if (!players.isEmpty()) {
+            dealerIndex = (dealerIndex + 1) % players.size();
+        }
+    }
+
     // Add win token to round winner and check for game winner
     public boolean addRoundWinner(String winnerId) {
         Player winnerPlayer = players.stream()
@@ -57,8 +64,6 @@ public class Game {
             .orElse(null);
         if (winnerPlayer != null) {
             winnerPlayer.addWinToken();
-            // Pass dealer button to the winner regardless of whether game is ending
-            passDealerToWinner(winnerId);
             if (winnerPlayer.getWinTokens() >= 7) {
                 gameWinner = winnerId;
                 state = GameState.GAME_ENDED;
