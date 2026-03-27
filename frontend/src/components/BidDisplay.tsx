@@ -95,9 +95,9 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   if (isMobile) {
     return (
-      <div className={`border-2 rounded-xl px-2 py-1.5 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}>
+      <div className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-bold text-white truncate">{bidderName}</span>
+          <span className="text-sm font-bold text-[#f7f3e8] truncate">{bidderName}</span>
           <div className="flex items-center flex-shrink-0">
             <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
           </div>
@@ -127,8 +127,8 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       ref={containerRef}
       className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
       style={{
-        backgroundColor: '#3d1f0d',
-        borderColor: '#78350f',
+        backgroundColor: '#0f2a1b',
+        borderColor: '#8a6a1d',
         position: "fixed",
         ...(isCentered ? getDefaultPosition() : { left: position.x, top: position.y }),
         zIndex: 1000,
@@ -137,7 +137,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center justify-center space-x-6 drag-handle">
-        <div className="text-xl font-bold text-white">{bidderName}</div>
+        <div className="text-xl font-bold text-[#f7f3e8]">{bidderName}</div>
 
         {/* Dice Visualization */}
         <div className="flex items-center space-x-2">

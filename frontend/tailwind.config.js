@@ -26,8 +26,8 @@ module.exports = {
           '100%': { transform: 'scale(1)' },
         },
         'turn-glow': {
-          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(96, 165, 250, 0.25)' },
-          '50%':       { 'box-shadow': '0 0 32px 12px rgba(96, 165, 250, 0.80)' },
+          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(217, 180, 90, 0.25)' },
+          '50%':       { 'box-shadow': '0 0 32px 12px rgba(217, 180, 90, 0.65)' },
         },
         'bounce-in': {
           '0%':   { transform: 'scale(0.65)', opacity: '0' },
@@ -67,8 +67,8 @@ module.exports = {
           '50%':      { boxShadow: '0 0 44px 14px rgba(74, 222, 128, 0.85)' },
         },
         'pulse-red': {
-          '0%, 100%': { boxShadow: '0 0 18px 4px rgba(239, 68, 68, 0.35)' },
-          '50%':      { boxShadow: '0 0 44px 14px rgba(239, 68, 68, 0.85)' },
+          '0%, 100%': { boxShadow: '0 0 18px 4px rgba(217, 180, 90, 0.30)' },
+          '50%':      { boxShadow: '0 0 44px 14px rgba(217, 180, 90, 0.70)' },
         },
         'fade-in': {
           '0%':   { opacity: '0', transform: 'translateY(12px)' },
@@ -90,11 +90,11 @@ module.exports = {
           '50%':       { opacity: '0.4' },
         },
         'elim-flash': {
-          '0%':   { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(239, 68, 68, 0)' },
-          '25%':  { transform: 'scale(1.10)', boxShadow: '0 0 40px 14px rgba(239, 68, 68, 0.85)' },
-          '60%':  { transform: 'scale(0.96)', boxShadow: '0 0 20px 6px rgba(239, 68, 68, 0.45)' },
-          '80%':  { transform: 'scale(1.04)', boxShadow: '0 0 10px 3px rgba(239, 68, 68, 0.20)' },
-          '100%': { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(239, 68, 68, 0)' },
+          '0%':   { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(217, 180, 90, 0)' },
+          '25%':  { transform: 'scale(1.10)', boxShadow: '0 0 40px 14px rgba(217, 180, 90, 0.65)' },
+          '60%':  { transform: 'scale(0.96)', boxShadow: '0 0 20px 6px rgba(217, 180, 90, 0.35)' },
+          '80%':  { transform: 'scale(1.04)', boxShadow: '0 0 10px 3px rgba(217, 180, 90, 0.20)' },
+          '100%': { transform: 'scale(1)',    boxShadow: '0 0 0px 0px rgba(217, 180, 90, 0)' },
         },
         'trophy-pop': {
           '0%':   { transform: 'scale(0) rotate(-20deg)', opacity: '0' },

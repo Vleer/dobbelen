@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Player } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
-import AnimatedDiceHandSVG from './AnimatedDiceHandSVG';
+import DiceSVG from './DiceSVG';
 
 interface LocalPlayerProps {
   player: Player;
@@ -120,32 +120,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
 
-  // Map backend color to border and text colors - darker, classy jewel tones for poker table
-  const colorBorderMap: Record<string, string> = {
-    blue: 'border-indigo-500',
-    red: 'border-rose-500',
-    green: 'border-emerald-500',
-    yellow: 'border-amber-500',
-    brown: 'border-amber-600', // rich cognac brown
-    cyan: 'border-cyan-500',
-    purple: 'border-purple-500',
-    pink: 'border-pink-500',
-  };
-  
-  const colorTextMap: Record<string, string> = {
-    blue: 'text-indigo-500',
-    red: 'text-rose-500',
-    green: 'text-emerald-500',
-    yellow: 'text-amber-500',
-    brown: 'text-amber-600', // rich cognac brown
-    cyan: 'text-cyan-500',
-    purple: 'text-purple-500',
-    pink: 'text-pink-500',
-  };
-  
-  const playerColor = player.color || 'blue';
-  const playerColorClass = colorBorderMap[playerColor] || colorBorderMap['blue'];
-  const playerTextClass = colorTextMap[playerColor] || colorTextMap['blue'];
+  const playerTextClass = 'text-amber-200';
 
   // Computed state flags
   const activeTurn = isMyTurn && !isRoundEnded;
@@ -201,63 +176,65 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   if (isMobile) {
     return (
-      <div
-        className={`w-full bg-green-950 p-2 shadow-2xl select-none transition-all duration-300 ${
-          activeTurn ? `border-t-[6px] border-blue-300` : isRoundWinner ? 'border-t-[6px] border-green-400' : `border-t-4 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-70" : ""} ${animClasses}`}
-      >
-        {/* Mobile: one row = name + dealer + eye (same height as dice row), then dice */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
-            <span className={`font-bold text-sm truncate ${playerTextClass}`}>{player.name}</span>
-            {isDealer && (
-              <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center border border-gray-400 flex-shrink-0">
-                <span className="text-black font-bold text-[9px]">D</span>
-              </div>
-            )}
-            {!showDice && (
-              <button
-                type="button"
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  touchHandledRef.current = true;
-                  handleToggleDiceVisibility();
-                  setTimeout(() => { touchHandledRef.current = false; }, 300);
-                }}
-                onClick={(e) => {
-                  if (touchHandledRef.current) {
+      <div className="relative pt-4" data-player-card={player.id}>
+        <div
+          data-dealer-anchor={player.id}
+          data-dealer-placement="above"
+          className="absolute left-1/2 top-0 w-0 h-0"
+        />
+        <div
+          className={`w-full bg-[#082012] p-3 shadow-2xl select-none transition-all duration-300 rounded-t-3xl border-x border-t ${
+            activeTurn ? 'border-[#f2c96d] border-t-4' : isRoundWinner ? 'border-[#d9b45a] border-t-4' : 'border-[#365844] border-t-2'
+          } ${player.eliminated ? "opacity-70" : ""} ${animClasses} h-[86px]`}
+        >
+          <div className="h-full flex items-center justify-between gap-2 min-w-0">
+            <div className="min-w-0 flex items-center gap-1.5">
+              <span className={`font-bold text-sm truncate ${playerTextClass}`}>{player.name}</span>
+              {player.winTokens > 0 && (
+                <span className="text-[#e7be5c] font-bold text-[10px] flex-shrink-0">🏆 {player.winTokens}</span>
+              )}
+              {!showDice && (
+                <button
+                  type="button"
+                  onTouchEnd={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    return;
-                  }
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleToggleDiceVisibility();
-                }}
-                className="p-0.5 rounded bg-transparent hover:bg-white/10 active:bg-white/20 text-white flex-shrink-0 cursor-pointer z-50 relative touch-manipulation"
-                style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
-                aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
-              >
-                <div className="pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3">
-                  {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                    touchHandledRef.current = true;
+                    handleToggleDiceVisibility();
+                    setTimeout(() => { touchHandledRef.current = false; }, 300);
+                  }}
+                  onClick={(e) => {
+                    if (touchHandledRef.current) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleToggleDiceVisibility();
+                  }}
+                  className="p-1 rounded-md border border-[#8a6a1d] bg-[#12352b] hover:bg-[#1b452f] active:bg-[#1f4e36] text-[#f5d98f] flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
+                  style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+                  aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
+                >
+                  <div className="pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3">
+                    {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                  </div>
+                </button>
+              )}
+            </div>
+            <div className="flex-1 h-full flex items-center justify-end overflow-hidden">
+              {shouldShowDice ? (
+                <div className="flex items-center gap-1 flex-nowrap">
+                  {diceValues.slice(0, 6).map((value, index) => (
+                    <DiceSVG key={index} value={value} size="sm" />
+                  ))}
                 </div>
-              </button>
-            )}
-            {player.winTokens > 0 && (
-              <span className="text-yellow-300 font-bold text-[10px] flex-shrink-0">🏆 {player.winTokens}</span>
-            )}
+              ) : (
+                <span className="text-[#b9cbbf] text-xs italic">{t("game.diceHidden") || "Hidden"}</span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center flex-1 min-w-0 flex-shrink overflow-hidden">
-            {shouldShowDice ? (
-              <AnimatedDiceHandSVG diceValues={diceValues} size="xs" noWrap />
-            ) : (
-              <span className="text-gray-400 text-xs italic">{t("game.diceHidden") || "Hidden"}</span>
-            )}
-          </div>
-          {player.eliminated && (
-            <span className="text-red-300 font-bold text-xs flex-shrink-0">{t("game.eliminated")}</span>
-          )}
         </div>
       </div>
     );
@@ -275,45 +252,45 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       }}
     >
       {/* Relative wrapper for badge + card */}
-      <div className="relative">
+      <div className="relative pt-5" data-player-card={player.id}>
+        <div
+          data-dealer-anchor={player.id}
+          data-dealer-placement="above"
+          className="absolute left-1/2 top-0 w-0 h-0"
+        />
         {/* Player Container */}
         <div
           ref={containerRef}
           onMouseDown={handleMouseDown}
-          className={`bg-green-950 p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
-            activeTurn ? `border-[6px] border-blue-300 scale-[1.03]` : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
+          className={`bg-[#082012] p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
+            activeTurn ? 'border-[6px] border-[#f2c96d] scale-[1.03]' : isRoundWinner ? 'border-[6px] border-[#d9b45a]' : 'border-4 border-[#365844]'
           } ${
             player.eliminated ? "opacity-50" : ""
           } ${animClasses}`}
         style={{
-          width: "340px", // fixed width
-          minHeight: "180px", // minimum height, allow to grow if needed
-          maxHeight: "95vh",
+          width: "420px",
+          height: "190px",
           maxWidth: "95vw",
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
-          overflowY: "auto",
+          overflow: "hidden",
         }}
       >
-        {/* Username with Dealer Button, Win Tokens, and Eye Toggle */}
-        <div className="text-center mb-4">
-          <div className="flex items-center justify-center space-x-2">
-            <span className={`font-bold text-xl ${playerTextClass}`}>
+          <div className="w-full h-full flex items-center justify-between gap-4">
+            {/* Left meta column */}
+            <div className="min-w-[140px] max-w-[180px] flex flex-col justify-center">
+              <div className="flex items-center gap-2">
+                <span className={`font-bold text-xl ${playerTextClass} truncate`}>
               {player.name}
             </span>
-            {/* Dealer Button */}
-            {isDealer && (
-              <div className="inline-flex items-center justify-center w-6 h-6 bg-white border-2 border-black rounded-full">
-                <span className="text-black text-xs font-bold">D</span>
+                {player.winTokens > 0 && (
+                  <div className="text-[#e7be5c] font-bold text-sm flex-shrink-0">
+                    🏆 {player.winTokens}
+                  </div>
+                )}
               </div>
-            )}
             {/* Win Tokens */}
-            {player.winTokens > 0 && (
-              <div className="text-yellow-300 font-bold text-sm">
-                🏆 {player.winTokens}
-              </div>
-            )}
             {/* Eye toggle button - next to name */}
             {!showDice && (
               <button
@@ -330,7 +307,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="rounded-md bg-transparent hover:bg-white/10 active:bg-white/20 transition-all text-white cursor-pointer z-50 relative"
+                className="rounded-md border border-[#8a6a1d] bg-[#12352b] hover:bg-[#1b452f] active:bg-[#1f4e36] transition-all text-[#f5d98f] cursor-pointer z-50 relative"
                 style={{
                   pointerEvents: "auto",
                   padding: 0,
@@ -363,36 +340,29 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                 </span>
               </button>
             )}
-          </div>
-        </div>
-
-        {/* Dice Row - Flexible height container */}
-        <div
-          className="mb-4 flex items-center justify-center"
-          style={{ minHeight: "60px", width: "100%" }}
-        >
-          {shouldShowDice ? (
-            <AnimatedDiceHandSVG diceValues={diceValues} size="lg" />
-          ) : (
-            <div
-              className="text-gray-300 text-lg italic w-full text-center"
-              style={{
-                minHeight: "32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {t("game.diceHidden") || "Hidden"}
             </div>
-          )}
-        </div>
+
+            {/* Right dice row */}
+            <div className="flex-1 flex items-center justify-end overflow-hidden">
+              {shouldShowDice ? (
+                <div className="flex items-center gap-1 flex-nowrap">
+                  {diceValues.slice(0, 6).map((value, index) => (
+                    <DiceSVG key={index} value={value} size="xs" />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[#b9cbbf] text-lg italic w-full text-center">
+                  {t("game.diceHidden") || "Hidden"}
+                </div>
+              )}
+            </div>
+          </div>
 
         {/* Previous Bid Display - Only show when relevant to current game state */}
         {previousBid &&
           previousBid.playerId === player.id &&
           !player.eliminated && (
-            <div className="text-center text-amber-200 font-bold text-sm mb-2">
+            <div className="text-center text-[#f5d98f] font-bold text-sm mb-2">
               {t("game.previousBid", {
                 quantity: previousBid.quantity,
                 faceValue: previousBid.faceValue,
@@ -402,7 +372,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
         {/* Eliminated State */}
         {player.eliminated && (
-          <div className="text-center text-red-300 font-bold text-xl bg-red-900 rounded-lg p-3">
+          <div className="text-center text-[#f5d98f] font-bold text-xl bg-[#203626] rounded-lg p-3 border border-[#8a6a1d]">
             {t("game.eliminated")}
           </div>
         )}

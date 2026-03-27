@@ -75,15 +75,15 @@ function App() {
     <LanguageProvider>
       <StatisticsProvider>
         <SettingsProvider>
-          <div className="min-h-screen bg-gray-900 relative">
+          <div className="min-h-screen relative" style={{ backgroundColor: 'var(--felt-bg)' }}>
             {/* Language Selector + Settings - Only show in lobby */}
             {appState === 'lobby' && (
-              <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+              <div className="absolute top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-[#365844] bg-[#0f2a1b]/95 p-1.5 shadow-2xl">
                 <div className="relative">
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => setShowLobbySettings((s) => !s)}
-                    className="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg hover:bg-opacity-70 font-medium shadow-lg text-sm transition-all duration-200"
+                    className="h-9 min-w-9 px-3 rounded-full bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] font-medium shadow text-sm transition-all duration-200"
                     aria-label="Settings"
                   >
                     ⚙
@@ -93,7 +93,7 @@ function App() {
                     onClose={() => setShowLobbySettings(false)}
                   />
                 </div>
-                <LanguageSelector />
+                <LanguageSelector buttonClassName="h-9 px-3 bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] shadow" compact />
               </div>
             )}
 

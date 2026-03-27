@@ -55,6 +55,7 @@
   "game.yourTurn": "Jouw beurt",
   "game.waitingForTurn": "Wachten op je beurt...",
   "game.waitingForNextRound": "Wachten op volgende ronde...",
+  "game.waitingForFirstBid": "Wachten op eerste bod",
   "game.doubt": "Optillen",
   "game.spotOn": "Spot On",
 
@@ -108,6 +109,7 @@
   "game.history.lastHand": "Laatste Hand",
   "game.history.stats": "Statistieken",
   "game.info": "Info",
+  "game.gameInfo": "Spelinfo",
   "game.viewRulesHere": "Bekijk regels hier 👆",
   "game.history.action": "Actie",
   "game.history.bid": "Bod",

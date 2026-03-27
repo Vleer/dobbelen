@@ -10,9 +10,11 @@ interface DiceHandSVGProps {
 
 const DiceHandSVG: React.FC<DiceHandSVGProps> = ({ diceValues, size = 'md', vertical = false, noWrap = false }) => {
   return (
-    <div className={`flex gap-1 min-w-0 ${vertical ? 'flex-col' : noWrap ? 'flex-nowrap' : 'flex-wrap'}`}>
+    <div className={`flex gap-1.5 min-w-0 justify-center items-center ${vertical ? 'flex-col' : noWrap ? 'flex-nowrap' : 'flex-wrap'}`}>
       {diceValues.map((value, index) => (
-        <DiceSVG key={index} value={value} size={size} />
+        <div key={index} className="min-w-8 min-h-8 flex items-center justify-center">
+          <DiceSVG value={value} size={size} />
+        </div>
       ))}
     </div>
   );

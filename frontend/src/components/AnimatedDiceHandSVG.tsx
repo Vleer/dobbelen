@@ -79,17 +79,17 @@ const AnimatedDiceHandSVG: React.FC<AnimatedDiceHandSVGProps> = ({
   }, [animationsEnabled]);
 
   return (
-    <div className={`flex gap-1 min-w-0 ${vertical ? 'flex-col' : noWrap ? 'flex-nowrap' : 'flex-wrap'}`}>
+    <div className={`flex gap-1.5 min-w-0 justify-center items-center ${vertical ? 'flex-col' : noWrap ? 'flex-nowrap' : 'flex-wrap'}`}>
       {displayValues.map((value, index) => (
         <div
           key={index}
-          className={
+          className={`min-w-8 min-h-8 flex items-center justify-center ${
             phase === 'rolling'
               ? 'animate-dice-roll'
               : phase === 'landing'
               ? 'animate-dice-land'
               : ''
-          }
+          }`}
           style={{
             animationDelay: phase === 'landing' ? `${index * 55}ms` : '0ms',
           }}

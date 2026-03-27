@@ -144,17 +144,17 @@ const BidSelector: React.FC<BidSelectorProps> = ({
 
   const getBidButtonClass = (quantity: number, faceValue: number): string => {
     const baseClass =
-      "w-12 h-12 flex items-center justify-center text-sm font-bold rounded-lg border-2 transition-all duration-200";
+      "w-12 h-12 flex items-center justify-center text-sm font-bold rounded-xl border-2 transition-all duration-200";
 
     if (disabled) {
-      return `${baseClass} bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed`;
+      return `${baseClass} bg-[#1c3224] border-[#365844] text-[#7f9788] cursor-not-allowed`;
     }
 
     if (isBidValid(quantity, faceValue)) {
-      return `${baseClass} bg-blue-500 border-blue-600 text-white hover:bg-blue-600 hover:scale-105 cursor-pointer shadow-md`;
+      return `${baseClass} bg-[#0f3a2a] border-[#8a6a1d] text-[#f7f3e8] hover:bg-[#154732] hover:scale-105 cursor-pointer shadow-md`;
     }
 
-    return `${baseClass} bg-gray-200 border-gray-300 text-gray-500 cursor-not-allowed`;
+    return `${baseClass} bg-[#173026] border-[#365844] text-[#78907f] cursor-not-allowed`;
   };
 
   // Drag functionality
@@ -217,7 +217,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     return (
       <div
         ref={containerRef}
-        className="bg-green-950 p-2 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm w-full select-none relative z-10"
+        className="bg-[#082012] p-3 rounded-2xl shadow-lg border-2 border-[#365844] max-w-sm w-full select-none relative z-10"
         onMouseDown={handleMouseDown}
         style={{
           cursor: isDragging ? "grabbing" : "grab",
@@ -268,7 +268,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-1.5 flex gap-1 w-[18.625rem] mx-auto">
+          <div className="mt-2 flex gap-2 w-[18.625rem] mx-auto">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -279,8 +279,8 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               onDoubt?.();
             }}
             disabled={disabled || noBidToChallenge}
-            className={`flex-1 py-1.5 text-white rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
-            style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+            className={`flex-1 py-2 h-10 text-[#f5d98f] rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
+            style={{ backgroundColor: '#242d1b', borderColor: '#8a6a1d' }}
           >
             {t("game.doubt")}
           </button>
@@ -295,7 +295,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             }}
             onMouseDown={(e) => e.stopPropagation()}
             disabled={disabled || noBidToChallenge}
-            className={`flex-1 py-1.5 bg-green-950 text-white rounded-xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
+            className={`flex-1 py-2 h-10 bg-[#242d1b] text-[#f5d98f] rounded-xl hover:bg-[#2f3a23] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 border-[#8a6a1d] transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
           >
             {t("game.spotOn")}
           </button>
@@ -305,7 +305,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               toggleExpanded();
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-10 h-8 bg-green-950 hover:bg-green-900 rounded-xl hover:scale-105 font-bold text-xs shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
+            className="w-10 h-10 bg-[#12352b] hover:bg-[#1a4a3a] rounded-xl hover:scale-105 font-bold text-base shadow-lg border-2 border-[#365844] transition-all duration-200 flex items-center justify-center text-[#f7f3e8]"
           >
             {isExpanded ? "−" : "+"}
           </button>
@@ -317,7 +317,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   return (
     <div
       ref={containerRef}
-      className="bg-green-950 p-3 rounded-2xl shadow-lg border-4 border-green-700 max-w-sm select-none relative z-10"
+      className="bg-[#082012] p-3 rounded-2xl shadow-lg border-2 border-[#365844] max-w-sm select-none relative z-10"
       style={{
         position: "fixed",
         left: position.x,
@@ -386,8 +386,8 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             onDoubt?.();
           }}
           disabled={disabled || noBidToChallenge}
-          className={`flex-1 py-2 text-white rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
-          style={{ backgroundColor: '#3d1f0d', borderColor: '#78350f' }}
+          className={`flex-1 py-2.5 h-11 text-[#f5d98f] rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
+          style={{ backgroundColor: '#242d1b', borderColor: '#8a6a1d' }}
         >
           {t("game.doubt")}
         </button>
@@ -401,7 +401,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             onSpotOn?.();
           }}
           disabled={disabled || noBidToChallenge}
-          className={`flex-1 py-2 bg-green-950 text-white rounded-2xl hover:bg-green-900 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
+          className={`flex-1 py-2.5 h-11 bg-[#242d1b] text-[#f5d98f] rounded-2xl hover:bg-[#2f3a23] hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 border-[#8a6a1d] transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
         >
           {t("game.spotOn")}
         </button>
@@ -410,7 +410,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             e.stopPropagation();
             toggleExpanded();
           }}
-          className="w-12 h-10 bg-green-950 hover:bg-green-900 rounded-2xl hover:scale-105 font-bold text-sm shadow-lg border-2 border-green-700 transition-all duration-200 flex items-center justify-center text-white"
+          className="w-12 h-11 bg-[#12352b] hover:bg-[#1a4a3a] rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 border-[#365844] transition-all duration-200 flex items-center justify-center text-[#f7f3e8]"
         >
           {isExpanded ? "−" : "+"}
         </button>

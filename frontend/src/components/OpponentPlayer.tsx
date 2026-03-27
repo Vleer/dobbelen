@@ -54,14 +54,16 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
   const getDefaultPosition = () => {
-    // Desktop: opponent 1 top-left, opponent 2 to the right (no overlap, clear of volume button)
-    const playerWidth = 180;
-    const topMargin = 80; // Below header/volume
-    const startX = 24; // Right of volume button
-    const gap = 20;
-    const x = startX + position * (playerWidth + gap);
-    const y = topMargin;
-    return { x, y };
+    const topMargin = 96;
+    const centerX = typeof window !== "undefined" ? window.innerWidth / 2 : 640;
+    const leftX = Math.max(24, centerX - 320);
+    const rightX = centerX + 160;
+    const presets = [
+      { x: leftX, y: topMargin },       // top-left
+      { x: centerX - 88, y: topMargin },// top-center
+      { x: rightX, y: topMargin },      // top-right
+    ];
+    return presets[position] || { x: leftX + position * 180, y: topMargin + 8 };
   };
 
   const [dragPosition, setDragPosition] = useState(() => {
@@ -119,32 +121,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
 
-  // Map backend color to border and text colors - darker, classy jewel tones for poker table
-  const colorBorderMap: Record<string, string> = {
-    blue: "border-indigo-500",
-    red: "border-rose-500",
-    green: "border-emerald-500",
-    yellow: "border-amber-500",
-    brown: "border-amber-600", // rich cognac brown
-    cyan: "border-cyan-500",
-    purple: "border-purple-500",
-    pink: "border-pink-500",
-  };
-  
-  const colorTextMap: Record<string, string> = {
-    blue: "text-indigo-500",
-    red: "text-rose-500",
-    green: "text-emerald-500",
-    yellow: "text-amber-500",
-    brown: "text-amber-600", // rich cognac brown
-    cyan: "text-cyan-500",
-    purple: "text-purple-500",
-    pink: "text-pink-500",
-  };
-  
-  const playerColor = player.color || "blue";
-  const playerColorClass = colorBorderMap[playerColor] || colorBorderMap["blue"];
-  const playerTextClass = colorTextMap[playerColor] || colorTextMap["blue"];
+  const playerTextClass = "text-amber-200";
 
   // Computed state flags
   const activeTurn = isMyTurn && !isRoundEnded;
@@ -239,38 +216,36 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     }
   };
 
+  const revealedDice = previousRoundPlayer?.dice || [];
+
   if (isMobile) {
     return (
-      <div
-        className={`bg-green-950 rounded-lg shadow-lg select-none transition-all duration-300 ${
-          activeTurn ? 'border-[3px] border-blue-300' : isRoundWinner ? 'border-[3px] border-green-400' : `border-2 ${playerColorClass}`
-        } ${player.eliminated ? "opacity-50" : ""} p-1.5 min-w-0 flex-shrink-0 ${animClasses}`}
-      >
-        {/* One row: name + dice next to each other (dice when revealed) */}
-        <div className="flex items-center gap-1 min-w-0">
-          <div className="flex items-center gap-0.5 flex-shrink-0 min-w-0">
-            {/* Turn arrow indicator - mobile */}
-            {isMyTurn && (
-              <span className="text-green-400 font-bold text-[10px] flex-shrink-0">▶</span>
-            )}
-            <span className={`font-bold text-[11px] truncate ${playerTextClass}`}>{player.name}</span>
-            {isDealer && (
-              <div className="w-3 h-3 bg-white border border-black rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-black text-[8px] font-bold">D</span>
-              </div>
-            )}
-            {player.winTokens > 0 && (
-              <span className="text-amber-300 font-bold text-[10px]">🏆 {player.winTokens}</span>
-            )}
-          </div>
-          {/* Dice next to name when revealed */}
-          {showDice &&
-            previousRoundPlayer &&
-            previousRoundPlayer.dice &&
-            previousRoundPlayer.dice.length > 0 && (
-              <div className="flex items-center flex-1 min-w-0 justify-end">
-                <div className="flex gap-0.5 flex-nowrap">
-                  {previousRoundPlayer.dice.map((value, index) => (
+      <div className="relative mb-6" data-player-card={player.id}>
+        <div
+          data-dealer-anchor={player.id}
+          data-dealer-placement="below"
+          className="absolute left-1/2 bottom-0 w-0 h-0"
+        />
+        <div
+          className={`bg-[#0b2415] rounded-xl shadow-lg select-none transition-all duration-300 ${
+            activeTurn ? 'border-[3px] border-[#f2c96d]' : isRoundWinner ? 'border-[3px] border-[#d9b45a]' : 'border-2 border-[#365844]'
+          } ${player.eliminated ? "opacity-50" : ""} p-2 min-w-0 flex-shrink-0 h-[82px] w-full ${animClasses}`}
+        >
+          <div className="h-full w-full flex flex-col justify-between gap-1">
+            <div className="flex items-center justify-center gap-1 min-w-0">
+              {/* Turn arrow indicator - mobile */}
+              {isMyTurn && (
+                <span className="text-[#f2c96d] font-bold text-[10px] flex-shrink-0">▶</span>
+              )}
+              <span className={`font-bold text-[11px] truncate ${playerTextClass}`}>{player.name}</span>
+              {player.winTokens > 0 && (
+                <span className="text-[#e7be5c] font-bold text-[10px]">🏆 {player.winTokens}</span>
+              )}
+            </div>
+            <div className="w-full flex-1 flex items-center justify-center overflow-hidden">
+              {showDice && revealedDice.length > 0 ? (
+                <div className="flex items-center gap-0.5 flex-nowrap">
+                  {revealedDice.slice(0, 6).map((value, index) => (
                     <div
                       key={index}
                       className={showDiceAnim && animationsEnabled ? 'animate-dice-land' : ''}
@@ -280,11 +255,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          {player.eliminated && (
-            <span className="text-red-300 font-bold text-[10px] flex-shrink-0">{t("game.out")}</span>
-          )}
+              ) : (
+                <span className="text-[#b9cbbf] text-[10px] font-medium">{t("game.diceHidden") || "Hidden"}</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -304,70 +279,63 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           : {}
       }
     >
-      {/* Player Container - Rounded Rectangle with Green Background */}
-      <div
-        ref={containerRef}
-        onMouseDown={handleMouseDown}
-        className={`w-40 h-48 bg-green-950 rounded-2xl shadow-lg select-none transition-all duration-300 ${
-          activeTurn ? 'border-[6px] border-blue-300' : isRoundWinner ? 'border-[6px] border-green-400' : `border-4 ${playerColorClass}`
-        } ${
-          player.eliminated ? "opacity-50" : ""
-        } ${animClasses} flex flex-col items-center justify-center p-3`}
-      >
+      <div className="relative pb-6" data-player-card={player.id}>
         <div
-          className="w-full h-full flex flex-col items-center justify-center"
+          data-dealer-anchor={player.id}
+          data-dealer-placement="below"
+          className="absolute left-1/2 bottom-0 w-0 h-0"
+        />
+        {/* Player Container - Rounded Rectangle with Green Background */}
+        <div
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          className={`w-72 h-[136px] bg-[#0b2415] rounded-2xl shadow-lg select-none transition-all duration-300 ${
+            activeTurn ? 'border-[6px] border-[#f2c96d]' : isRoundWinner ? 'border-[6px] border-[#d9b45a]' : 'border-4 border-[#365844]'
+          } ${
+            player.eliminated ? "opacity-50" : ""
+          } ${animClasses} flex flex-col items-center justify-between p-3`}
         >
+          <div className="w-full h-full flex flex-col items-center justify-between">
           {/* Username with Dealer Button and Win Tokens */}
-          <div className="text-center mb-2">
+          <div className="text-center mb-1 min-h-8 flex items-center justify-center">
             <div className="flex items-center justify-center space-x-1">
               <span className={`font-bold text-sm ${playerTextClass} break-words`}>
                 {player.name}
               </span>
-              {/* Dealer Button */}
-              {isDealer && (
-                <div className="inline-flex items-center justify-center w-5 h-5 bg-white border-2 border-black rounded-full">
-                  <span className="text-black text-xs font-bold">D</span>
-                </div>
-              )}
               {/* Win Tokens */}
               {player.winTokens > 0 && (
-                <div className="text-xs text-amber-300 font-bold">
+                <div className="text-xs text-[#e7be5c] font-bold">
                   🏆 {player.winTokens}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Dice - Only show when revealed */}
-          {showDice &&
-            previousRoundPlayer &&
-            previousRoundPlayer.dice &&
-            previousRoundPlayer.dice.length > 0 && (
-              <div className="flex justify-center mb-2 w-full">
-                <div className="flex flex-col items-center space-y-1 w-full">
-                  <div className="flex justify-center w-full px-1 overflow-hidden">
-                    <div className="flex gap-0.5 flex-nowrap justify-center max-w-full">
-                      {previousRoundPlayer.dice.map((value, index) => (
-                        <div
-                          key={index}
-                          className={showDiceAnim && animationsEnabled ? 'animate-dice-land' : ''}
-                          style={{ animationDelay: showDiceAnim && animationsEnabled ? `${index * 55}ms` : '0ms' }}
-                        >
-                          <DiceSVG value={value} size="sm" />
-                        </div>
-                      ))}
-                    </div>
+          <div className="w-full flex-1 flex items-center justify-center px-1 overflow-hidden">
+            {showDice && revealedDice.length > 0 ? (
+              <div className="flex items-center gap-1 flex-nowrap">
+                {revealedDice.slice(0, 6).map((value, index) => (
+                  <div
+                    key={index}
+                    className={showDiceAnim && animationsEnabled ? 'animate-dice-land' : ''}
+                    style={{ animationDelay: showDiceAnim && animationsEnabled ? `${index * 55}ms` : '0ms' }}
+                  >
+                    <DiceSVG value={value} size="xs" />
                   </div>
-                  {/* <div className="text-xs text-yellow-300 font-bold">{t('game.revealed')}</div> */}
-                </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-[#b9cbbf] text-sm font-medium">
+                {t("game.diceHidden") || "Hidden"}
               </div>
             )}
+          </div>
 
           {/* Previous Bid Display - Only show when relevant to current game state */}
           {previousBid &&
             previousBid.playerId === player.id &&
             !player.eliminated && (
-              <div className="text-center text-xs text-amber-200 font-bold mb-1 break-words">
+              <div className="text-center text-xs text-[#f5d98f] font-bold mb-1 break-words">
                 {t("game.previousBid", {
                   quantity: previousBid.quantity,
                   faceValue: previousBid.faceValue,
@@ -375,12 +343,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
               </div>
             )}
 
-          {/* Eliminated State */}
-          {player.eliminated && (
-            <div className="text-center text-red-300 font-bold text-xs">
-              {t("game.out")}
-            </div>
-          )}
+        </div>
         </div>
       </div>
     </div>

@@ -49,6 +49,7 @@
   "game.yourTurn": "Votre tour",
   "game.waitingForTurn": "En attente de votre tour...",
   "game.waitingForNextRound": "En attente du prochain tour...",
+  "game.waitingForFirstBid": "En attente de la première enchère",
   "game.doubt": "Doute",
   "game.spotOn": "Exact",
 
@@ -102,6 +103,7 @@
   "game.history.lastHand": "Dernière Main",
   "game.history.stats": "Statistiques",
   "game.info": "Info",
+  "game.gameInfo": "Infos Partie",
   "game.viewRulesHere": "Voir les règles ici 👆",
   "game.history.action": "Action",
   "game.history.bid": "Enchère",

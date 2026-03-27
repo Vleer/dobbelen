@@ -49,8 +49,8 @@ html.scale-x-large { font-size: 21px; }
   50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
 }
 @keyframes pulse-red {
-  0%, 100% { box-shadow: 0 0 18px 4px rgba(239, 68, 68, 0.35); }
-  50%       { box-shadow: 0 0 44px 14px rgba(239, 68, 68, 0.85); }
+  0%, 100% { box-shadow: 0 0 18px 4px rgba(217, 180, 90, 0.30); }
+  50%       { box-shadow: 0 0 44px 14px rgba(217, 180, 90, 0.70); }
 }
 @keyframes winner-glow {
   0%, 100% { box-shadow: 0 0 20px 4px rgba(74, 222, 128, 0.35); }
@@ -61,11 +61,11 @@ html.scale-x-large { font-size: 21px; }
   50%       { opacity: 0.4; }
 }
 @keyframes elim-flash {
-  0%   { transform: scale(1);    box-shadow: 0 0 0px 0px rgba(239, 68, 68, 0); }
-  25%  { transform: scale(1.10); box-shadow: 0 0 40px 14px rgba(239, 68, 68, 0.85); }
-  60%  { transform: scale(0.96); box-shadow: 0 0 20px 6px rgba(239, 68, 68, 0.45); }
-  80%  { transform: scale(1.04); box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.20); }
-  100% { transform: scale(1);    box-shadow: 0 0 0px 0px rgba(239, 68, 68, 0); }
+  0%   { transform: scale(1);    box-shadow: 0 0 0px 0px rgba(217, 180, 90, 0); }
+  25%  { transform: scale(1.10); box-shadow: 0 0 40px 14px rgba(217, 180, 90, 0.65); }
+  60%  { transform: scale(0.96); box-shadow: 0 0 20px 6px rgba(217, 180, 90, 0.35); }
+  80%  { transform: scale(1.04); box-shadow: 0 0 10px 3px rgba(217, 180, 90, 0.20); }
+  100% { transform: scale(1);    box-shadow: 0 0 0px 0px rgba(217, 180, 90, 0); }
 }
 @keyframes trophy-pop {
   0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
@@ -76,11 +76,42 @@ html.scale-x-large { font-size: 21px; }
 }
 
 /* ── Color-scheme themes ─────────────────────────────────────────── */
-/* Default theme: no overrides, original colours */
-html.theme-default #root { filter: none; }
+/* Theme tokens used by lobby/menu/game wrappers */
+:root {
+  --felt-bg: #0b2a1a;
+  --felt-bg-soft: #0f2a1b;
+  --panel-bg: #0f2a1b;
+  --panel-bg-soft: #12352b;
+  --panel-border: #365844;
+  --accent-gold: #d9b45a;
+  --accent-gold-strong: #8a6a1d;
+  --text-main: #f7f3e8;
+  --text-muted: #b9cbbf;
+}
 
-/* Dark theme: desaturate and darken */
-html.theme-dark #root { filter: brightness(0.6) saturate(0.6); }
+/* Default + dark share the same dark-felt palette */
+html.theme-default,
+html.theme-dark {
+  --felt-bg: #0b2a1a;
+  --felt-bg-soft: #0f2a1b;
+  --panel-bg: #0f2a1b;
+  --panel-bg-soft: #12352b;
+  --panel-border: #365844;
+  --accent-gold: #d9b45a;
+  --accent-gold-strong: #8a6a1d;
+  --text-main: #f7f3e8;
+  --text-muted: #b9cbbf;
+}
 
-/* White theme: greyscale + invert → black-and-white light look */
-html.theme-white #root { filter: grayscale(1) invert(1) contrast(1.2) brightness(0.92); }
+/* "white" option becomes light green theme */
+html.theme-white {
+  --felt-bg: #2b5a3d;
+  --felt-bg-soft: #356b48;
+  --panel-bg: #3f7a54;
+  --panel-bg-soft: #4b8760;
+  --panel-border: #85a892;
+  --accent-gold: #f1dc9e;
+  --accent-gold-strong: #caa249;
+  --text-main: #f7f3e8;
+  --text-muted: #e5eee8;
+}

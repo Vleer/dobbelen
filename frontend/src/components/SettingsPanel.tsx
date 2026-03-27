@@ -5,9 +5,18 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onLeaveGame?: () => void;
+  leaveGameLabel?: string;
+  mobileCentered?: boolean;
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({
+  isOpen,
+  onClose,
+  onLeaveGame,
+  leaveGameLabel,
+  mobileCentered = false,
+}) => {
   const { colorScheme, setColorScheme, fontSize, setFontSize, animationsEnabled, setAnimationsEnabled } = useSettings();
   const { t } = useLanguage();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -40,15 +49,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
     { value: 'x-large', label: 'Aa', sizeClass: 'text-xl' },
   ];
 
-  return (
+  const panelNode = (
     <div
       ref={panelRef}
-      className="absolute right-0 mt-1 w-64 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl z-[9999] p-4 text-white"
+      className={[
+        "rounded-2xl border border-[#365844] bg-[#0f2a1b]/95 shadow-2xl z-[9999] p-4 text-[#f7f3e8]",
+        mobileCentered
+          ? "fixed left-1/2 top-1/2 w-[min(92vw,22rem)] -translate-x-1/2 -translate-y-1/2"
+          : "absolute right-0 mt-1 w-64",
+      ].join(" ")}
     >
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors duration-150 leading-none"
+        className="absolute top-2 right-2 text-[#a7b9ac] hover:text-[#f7f3e8] transition-colors duration-150 leading-none"
         aria-label="Close settings"
       >
         ✕
@@ -56,20 +70,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
 
       {/* Color Scheme */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
           {t('settings.colorScheme')}
         </p>
-        <div className="flex rounded-lg overflow-hidden border border-gray-600">
+        <div className="flex rounded-lg overflow-hidden border border-[#365844]">
           {colorOptions.map((option, idx) => (
             <button
               key={option.value}
               onClick={() => setColorScheme(option.value)}
               className={[
                 'flex-1 py-1.5 text-xs font-medium transition-all duration-150',
-                idx === 0 ? '' : 'border-l border-gray-600',
+                idx === 0 ? '' : 'border-l border-[#365844]',
                 colorScheme === option.value
-                  ? 'bg-white text-gray-900 font-bold'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+                  ? 'bg-[#2e2417] text-[#f5d98f] font-bold'
+                  : 'bg-[#12352b] text-[#d2dfd6] hover:bg-[#1b452f]',
               ].join(' ')}
             >
               {option.label}
@@ -80,20 +94,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
 
       {/* Font Size */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
           {t('settings.fontSize')}
         </p>
-        <div className="flex rounded-lg overflow-hidden border border-gray-600">
+        <div className="flex rounded-lg overflow-hidden border border-[#365844]">
           {fontOptions.map((option, idx) => (
             <button
               key={option.value}
               onClick={() => setFontSize(option.value)}
               className={[
                 'flex-1 py-1.5 font-medium transition-all duration-150 flex items-center justify-center',
-                idx === 0 ? '' : 'border-l border-gray-600',
+                idx === 0 ? '' : 'border-l border-[#365844]',
                 fontSize === option.value
-                  ? 'bg-white text-gray-900 font-bold'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+                  ? 'bg-[#2e2417] text-[#f5d98f] font-bold'
+                  : 'bg-[#12352b] text-[#d2dfd6] hover:bg-[#1b452f]',
               ].join(' ')}
             >
               <span className={option.sizeClass}>{option.label}</span>
@@ -103,26 +117,54 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose }) => {
       </div>
 
       {/* Animations Toggle */}
-      <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+      <div className="mb-3">
+        <p className="text-xs font-semibold text-[#d9b45a] uppercase tracking-wide mb-2">
           {t('settings.animations')}
         </p>
         <button
           onClick={() => setAnimationsEnabled(!animationsEnabled)}
           className="relative inline-flex h-6 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none"
-          style={{ backgroundColor: animationsEnabled ? '#22c55e' : '#4b5563' }}
+          style={{ backgroundColor: animationsEnabled ? '#8a6a1d' : '#365844' }}
           role="switch"
           aria-checked={animationsEnabled}
           aria-label={t('settings.animations')}
         >
           <span
-            className="inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200"
+            className="inline-block h-4 w-4 transform rounded-full bg-[#f7f3e8] shadow-md transition-transform duration-200"
             style={{ transform: animationsEnabled ? 'translateX(28px)' : 'translateX(4px)' }}
           />
         </button>
       </div>
+
+      {onLeaveGame && (
+        <button
+          onClick={() => {
+            onClose();
+            onLeaveGame();
+          }}
+          className="w-full mt-1 px-3 py-2 rounded-lg bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d] text-sm font-semibold transition-colors"
+        >
+          {leaveGameLabel || t('game.leaveGame')}
+        </button>
+      )}
     </div>
   );
+
+  if (mobileCentered) {
+    return (
+      <>
+        <button
+          type="button"
+          aria-label="Close settings overlay"
+          className="fixed inset-0 z-[9998] bg-black/45"
+          onClick={onClose}
+        />
+        {panelNode}
+      </>
+    );
+  }
+
+  return panelNode;
 };
 
 export default SettingsPanel;

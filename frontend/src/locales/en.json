@@ -55,6 +55,7 @@
   "game.yourTurn": "Your Turn",
   "game.waitingForTurn": "Waiting for your turn...",
   "game.waitingForNextRound": "Waiting for next round...",
+  "game.waitingForFirstBid": "Waiting for first bid",
   "game.doubt": "Doubt",
   "game.spotOn": "Spot On",
 
@@ -108,6 +109,7 @@
   "game.history.lastHand": "Last Hand",
   "game.history.stats": "Stats",
   "game.info": "Info",
+  "game.gameInfo": "Game Info",
   "game.viewRulesHere": "View rules here 👆",
   "game.history.action": "Action",
   "game.history.bid": "Bid",
