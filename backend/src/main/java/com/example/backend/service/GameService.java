@@ -993,8 +993,8 @@ public class GameService {
             System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
                     + roundWinner.getWinTokens() + " tokens");
         } else {
-            game.passDealerToWinner(roundWinner.getId());
-            System.out.println("Dealer button passed to: " + roundWinner.getName());
+            game.passDealerToNextPlayer();
+            System.out.println("Dealer button passed to next player: " + (game.getDealer() != null ? game.getDealer().getName() : "unknown"));
             System.out.println("Round won by: " + roundWinner.getName() + " with "
                     + roundWinner.getWinTokens() + " tokens. Starting new round in 6s.");
             new java.util.Timer().schedule(new java.util.TimerTask() {
