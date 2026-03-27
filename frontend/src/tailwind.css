@@ -87,10 +87,70 @@ html.scale-x-large { font-size: 21px; }
   --accent-gold-strong: #8a6a1d;
   --text-main: #f7f3e8;
   --text-muted: #b9cbbf;
+  --menu-shell-bg: rgba(15, 42, 27, 0.95);
+  --menu-border: #365844;
+  --menu-button-bg: #133624;
+  --menu-button-hover-bg: #1b452f;
+  --menu-button-text: #f7f3e8;
+  --menu-dropdown-bg: #0f2a1b;
+  --menu-dropdown-border: #8a6a1d;
+  --menu-dropdown-active-bg: #1f3f2b;
+  --menu-dropdown-active-text: #f5d98f;
+  --menu-dropdown-text: #f9f3e5;
+  --menu-dropdown-hover-bg: #1a3424;
+  --menu-close-text: #a7b9ac;
+  --menu-toggle-on: #8a6a1d;
+  --menu-toggle-off: #365844;
+  --menu-toggle-thumb: #f7f3e8;
+  --game-surface: #0f2a1b;
+  --game-surface-strong: #082012;
+  --game-surface-soft: #12352b;
+  --game-border: #365844;
+  --game-border-strong: #8a6a1d;
+  --game-highlight: #f2c96d;
+  --game-text: #f7f3e8;
+  --game-text-muted: #b9cbbf;
+  --game-accent-text: #f5d98f;
 }
 
-/* Default + dark share the same dark-felt palette */
-html.theme-default,
+/* Default theme now uses previous "white" (light green) palette */
+html.theme-default {
+  --felt-bg: #2b5a3d;
+  --felt-bg-soft: #356b48;
+  --panel-bg: #3f7a54;
+  --panel-bg-soft: #4b8760;
+  --panel-border: #85a892;
+  --accent-gold: #f1dc9e;
+  --accent-gold-strong: #caa249;
+  --text-main: #f7f3e8;
+  --text-muted: #e5eee8;
+  --menu-shell-bg: rgba(44, 93, 63, 0.97);
+  --menu-border: #85a892;
+  --menu-button-bg: #4b8760;
+  --menu-button-hover-bg: #5b9270;
+  --menu-button-text: #f7f3e8;
+  --menu-dropdown-bg: #3f7a54;
+  --menu-dropdown-border: #caa249;
+  --menu-dropdown-active-bg: #5b9270;
+  --menu-dropdown-active-text: #f7f3e8;
+  --menu-dropdown-text: #f7f3e8;
+  --menu-dropdown-hover-bg: #568f68;
+  --menu-close-text: #e5eee8;
+  --menu-toggle-on: #caa249;
+  --menu-toggle-off: #85a892;
+  --menu-toggle-thumb: #ffffff;
+  --game-surface: #3f7a54;
+  --game-surface-strong: #356b48;
+  --game-surface-soft: #4b8760;
+  --game-border: #85a892;
+  --game-border-strong: #caa249;
+  --game-highlight: #f1dc9e;
+  --game-text: #f7f3e8;
+  --game-text-muted: #e5eee8;
+  --game-accent-text: #f7f3e8;
+}
+
+/* Dark theme now uses previous default palette */
 html.theme-dark {
   --felt-bg: #0b2a1a;
   --felt-bg-soft: #0f2a1b;
@@ -101,17 +161,134 @@ html.theme-dark {
   --accent-gold-strong: #8a6a1d;
   --text-main: #f7f3e8;
   --text-muted: #b9cbbf;
+  --menu-shell-bg: rgba(15, 42, 27, 0.95);
+  --menu-border: #365844;
+  --menu-button-bg: #133624;
+  --menu-button-hover-bg: #1b452f;
+  --menu-button-text: #f7f3e8;
+  --menu-dropdown-bg: #0f2a1b;
+  --menu-dropdown-border: #8a6a1d;
+  --menu-dropdown-active-bg: #1f3f2b;
+  --menu-dropdown-active-text: #f5d98f;
+  --menu-dropdown-text: #f9f3e5;
+  --menu-dropdown-hover-bg: #1a3424;
+  --menu-close-text: #a7b9ac;
+  --menu-toggle-on: #8a6a1d;
+  --menu-toggle-off: #365844;
+  --menu-toggle-thumb: #f7f3e8;
+  --game-surface: #0f2a1b;
+  --game-surface-strong: #082012;
+  --game-surface-soft: #12352b;
+  --game-border: #365844;
+  --game-border-strong: #8a6a1d;
+  --game-highlight: #f2c96d;
+  --game-text: #f7f3e8;
+  --game-text-muted: #b9cbbf;
+  --game-accent-text: #f5d98f;
 }
 
-/* "white" option becomes light green theme */
+/* White theme is monochrome (mostly white, no color accents) */
 html.theme-white {
-  --felt-bg: #2b5a3d;
-  --felt-bg-soft: #356b48;
-  --panel-bg: #3f7a54;
-  --panel-bg-soft: #4b8760;
-  --panel-border: #85a892;
-  --accent-gold: #f1dc9e;
-  --accent-gold-strong: #caa249;
-  --text-main: #f7f3e8;
-  --text-muted: #e5eee8;
+  --felt-bg: #ffffff;
+  --felt-bg-soft: #f6f6f6;
+  --panel-bg: #ffffff;
+  --panel-bg-soft: #f3f3f3;
+  --panel-border: #cfcfcf;
+  --accent-gold: #111111;
+  --accent-gold-strong: #000000;
+  --text-main: #111111;
+  --text-muted: #5a5a5a;
+  --menu-shell-bg: rgba(255, 255, 255, 0.97);
+  --menu-border: #cfcfcf;
+  --menu-button-bg: #f3f3f3;
+  --menu-button-hover-bg: #e8e8e8;
+  --menu-button-text: #111111;
+  --menu-dropdown-bg: #ffffff;
+  --menu-dropdown-border: #cfcfcf;
+  --menu-dropdown-active-bg: #efefef;
+  --menu-dropdown-active-text: #000000;
+  --menu-dropdown-text: #111111;
+  --menu-dropdown-hover-bg: #f4f4f4;
+  --menu-close-text: #555555;
+  --menu-toggle-on: #000000;
+  --menu-toggle-off: #cfcfcf;
+  --menu-toggle-thumb: #ffffff;
+  --game-surface: #ffffff;
+  --game-surface-strong: #ffffff;
+  --game-surface-soft: #f3f3f3;
+  --game-border: #cfcfcf;
+  --game-border-strong: #000000;
+  --game-highlight: #000000;
+  --game-text: #111111;
+  --game-text-muted: #5a5a5a;
+  --game-accent-text: #000000;
+}
+
+.menu-shell {
+  border: 1px solid var(--menu-border);
+  background-color: var(--menu-shell-bg);
+}
+
+.menu-header-shell {
+  width: min(100%, 48rem);
+  max-width: calc(100vw - 0.5rem);
+  padding: 0.25rem 0.35rem;
+  overflow: hidden;
+}
+
+.menu-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.menu-pill {
+  background-color: var(--menu-button-bg);
+  color: var(--menu-button-text);
+}
+
+.menu-pill:hover {
+  background-color: var(--menu-button-hover-bg);
+}
+
+.menu-pill-fixed {
+  height: 36px;
+  min-height: 36px;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.menu-pill-icon {
+  min-width: 36px;
+  width: 36px;
+  padding-left: 0;
+  padding-right: 0;
+  justify-content: center;
+}
+
+.menu-pill-label {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.menu-dropdown {
+  background-color: var(--menu-dropdown-bg);
+  border: 1px solid var(--menu-dropdown-border);
+}
+
+.menu-dropdown-item {
+  color: var(--menu-dropdown-text);
+}
+
+.menu-dropdown-item:hover {
+  background-color: var(--menu-dropdown-hover-bg);
+}
+
+.menu-dropdown-item-active {
+  background-color: var(--menu-dropdown-active-bg);
+  color: var(--menu-dropdown-active-text);
 }

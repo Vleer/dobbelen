@@ -988,7 +988,9 @@ const GameTable: React.FC<GameTableProps> = ({
     game.currentBid && game.players.some((p) => p.id === game.currentBid!.playerId)
       ? game.currentBid
       : null;
+  const shouldShowPreviousBid = !!currentBidFromActivePlayer;
   const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED");
+  const snugMobileLayout = useMobileLayout && opponentsInTurnOrder.length >= 3;
 
   return (
     <div ref={tableRef} className="game-table relative w-full h-screen overflow-hidden select-none text-[#f7f3e8]" style={{ backgroundColor: 'var(--felt-bg)' }}>
@@ -1001,10 +1003,10 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Mobile/Tablet Layout - Clean Vertical Stack with fixed bottom elements */}
       <div className="lg:hidden flex flex-col h-screen">
         {/* Scrollable content area - opponents and results/bid display */}
-        <div className="flex-1 overflow-y-auto pb-80 pt-20">
+        <div className={`flex-1 overflow-y-auto pt-20 ${snugMobileLayout ? "pb-72" : "pb-80"}`}>
           {/* Opponent Players - Top section with natural flow, below header */}
-          <div className="px-3">
-            <div className="grid grid-cols-2 gap-2 items-start">
+          <div className={snugMobileLayout ? "px-2" : "px-3"}>
+            <div className={`grid grid-cols-2 items-start ${snugMobileLayout ? "gap-1" : "gap-2"}`}>
               {opponentsInTurnOrder.map((opponent, index) => {
                 const previousRoundPlayer = game.previousRoundPlayers?.find(
                   (p) => p.id === opponent.id
@@ -1024,13 +1026,15 @@ const GameTable: React.FC<GameTableProps> = ({
                       game.state === "ROUND_ENDED" ||
                       game.winner !== null
                     }
-                    previousBid={game.previousBid}
+                    previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                    totalOpponents={opponentsInTurnOrder.length}
                     previousRoundPlayer={previousRoundPlayer}
                     isMobile={useMobileLayout}
                     playerIndex={originalIndex}
                     isRoundEnded={roundEnded}
                     isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
                     isRoundWinner={game.winner === opponent.id}
+                    compactMobile={snugMobileLayout}
                   />
                 );
               })}
@@ -1038,17 +1042,17 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
 
           {/* Mobile center status panel */}
-          <div className="px-3 py-2">
-            <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 shadow-lg p-2.5 text-center">
-              <div className="text-xs text-[#d9b45a] font-semibold uppercase tracking-wide">
+          <div className={snugMobileLayout ? "px-2 py-1" : "px-3 py-2"}>
+            <div className={`rounded-2xl border shadow-lg text-center ${snugMobileLayout ? "p-2" : "p-2.5"}`} style={{ borderColor: 'var(--game-border)', backgroundColor: 'var(--game-surface)' }}>
+              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--game-accent-text)' }}>
                 {t("game.round", { roundNumber: game.roundNumber })}
               </div>
               {currentBidFromActivePlayer ? (
-                <div className="text-sm font-semibold text-[#f7f3e8] mt-1">
+                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text)' }}>
                   {t("game.currentBid")}: {currentBidFromActivePlayer.quantity}x{currentBidFromActivePlayer.faceValue}
                 </div>
               ) : (
-                <div className="text-sm font-semibold text-[#d4dfd7] mt-1">{t("game.waitingForFirstBid")}</div>
+                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text-muted)' }}>{t("game.waitingForFirstBid")}</div>
               )}
             </div>
           </div>
@@ -1071,23 +1075,25 @@ const GameTable: React.FC<GameTableProps> = ({
               );
               return isHistoryOpen && historyPanelBottom > 0 ? (
                 <div
-                  className="fixed left-0 right-0 px-2 z-40"
+                  className={`fixed left-0 right-0 z-40 ${snugMobileLayout ? "px-1.5" : "px-2"}`}
                   style={{ top: historyPanelBottom + 8 }}
                 >
                   {bidNode}
                 </div>
               ) : (
-                <div className="px-2 py-1">{bidNode}</div>
+                <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>{bidNode}</div>
               );
             })()}
 
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
-            <div className="px-2 py-1">
-              <div className="rounded-2xl p-2 md:p-3 shadow-2xl border-2" style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
+            <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
+              <div className={`rounded-2xl shadow-2xl border-2 ${snugMobileLayout ? "p-1.5" : "p-2 md:p-3"}`} style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
                 {/* Compact Header - Action and Who */}
-                <div className="text-center mb-1 md:mb-2">
-                  <div className="text-sm md:text-base font-bold text-amber-200">
+                <div className={snugMobileLayout ? "text-center mb-1" : "text-center mb-1 md:mb-2"}>
+                  <div className={`rounded-lg border border-[#365844] bg-[#143322] ${snugMobileLayout ? "px-2 py-1" : "px-2.5 py-1.5"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
+                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Action</div>
+                    <div className="text-sm md:text-base font-bold text-[#f5d98f]">
                     {game.lastActionType &&
                       game.lastActionPlayerId &&
                       (game.lastActionType === "DOUBT"
@@ -1110,6 +1116,7 @@ const GameTable: React.FC<GameTableProps> = ({
                                 (p) => p.id === game.lastActionPlayerId
                               )?.name || t("common.unknownPlayer"),
                           }))}
+                    </div>
                   </div>
                 </div>
 
@@ -1117,32 +1124,28 @@ const GameTable: React.FC<GameTableProps> = ({
                 {game.lastActualCount !== undefined &&
                   game.lastBidQuantity !== undefined &&
                   game.lastBidFaceValue !== undefined && (
-                    <div
-                      className={`text-center mb-1 md:mb-2 p-1.5 md:p-2 rounded-lg ${
-                        "bg-[#163726] border-2 border-[#8a6a1d]"
-                      }`}
-                    >
+                    <div className={`text-center rounded-lg bg-[#163726] border-2 border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"}`}>
                       <div
                         className="text-sm md:text-lg font-bold text-[#f5d98f]"
                       >
                         {game.lastActualCount >= game.lastBidQuantity
-                          ? `✓ ${t("game.result.thereWere", {
+                          ? t("game.result.thereWere", {
                               actualCount: game.lastActualCount,
                               faceValue: game.lastBidFaceValue,
-                            })}`
-                          : `✗ ${t("game.result.thereWereOnly", {
+                            })
+                          : t("game.result.thereWereOnly", {
                               actualCount: game.lastActualCount,
                               faceValue: game.lastBidFaceValue,
-                            })}`}
+                            })}
                       </div>
                     </div>
                   )}
 
                 {/* Winner - Prominent */}
                 {game.winner && (
-                  <div className="text-center mb-1 md:mb-2 p-1.5 md:p-2 bg-[#163726] rounded-lg border-2 border-[#8a6a1d]">
+                  <div className={`text-center rounded-lg border-2 bg-[#1b412c] border-[#d9b45a] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-pulse-green" : ""}`}>
+                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Round winner</div>
                     <div className="text-base md:text-xl font-bold text-[#f5d98f]">
-                      🏆{" "}
                       {t("game.result.winsRound", {
                         playerName:
                           game.players.find((p) => p.id === game.winner)
@@ -1154,9 +1157,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Eliminated Player - Very Prominent */}
                 {game.lastEliminatedPlayerId && (
-                  <div className="text-center mb-1 md:mb-2 p-1.5 md:p-2 bg-[#22382b] rounded-lg border-2 border-[#8a6a1d]">
+                  <div className={`text-center rounded-lg border-2 bg-[#22382b] border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
                     <div className="text-sm md:text-lg font-bold text-[#f5d98f]">
-                      💀{" "}
                       {t("game.result.isEliminated", {
                         playerName:
                           game.players.find(
@@ -1175,8 +1177,8 @@ const GameTable: React.FC<GameTableProps> = ({
 
           {/* Waiting Message - In scrollable area, below results */}
           {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
-            <div className="px-2 py-1">
-              <div className="bg-[#0f2a1b] p-2 md:p-4 rounded-2xl md:rounded-3xl shadow-lg border-2 border-[#365844] max-w-sm w-full mx-auto">
+            <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
+              <div className={`bg-[#0f2a1b] rounded-2xl md:rounded-3xl shadow-lg border-2 border-[#365844] max-w-sm w-full mx-auto ${snugMobileLayout ? "p-1.5" : "p-2 md:p-4"}`}>
                 <div className="text-center text-white text-sm md:text-lg font-bold">
                   {localPlayer.eliminated
                     ? t("game.waitingForNextRound")
@@ -1192,7 +1194,7 @@ const GameTable: React.FC<GameTableProps> = ({
           localPlayer &&
           isMyTurn() &&
           !localPlayer.eliminated && (
-            <div className="fixed bottom-24 left-0 right-0 z-45 px-2">
+            <div className={`fixed bottom-28 left-0 right-0 z-45 ${snugMobileLayout ? "px-1.5" : "px-2"}`}>
               <BidSelector
                 currentBid={game.currentBid}
                 previousBid={game.previousBid}
@@ -1217,7 +1219,7 @@ const GameTable: React.FC<GameTableProps> = ({
               onAction={handleAction}
               disabled={isLoading || bettingDisabled}
               currentBid={game.currentBid}
-              previousBid={game.previousBid}
+              previousBid={shouldShowPreviousBid ? game.previousBid : null}
               showDice={
                 game.showAllDice ||
                 game.state === "ROUND_ENDED" ||
@@ -1246,7 +1248,7 @@ const GameTable: React.FC<GameTableProps> = ({
             onAction={handleAction}
             disabled={isLoading || bettingDisabled}
             currentBid={game.currentBid}
-            previousBid={game.previousBid}
+            previousBid={shouldShowPreviousBid ? game.previousBid : null}
             showDice={
               game.showAllDice ||
               game.state === "ROUND_ENDED" ||
@@ -1299,7 +1301,8 @@ const GameTable: React.FC<GameTableProps> = ({
                 game.state === "ROUND_ENDED" ||
                 game.winner !== null
               }
-              previousBid={game.previousBid}
+              previousBid={shouldShowPreviousBid ? game.previousBid : null}
+              totalOpponents={opponentsInTurnOrder.length}
               previousRoundPlayer={previousRoundPlayer}
               playerIndex={originalIndex}
               isRoundEnded={roundEnded}
@@ -1313,7 +1316,7 @@ const GameTable: React.FC<GameTableProps> = ({
         {localPlayer && isMyTurn() && !localPlayer.eliminated && (
           <BidSelector
             currentBid={game.currentBid}
-            previousBid={game.previousBid}
+            previousBid={shouldShowPreviousBid ? game.previousBid : null}
             onBidSelect={(quantity, faceValue) =>
               handleAction("bid", { quantity, faceValue })
             }
@@ -1350,7 +1353,6 @@ const GameTable: React.FC<GameTableProps> = ({
             roundNumber={game.roundNumber}
             winner={game.winner || undefined}
             isMobile={false}
-            infoPanelBottom={historyPanelBottom}
           />
         </div>
       )}
@@ -1365,18 +1367,19 @@ const GameTable: React.FC<GameTableProps> = ({
         !error.toLowerCase().includes("stomp") &&
         !error.toLowerCase().includes("websocket") &&
         !error.toLowerCase().includes("connection") && (
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-[#3a2816] text-[#f7f3e8] border border-[#8a6a1d] px-4 py-2 rounded-xl z-50">
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 border px-4 py-2 rounded-xl z-50" style={{ backgroundColor: 'var(--game-surface)', color: 'var(--game-text)', borderColor: 'var(--game-border-strong)' }}>
             {error}
           </div>
         )}
 
       {/* Top Header Bar - Absolute positioning for both mobile and desktop */}
       <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
-        <div className="mx-auto w-full max-w-3xl flex items-center justify-center gap-1 md:gap-2 rounded-full border border-[#365844] bg-[#0f2a1b]/95 px-2 md:px-3 py-1 shadow-2xl">
+        <div className="mx-auto rounded-full menu-shell menu-header-shell shadow-2xl">
+          <div className="menu-header-row">
           <div>
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="h-9 min-w-9 px-3 rounded-full bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] font-medium shadow text-xs md:text-sm transition-all duration-200"
+              className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? "🔇" : "🔊"}
@@ -1399,7 +1402,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     return next;
                   })
                 }
-                className="h-9 min-w-9 px-3 rounded-full bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] font-medium shadow text-xs md:text-sm transition-all duration-200"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
                 aria-label="Settings"
               >
                 ⚙
@@ -1426,7 +1429,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   setIsHistoryOpen(!isHistoryOpen);
                   setShowRulesTooltip(false);
                 }}
-                className="h-9 px-3 rounded-full bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] font-medium shadow text-xs md:text-sm transition-all duration-200"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-label font-medium shadow transition-all duration-200 min-w-0 max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
               >
                 {t("game.gameInfo")}
               </button>
@@ -1444,8 +1447,9 @@ const GameTable: React.FC<GameTableProps> = ({
             compact
             closeSignal={languageCloseSignal}
             onOpenChange={setIsLanguageOpen}
-            buttonClassName="h-9 px-3 bg-[#133624] text-[#f7f3e8] hover:bg-[#1b452f] shadow"
+            buttonClassName="menu-pill menu-pill-fixed menu-pill-label shadow text-[13px]"
           />
+          </div>
         </div>
 
         {/* History Panel - Positioned below the header */}
@@ -1467,10 +1471,10 @@ const GameTable: React.FC<GameTableProps> = ({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4 bg-black/50">
           <div
             className="border-2 rounded-xl px-4 py-3 md:px-6 md:py-5 shadow-2xl min-w-[240px] max-w-md"
-            style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}
+            style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-[#f5d98f] text-center text-sm md:text-lg mb-3 md:mb-5">
+            <p className="text-center text-sm md:text-lg mb-3 md:mb-5" style={{ color: 'var(--game-accent-text)' }}>
               {t("game.leaveConfirmMessage")}
             </p>
             <div className="flex gap-2 md:gap-3 justify-center">
@@ -1486,14 +1490,15 @@ const GameTable: React.FC<GameTableProps> = ({
                   }
                   onBack?.();
                 }}
-                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d] transition-colors"
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border transition-colors"
+                style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
               >
                 {t("game.leaveConfirmLeave")}
               </button>
               <button
                 onClick={() => setShowLeaveConfirm(false)}
                 className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
-                style={{ backgroundColor: '#12352b', borderColor: '#365844', color: '#f7f3e8' }}
+                style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
               >
                 {t("game.leaveConfirmCancel")}
               </button>
@@ -1506,9 +1511,9 @@ const GameTable: React.FC<GameTableProps> = ({
       {playerLeftNotification && (
         <div
           className="fixed top-2 left-1/2 -translate-x-1/2 z-[9998] border-2 rounded-xl px-3 py-2 md:px-6 md:py-4 shadow-2xl max-w-[95vw]"
-          style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}
+          style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
         >
-          <p className="text-[#f5d98f] text-center text-sm md:text-lg font-medium">
+          <p className="text-center text-sm md:text-lg font-medium" style={{ color: 'var(--game-accent-text)' }}>
             {t("game.playerLeftNotification", { playerName: playerLeftNotification })}
           </p>
         </div>

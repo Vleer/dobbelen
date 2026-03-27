@@ -23,17 +23,10 @@ interface LocalPlayerProps {
 const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState(() => {
-    const saved = localStorage.getItem('localPlayerPosition');
-    return saved ? JSON.parse(saved) : { x: 16, y: 0 }; // default: bottom-left
-  });
   const [isDiceVisible, setIsDiceVisible] = useState(true);
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
   const [showLoserAnim, setShowLoserAnim] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevEliminatedRef = useRef(player.eliminated);
@@ -120,7 +113,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
 
-  const playerTextClass = 'text-amber-200';
+  const scoreSlots = 7;
+  const filledScore = Math.min(player.winTokens || 0, scoreSlots);
 
   // Computed state flags
   const activeTurn = isMyTurn && !isRoundEnded;
@@ -133,47 +127,6 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     isRoundWinner && animationsEnabled ? 'animate-pulse-green' : '',
   ].filter(Boolean).join(' ');
 
-  // Drag functionality (desktop only)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 0 && !isMobile) { // Left mouse button, desktop only
-      setIsDragging(true);
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-        });
-      }
-    }
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newPosition = {
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
-      };
-      setPosition(newPosition);
-      localStorage.setItem('localPlayerPosition', JSON.stringify(newPosition));
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, dragOffset]);
-
   if (isMobile) {
     return (
       <div className="relative pt-4" data-player-card={player.id}>
@@ -182,17 +135,34 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           data-dealer-placement="above"
           className="absolute left-1/2 top-0 w-0 h-0"
         />
+        <div className="px-2 mb-1">
+          <div className="w-full flex items-center justify-between gap-1">
+            {Array.from({ length: scoreSlots }, (_, index) => (
+              <div
+                key={`local-mobile-score-${index}`}
+                className={`h-2.5 flex-1 rounded-sm border ${
+                  index < filledScore ? "" : "bg-transparent"
+                }`}
+                style={{
+                  backgroundColor: index < filledScore ? 'var(--game-highlight)' : 'transparent',
+                  borderColor: index < filledScore ? 'var(--game-highlight)' : 'var(--game-border-strong)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
         <div
-          className={`w-full bg-[#082012] p-3 shadow-2xl select-none transition-all duration-300 rounded-t-3xl border-x border-t ${
-            activeTurn ? 'border-[#f2c96d] border-t-4' : isRoundWinner ? 'border-[#d9b45a] border-t-4' : 'border-[#365844] border-t-2'
+          className={`w-full p-3 shadow-2xl select-none transition-all duration-300 rounded-t-3xl border-x border-t ${
+            activeTurn ? 'border-t-4' : isRoundWinner ? 'border-t-4' : 'border-t-2'
           } ${player.eliminated ? "opacity-70" : ""} ${animClasses} h-[86px]`}
+          style={{
+            backgroundColor: 'var(--game-surface-strong)',
+            borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
+          }}
         >
           <div className="h-full flex items-center justify-between gap-2 min-w-0">
             <div className="min-w-0 flex items-center gap-1.5">
-              <span className={`font-bold text-sm truncate ${playerTextClass}`}>{player.name}</span>
-              {player.winTokens > 0 && (
-                <span className="text-[#e7be5c] font-bold text-[10px] flex-shrink-0">🏆 {player.winTokens}</span>
-              )}
+              <span className="font-bold text-sm truncate" style={{ color: 'var(--game-accent-text)' }}>{player.name}</span>
               {!showDice && (
                 <button
                   type="button"
@@ -213,8 +183,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                     e.stopPropagation();
                     handleToggleDiceVisibility();
                   }}
-                  className="p-1 rounded-md border border-[#8a6a1d] bg-[#12352b] hover:bg-[#1b452f] active:bg-[#1f4e36] text-[#f5d98f] flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
-                  style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+                  className="p-1 rounded-md border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
+                  style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent", borderColor: 'var(--game-border-strong)', backgroundColor: 'var(--game-surface-soft)', color: 'var(--game-accent-text)' }}
                   aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
                 >
                   <div className="pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3">
@@ -231,7 +201,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   ))}
                 </div>
               ) : (
-                <span className="text-[#b9cbbf] text-xs italic">{t("game.diceHidden") || "Hidden"}</span>
+                <span className="text-xs italic" style={{ color: 'var(--game-text-muted)' }}>{t("game.diceHidden") || "Hidden"}</span>
               )}
             </div>
           </div>
@@ -244,11 +214,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     <div
       className="absolute"
       style={{
-        left: position.x || "50%",
-        top: position.y || "auto",
-        bottom: position.y ? "auto" : "2rem",
-        transform: position.x ? "none" : "translateX(-50%)",
-        cursor: isDragging ? "grabbing" : "grab",
+        left: "50%",
+        bottom: "2rem",
+        transform: "translateX(-50%)",
       }}
     >
       {/* Relative wrapper for badge + card */}
@@ -258,16 +226,32 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           data-dealer-placement="above"
           className="absolute left-1/2 top-0 w-0 h-0"
         />
+        <div className="w-full mb-2 px-1">
+          <div className="w-[420px] max-w-[95vw] flex items-center justify-between gap-1.5">
+            {Array.from({ length: scoreSlots }, (_, index) => (
+              <div
+                key={`local-desktop-score-${index}`}
+                className={`h-3.5 flex-1 rounded-sm border ${
+                  index < filledScore ? "" : "bg-transparent"
+                }`}
+                style={{
+                  backgroundColor: index < filledScore ? 'var(--game-highlight)' : 'transparent',
+                  borderColor: index < filledScore ? 'var(--game-highlight)' : 'var(--game-border-strong)',
+                }}
+              />
+            ))}
+          </div>
+        </div>
         {/* Player Container */}
         <div
-          ref={containerRef}
-          onMouseDown={handleMouseDown}
-          className={`bg-[#082012] p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
-            activeTurn ? 'border-[6px] border-[#f2c96d] scale-[1.03]' : isRoundWinner ? 'border-[6px] border-[#d9b45a]' : 'border-4 border-[#365844]'
+          className={`p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
+            activeTurn ? 'border-[6px] scale-[1.03]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-50" : ""
           } ${animClasses}`}
         style={{
+          backgroundColor: 'var(--game-surface-strong)',
+          borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
           width: "420px",
           height: "190px",
           maxWidth: "95vw",
@@ -281,14 +265,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             {/* Left meta column */}
             <div className="min-w-[140px] max-w-[180px] flex flex-col justify-center">
               <div className="flex items-center gap-2">
-                <span className={`font-bold text-xl ${playerTextClass} truncate`}>
+                <span className="font-bold text-xl truncate" style={{ color: 'var(--game-accent-text)' }}>
               {player.name}
             </span>
-                {player.winTokens > 0 && (
-                  <div className="text-[#e7be5c] font-bold text-sm flex-shrink-0">
-                    🏆 {player.winTokens}
-                  </div>
-                )}
               </div>
             {/* Win Tokens */}
             {/* Eye toggle button - next to name */}
@@ -303,30 +282,24 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   handleToggleDiceVisibility();
                 }}
                 onMouseDown={(e) => {
-                  console.log("DESKTOP BUTTON MOUSE DOWN!", e);
                   e.preventDefault();
                   e.stopPropagation();
                 }}
-                className="rounded-md border border-[#8a6a1d] bg-[#12352b] hover:bg-[#1b452f] active:bg-[#1f4e36] transition-all text-[#f5d98f] cursor-pointer z-50 relative"
+                className="rounded-md border transition-all cursor-pointer z-50 relative"
                 style={{
                   pointerEvents: "auto",
-                  padding: 0,
-                  minWidth: 36,
-                  minHeight: 36,
+                  padding: 4,
+                  minWidth: 30,
+                  minHeight: 30,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  borderColor: 'var(--game-border-strong)',
+                  backgroundColor: 'var(--game-surface-soft)',
+                  color: 'var(--game-accent-text)',
                 }}
                 aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
-                <span
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    minWidth: 36,
-                    minHeight: 36,
-                  }}
-                />
                 <span
                   style={{
                     position: "relative",
@@ -347,11 +320,11 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
               {shouldShowDice ? (
                 <div className="flex items-center gap-1 flex-nowrap">
                   {diceValues.slice(0, 6).map((value, index) => (
-                    <DiceSVG key={index} value={value} size="xs" />
+                    <DiceSVG key={index} value={value} size="sm" />
                   ))}
                 </div>
               ) : (
-                <div className="text-[#b9cbbf] text-lg italic w-full text-center">
+                <div className="text-lg italic w-full text-center" style={{ color: 'var(--game-text-muted)' }}>
                   {t("game.diceHidden") || "Hidden"}
                 </div>
               )}
@@ -362,7 +335,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         {previousBid &&
           previousBid.playerId === player.id &&
           !player.eliminated && (
-            <div className="text-center text-[#f5d98f] font-bold text-sm mb-2">
+            <div className="text-center font-bold text-sm mb-2" style={{ color: 'var(--game-accent-text)' }}>
               {t("game.previousBid", {
                 quantity: previousBid.quantity,
                 faceValue: previousBid.faceValue,
@@ -372,7 +345,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
         {/* Eliminated State */}
         {player.eliminated && (
-          <div className="text-center text-[#f5d98f] font-bold text-xl bg-[#203626] rounded-lg p-3 border border-[#8a6a1d]">
+          <div className="text-center font-bold text-xl rounded-lg p-3 border" style={{ color: 'var(--game-accent-text)', backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)' }}>
             {t("game.eliminated")}
           </div>
         )}

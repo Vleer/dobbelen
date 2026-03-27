@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
-import { useSettings } from '../contexts/SettingsContext';
 
 interface GameSetupProps {
   onCreateGame: (playerNames: string[], username: string) => void;
@@ -21,7 +20,6 @@ const DUTCH_NAMES = [
 ];
 
 const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLoading, error }) => {
-  const { colorScheme } = useSettings();
   const [username, setUsername] = useState('');
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Henk', 'AI Jan']);
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -86,8 +84,6 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
     }
   };
 
-  const isLightTheme = colorScheme === 'white';
-
   return (
     <div className="flex items-center justify-center min-h-screen select-none" style={{ backgroundColor: 'var(--felt-bg)' }}>
       <div className="p-8 rounded-lg shadow-lg max-w-md w-full border" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--panel-border)', color: 'var(--text-main)' }}>
@@ -129,7 +125,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                 }`}
                 style={aiDifficulty === 'easy'
                   ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
-                  : { backgroundColor: isLightTheme ? '#5b9270' : '#173d2b', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
+                  : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
               >
                 <div className="text-lg">🎲 Easy AI</div>
                 <div className="text-xs mt-1 opacity-80">Random decisions</div>
@@ -144,7 +140,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                 }`}
                 style={aiDifficulty === 'medium'
                   ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
-                  : { backgroundColor: isLightTheme ? '#5b9270' : '#173d2b', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
+                  : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
               >
                 <div className="text-lg">🧠 Medium AI</div>
                 <div className="text-xs mt-1 opacity-80">Strategic thinking</div>
@@ -167,7 +163,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
                   }`}
                   style={aiCount === count
                     ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
-                    : { backgroundColor: isLightTheme ? '#5b9270' : '#173d2b', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
+                    : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
                 >
                   {count}
                 </button>
@@ -177,7 +173,7 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
             <div className="space-y-2">
               {playerNames.map((name, index) => (
                 <div key={index} className="flex items-center space-x-2">
-                  <span className="flex-1 p-2 border rounded" style={{ backgroundColor: isLightTheme ? '#5b9270' : '#173d2b', borderColor: 'var(--panel-border)' }}>{name}</span>
+                  <span className="flex-1 p-2 border rounded" style={{ backgroundColor: 'var(--felt-bg-soft)', borderColor: 'var(--panel-border)' }}>{name}</span>
                   <button
                     type="button"
                     onClick={() => removePlayer(index)}
