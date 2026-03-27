@@ -1,3 +1,10 @@
+import gameStartUrl from '../resources/game_start.wav';
+import newRoundUrl from '../resources/new_round.wav';
+import doubtUrl from '../resources/doubt.wav';
+import spotOnUrl from '../resources/spot_on.wav';
+import raiseUrl from '../resources/raise.wav';
+import winUrl from '../resources/win.wav';
+
 class AudioService {
   private sounds: { [key: string]: HTMLAudioElement } = {};
   private isMuted: boolean = false;
@@ -8,25 +15,21 @@ class AudioService {
     
     console.log('Initializing audio service...');
     
-    // Import audio files from src/resources using require or import
-    // Note: Using direct imports for webpack to bundle them properly
     try {
       this.sounds = {
-        gameStart: new Audio(require('../resources/game_start.wav')),
-        newRound: new Audio(require('../resources/new_round.wav')),
-        doubt: new Audio(require('../resources/doubt.wav')),
-        spotOn: new Audio(require('../resources/spot_on.wav')),
-        raise: new Audio(require('../resources/raise.wav')),
-        win: new Audio(require('../resources/win.wav')),
+        gameStart: new Audio(gameStartUrl),
+        newRound: new Audio(newRoundUrl),
+        doubt: new Audio(doubtUrl),
+        spotOn: new Audio(spotOnUrl),
+        raise: new Audio(raiseUrl),
+        win: new Audio(winUrl),
       };
 
-      // Set volume for all sounds (adjust as needed)
       Object.values(this.sounds).forEach(sound => {
         sound.volume = 0.7;
-        sound.load(); // Explicitly load the audio
+        sound.load();
       });
 
-      // Lower volume for new round and win sounds
       if (this.sounds.newRound) {
         this.sounds.newRound.volume = 0.3;
       }
@@ -47,7 +50,6 @@ class AudioService {
   }
 
   private play(soundKey: string) {
-    // Initialize sounds on first play (after user interaction)
     if (!this.initialized) {
       this.initializeSounds();
     }
@@ -60,7 +62,6 @@ class AudioService {
     const sound = this.sounds[soundKey];
     if (sound) {
       console.log(`Playing sound: ${soundKey}`);
-      // Reset the sound to the beginning in case it's already playing
       sound.currentTime = 0;
       sound.play().catch(err => {
         console.error(`Failed to play sound ${soundKey}:`, err);

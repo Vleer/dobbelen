@@ -27,7 +27,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
-      - APP_ALLOWED_ORIGINS=https://898944.xyz,https://www.898944.xyz,http://localhost:*,http://127.0.0.1:*
+      - APP_ALLOWED_ORIGINS=https://898944.xyz,https://www.898944.xyz,http://localhost:*,http://127.0.0.1:*,https://localhost,capacitor://localhost
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
     networks:
       - dobbelen-network

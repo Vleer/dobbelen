@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { postData, Data } from "../api/api";
 
 const DataPoster: React.FC = () => {
   const [inputData, setInputData] = useState<Data>({ id: 0, name: "" });
-  const mutation = useMutation<Data, Error, Data>(postData);
+  const mutation = useMutation<Data, Error, Data>({ mutationFn: postData });
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -27,7 +27,7 @@ const DataPoster: React.FC = () => {
           Submit
         </button>
       </form>
-      {mutation.isLoading && <p>Loading...</p>}
+      {mutation.isPending && <p>Loading...</p>}
       {mutation.isError && <p>Error: {mutation.error?.message}</p>}
       {mutation.isSuccess && <p>Success: {JSON.stringify(mutation.data)}</p>}
     </div>
