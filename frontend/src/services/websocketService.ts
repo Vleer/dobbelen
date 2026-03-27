@@ -48,22 +48,22 @@ export class WebSocketService {
     // Get the backend URL based on environment
     const getBackendUrl = () => {
       // Development: always use local backend so dev machine is isolated from server
-      if (process.env.NODE_ENV === 'development') {
-        const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+      if (import.meta.env.DEV) {
+        const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
         console.log('🔌 [DEV] WebSocket using isolated local backend:', url);
         return url;
       }
 
       // Check if we're running in Kubernetes (via ingress)
-      if (process.env.REACT_APP_USE_INGRESS === 'true') {
+      if (import.meta.env.VITE_USE_INGRESS === 'true') {
         console.log('🔌 WebSocket using Kubernetes ingress routing');
-        const basePath = process.env.PUBLIC_URL || '';
+        const basePath = import.meta.env.BASE_URL || '';
         return basePath;  // Use base path for ingress routing (e.g., /dobbelen)
       }
 
       const hostname = window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        const url = process.env.REACT_APP_BACKEND_URL || "http://localhost:8080";
+        const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
         console.log('🔌 WebSocket using localhost backend URL:', url);
         return url;
       }

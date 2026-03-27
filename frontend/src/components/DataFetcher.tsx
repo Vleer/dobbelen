@@ -1,9 +1,9 @@
 import React from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchData, Data } from "../api/api";
 
 const DataFetcher: React.FC = () => {
-  const { data, error, isLoading } = useQuery<Data[], Error>("data", fetchData);
+  const { data, error, isLoading } = useQuery<Data[], Error>({ queryKey: ["data"], queryFn: fetchData });
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
