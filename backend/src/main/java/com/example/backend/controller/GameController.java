@@ -200,6 +200,17 @@ public class GameController {
         }
     }
 
+    /** Host-only: refresh public lobby presence while the lobby browser tab is active */
+    @PostMapping("/multiplayer/{gameId}/lobby-presence")
+    public ResponseEntity<Void> lobbyPresence(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            gameService.recordHostLobbyPresence(gameId, request.getPlayerId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @DeleteMapping("/multiplayer/{gameId}")
     public ResponseEntity<Void> cancelMultiplayerGame(@PathVariable String gameId,
             @RequestParam String playerId) {

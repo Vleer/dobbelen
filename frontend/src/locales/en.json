@@ -80,6 +80,7 @@
   "game.result.youWinGame": "You are the Dobbelkoning! 👑",
   "game.result.youLoseGame": "You Lost! 💀",
   "game.result.gameWinnerIs": "{{playerName}} wins the game!",
+  "game.result.opponentHasWonGame": "{{playerName}} has won",
   "game.action.doubt": "{{playerName}}: Doubts",
   "game.action.spotOn": "{{playerName}}: spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",

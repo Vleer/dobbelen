@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, type CSSProperties } from 'react';
 import { Bid } from '../types/game';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -12,6 +12,8 @@ interface BidSelectorProps {
   onSpotOn?: () => void;
   disabled: boolean;
   isMobile?: boolean; // Mobile layout flag
+  /** When true, no fixed positioning — parent column stacks this under BidDisplay */
+  stacked?: boolean;
 }
 
 const BidSelector: React.FC<BidSelectorProps> = ({
@@ -22,6 +24,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   onSpotOn,
   disabled,
   isMobile = false,
+  stacked = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -144,7 +147,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     return (
       <div
         ref={containerRef}
-        className="p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10"
+        className={`p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10 ${stacked ? "mx-auto" : ""}`}
         style={{ backgroundColor: 'var(--game-surface-strong)', borderColor: 'var(--game-border)' }}
       >
         <div className="space-y-0.5">
@@ -249,19 +252,30 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     );
   }
 
+  const desktopShellStyle: CSSProperties = stacked
+    ? {
+        backgroundColor: 'var(--game-surface-strong)',
+        borderColor: 'var(--game-border)',
+      }
+    : {
+        backgroundColor: 'var(--game-surface-strong)',
+        borderColor: 'var(--game-border)',
+        position: 'fixed',
+        left: '50%',
+        bottom: '14rem',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+      };
+
   return (
     <div
       ref={containerRef}
-      className="p-3 rounded-2xl shadow-lg border-2 max-w-sm select-none relative z-10"
-      style={{
-        backgroundColor: 'var(--game-surface-strong)',
-        borderColor: 'var(--game-border)',
-        position: "fixed",
-        left: "50%",
-        bottom: "14rem",
-        transform: "translateX(-50%)",
-        zIndex: 1000,
-      }}
+      className={
+        stacked
+          ? 'p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10 pointer-events-auto mx-auto'
+          : 'p-3 rounded-2xl shadow-lg border-2 max-w-sm select-none relative z-10'
+      }
+      style={desktopShellStyle}
     >
       <div className="space-y-1">
         {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
@@ -317,7 +331,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-2 flex gap-2 w-[19.25rem] mx-auto">
+      <div className={`mt-2 flex gap-2 w-[19.25rem] mx-auto ${stacked ? 'max-w-full' : ''}`}>
         <button
           onClick={(e) => {
             e.stopPropagation();

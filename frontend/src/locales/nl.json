@@ -80,6 +80,7 @@
   "game.result.youWinGame": "Jij bent de Dobbelkoning! 👑",
   "game.result.youLoseGame": "Je hebt verloren! 💀",
   "game.result.gameWinnerIs": "{{playerName}} wint het spel!",
+  "game.result.opponentHasWonGame": "{{playerName}} heeft gewonnen",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",
   "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",

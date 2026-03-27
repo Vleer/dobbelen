@@ -106,6 +106,11 @@ public class Game {
     private Long countdownEndTime;
     /** Players who have clicked "continue" after the game ended (to trigger a rematch) */
     private List<String> playersContinued;
+    /**
+     * Last time the host was actively present on the public lobby browser (epoch ms).
+     * Used to hide idle lobbies from the public list while the game still exists (direct link still works).
+     */
+    private Long lastHostLobbyPresenceAt;
 
     public Game() {
         this.id = generateShortGameId();
@@ -131,6 +136,7 @@ public class Game {
         this.twoPlayerRoundStartIndex = null;
         this.currentHandBidHistory = new ArrayList<>();
         this.playersContinued = new ArrayList<>();
+        this.lastHostLobbyPresenceAt = null;
     }
 
     /** Reset this game back to WAITING_FOR_PLAYERS so all players can start a new game. */
@@ -163,6 +169,7 @@ public class Game {
         lastActionType = null;
         dealerIndex = 0;
         currentPlayerIndex = 0;
+        lastHostLobbyPresenceAt = System.currentTimeMillis();
     }
 
     private String generateShortGameId() {
@@ -411,6 +418,14 @@ public class Game {
 
     public void setPlayersContinued(List<String> playersContinued) {
         this.playersContinued = playersContinued;
+    }
+
+    public Long getLastHostLobbyPresenceAt() {
+        return lastHostLobbyPresenceAt;
+    }
+
+    public void setLastHostLobbyPresenceAt(Long lastHostLobbyPresenceAt) {
+        this.lastHostLobbyPresenceAt = lastHostLobbyPresenceAt;
     }
 
     public void addBidToCurrentHand(Bid bid) {

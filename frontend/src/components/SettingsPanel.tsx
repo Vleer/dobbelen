@@ -159,7 +159,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             onClose();
             onLeaveGame();
           }}
-          className="settings-leave-game-btn w-full mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold border transition-colors"
+          className="settings-leave-game-btn w-full mt-4 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
         >
           {leaveGameLabel || t('game.leaveGame')}
         </button>

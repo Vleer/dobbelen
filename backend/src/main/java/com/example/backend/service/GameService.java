@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GameService {
     private static final long RECONNECT_TIMEOUT_MS = 300_000; // 5 minutes for current player to reconnect
     private static final long HOST_INACTIVITY_TIMEOUT_MS = 3 * 60 * 60 * 1000L; // 3 hours for host when game has started
+    /** Public lobby list: host must have had the lobby tab visible (presence ping) within this window */
+    private static final long PUBLIC_LOBBY_HOST_PRESENCE_TTL_MS = 5 * 60 * 1000L;
 
     private final Map<String, Game> games = new ConcurrentHashMap<>();
     private final Set<String> processingAITurns = ConcurrentHashMap.newKeySet(); // Track games currently processing AI
@@ -568,16 +570,47 @@ public class GameService {
         game.setMaxPlayers(4);
         game.setWaitingForPlayers(true);
         game.setState(GameState.WAITING_FOR_PLAYERS);
+        game.setLastHostLobbyPresenceAt(System.currentTimeMillis());
         games.put(game.getId(), game);
         return game;
     }
 
+    /**
+     * Host calls this while the lobby UI is visible so the game stays on the public list.
+     * Idle hosts (no ping within the configured TTL) are omitted from the list;
+     * the game still exists and can be rejoined via link or code.
+     */
+    public void recordHostLobbyPresence(String gameId, String playerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (!game.isMultiplayer() || game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            throw new IllegalArgumentException("Lobby presence only applies while waiting for players");
+        }
+        if (game.getPlayers().isEmpty()) {
+            throw new IllegalArgumentException("Game has no players");
+        }
+        if (!game.getPlayers().get(0).getId().equals(playerId)) {
+            throw new IllegalArgumentException("Only the host can refresh lobby presence");
+        }
+        game.setLastHostLobbyPresenceAt(System.currentTimeMillis());
+    }
+
     public List<Game> listMultiplayerLobbyGames() {
+        long now = System.currentTimeMillis();
         List<Game> all = new ArrayList<>(games.values());
         return all.stream()
                 .filter(g -> g.isMultiplayer())
                 .filter(g -> g.getState() == GameState.WAITING_FOR_PLAYERS)
                 .filter(g -> !g.isPrivate())
+                .filter(g -> {
+                    Long last = g.getLastHostLobbyPresenceAt();
+                    if (last == null) {
+                        return false;
+                    }
+                    return now - last <= PUBLIC_LOBBY_HOST_PRESENCE_TTL_MS;
+                })
                 .toList();
     }
 
@@ -633,6 +666,9 @@ public class GameService {
 
         Player player = new Player(playerName, color, aiType);
         game.getPlayers().add(player);
+        if (game.getPlayers().size() == 1) {
+            game.setLastHostLobbyPresenceAt(System.currentTimeMillis());
+        }
 
         System.out.println("JOIN SUCCESS: Added player=" + playerName + ", total players=" + game.getPlayers().size()
                 + ", isAI=" + (aiType != null));

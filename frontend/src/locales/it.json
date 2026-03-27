@@ -74,6 +74,7 @@
   "game.result.youWinGame": "Sei il Dobbelkoning! 👑",
   "game.result.youLoseGame": "Hai perso! 💀",
   "game.result.gameWinnerIs": "{{playerName}} vince la partita!",
+  "game.result.opponentHasWonGame": "{{playerName}} ha vinto",
   "game.action.doubt": "{{playerName}} dubita",
   "game.action.spotOn": "{{playerName}} dice esatto",
   "game.action.raise": "{{playerName}} rilancia",

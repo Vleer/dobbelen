@@ -23,6 +23,10 @@ interface OpponentPlayerProps {
   isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
   isRoundWinner?: boolean; // This player won this round – glow green
   compactMobile?: boolean; // Extra snug spacing for dense mobile layouts
+  /** Shorter / narrower cards in landscape (tablet/phone) */
+  landscapeMobile?: boolean;
+  /** lg+ layout: narrower opponent cards in landscape */
+  compactDesktopLandscape?: boolean;
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
@@ -40,6 +44,8 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   isRoundWinner = false,
   totalOpponents = 0,
   compactMobile = false,
+  landscapeMobile = false,
+  compactDesktopLandscape = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -169,7 +175,15 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         <div
           className={`rounded-xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[3px]' : isRoundWinner ? 'border-[3px]' : 'border-2'
-          } ${player.eliminated ? "opacity-50" : ""} ${compactMobile ? "p-1.5 h-[72px]" : "p-2 h-[82px]"} min-w-0 flex-shrink-0 w-full ${animClasses}`}
+          } ${player.eliminated ? "opacity-50" : ""} ${
+            landscapeMobile
+              ? compactMobile
+                ? "p-1 h-[62px]"
+                : "p-1.5 h-[68px]"
+              : compactMobile
+                ? "p-1.5 h-[72px]"
+                : "p-2 h-[82px]"
+          } min-w-0 flex-shrink-0 w-full max-w-[min(100%,11.5rem)] mx-auto ${animClasses}`}
           style={{
             backgroundColor: 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
@@ -230,11 +244,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         {/* Player Container - Rounded Rectangle with Green Background */}
         <div
           ref={containerRef}
-          className={`w-72 h-[136px] rounded-2xl shadow-lg select-none transition-all duration-300 ${
+          className={`rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-50" : ""
-          } ${animClasses} flex flex-col items-center justify-between p-3`}
+          } ${animClasses} flex flex-col items-center justify-between p-3 ${
+            compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(118px,16vh)] max-w-[16rem]" : "w-72 h-[136px]"
+          }`}
           style={{
             backgroundColor: 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',

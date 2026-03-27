@@ -12,9 +12,11 @@ interface BidDisplayProps {
   winner?: string;
   playerName?: string;
   isMobile?: boolean;
+  /** When true, no fixed positioning — parent stacks this above BidSelector (centered column) */
+  stacked?: boolean;
 }
 
-const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false }) => {
+const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, stacked = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showSlideAnim, setShowSlideAnim] = useState(false);
@@ -45,40 +47,63 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   // Create an array of dice values for visualization
   const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
 
-  if (isMobile) {
-    return (
-      <div className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}>
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}</span>
-          <div className="flex items-center flex-shrink-0">
-            <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
-          </div>
+  const mobileCard = (
+    <div
+      className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
+      style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
+    >
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}</span>
+        <div className="flex items-center flex-shrink-0">
+          <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
         </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    if (stacked) {
+      return (
+        <div className="w-full max-w-md mx-auto flex justify-center px-2">
+          {mobileCard}
+        </div>
+      );
+    }
+    return mobileCard;
+  }
+
+  const desktopCard = (
+    <div
+      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-0 max-w-[min(24rem,92vw)] select-none ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
+      style={{
+        backgroundColor: 'var(--game-surface)',
+        borderColor: 'var(--game-border-strong)',
+      }}
+    >
+      <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2">
+        <div className="text-xl font-bold text-center" style={{ color: 'var(--game-text)' }}>{bidderName}</div>
+        <div className="flex items-center justify-center space-x-2">
+          <DiceHandSVG diceValues={diceValues} size="lg" />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (stacked) {
+    return (
+      <div className="relative w-full flex justify-center pointer-events-auto">
+        {desktopCard}
       </div>
     );
   }
 
+  /* Legacy floating center (kept for safety); animation runs on inner card so translateX(-50%) is not clobbered */
   return (
     <div
-      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
-      style={{
-        backgroundColor: 'var(--game-surface)',
-        borderColor: 'var(--game-border-strong)',
-        position: "fixed",
-        left: "50%",
-        top: "calc(50% + 64px)",
-        transform: "translateX(-50%)",
-        zIndex: 1000
-      }}
+      className="fixed left-1/2 top-[calc(50%+64px)] z-[1000] pointer-events-none"
+      style={{ transform: 'translateX(-50%)' }}
     >
-      <div className="flex items-center justify-center space-x-6">
-        <div className="text-xl font-bold" style={{ color: 'var(--game-text)' }}>{bidderName}</div>
-
-        {/* Dice Visualization */}
-        <div className="flex items-center space-x-2">
-          <DiceHandSVG diceValues={diceValues} size="lg" />
-        </div>
-      </div>
+      <div className="pointer-events-auto">{desktopCard}</div>
     </div>
   );
 };

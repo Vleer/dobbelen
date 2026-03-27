@@ -18,9 +18,13 @@ interface LocalPlayerProps {
   isRoundEnded?: boolean; // Round has ended – suppress turn-indicator animations
   isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
   isRoundWinner?: boolean; // This player won this round – glow green
+  /** Mobile/tablet: shorter bar in landscape */
+  landscapeMobile?: boolean;
+  /** Desktop: slightly smaller card in landscape */
+  compactDesktopLandscape?: boolean;
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [isDiceVisible, setIsDiceVisible] = useState(true);
@@ -129,7 +133,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   if (isMobile) {
     return (
-      <div className="relative pt-4" data-player-card={player.id}>
+      <div className={`relative pt-4 ${landscapeMobile ? "max-w-[min(100%,22rem)] mx-auto" : ""}`} data-player-card={player.id}>
         <div
           data-dealer-anchor={player.id}
           data-dealer-placement="above"
@@ -154,7 +158,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         <div
           className={`w-full p-3 shadow-2xl select-none transition-all duration-300 rounded-t-3xl border-x border-t ${
             activeTurn ? 'border-t-4' : isRoundWinner ? 'border-t-4' : 'border-t-2'
-          } ${player.eliminated ? "opacity-70" : ""} ${animClasses} h-[86px]`}
+          } ${player.eliminated ? "opacity-70" : ""} ${animClasses} ${landscapeMobile ? "h-[72px] p-2" : "h-[86px]"}`}
           style={{
             backgroundColor: 'var(--game-surface-strong)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
@@ -227,7 +231,11 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           className="absolute left-1/2 top-0 w-0 h-0"
         />
         <div className="w-full mb-2 px-1">
-          <div className="w-[420px] max-w-[95vw] flex items-center justify-between gap-1.5">
+          <div
+            className={`flex items-center justify-between gap-1.5 max-w-[95vw] ${
+              compactDesktopLandscape ? "w-[min(360px,88vw)]" : "w-[420px]"
+            }`}
+          >
             {Array.from({ length: scoreSlots }, (_, index) => (
               <div
                 key={`local-desktop-score-${index}`}
@@ -252,8 +260,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         style={{
           backgroundColor: 'var(--game-surface-strong)',
           borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
-          width: "420px",
-          height: "190px",
+          width: compactDesktopLandscape ? "min(360px, 88vw)" : "420px",
+          height: compactDesktopLandscape ? "168px" : "190px",
           maxWidth: "95vw",
           display: "flex",
           flexDirection: "column",

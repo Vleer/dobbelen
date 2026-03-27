@@ -74,6 +74,7 @@
   "game.result.youWinGame": "Du bist der Würfelkönig! 👑",
   "game.result.youLoseGame": "Du hast verloren! 💀",
   "game.result.gameWinnerIs": "{{playerName}} gewinnt das Spiel!",
+  "game.result.opponentHasWonGame": "{{playerName}} hat gewonnen",
   "game.action.doubt": "{{playerName}} zweifelt",
   "game.action.spotOn": "{{playerName}} sagt genau richtig",
   "game.action.raise": "{{playerName}} erhöht",

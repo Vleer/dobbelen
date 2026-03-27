@@ -77,7 +77,25 @@ function App() {
   };
 
   const handleBackToLobby = () => {
-    getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
+    const storage = getSessionLikeStorage();
+    let gameIdToClear: string | undefined = game?.id;
+    if (!gameIdToClear) {
+      try {
+        const raw = storage.getItem(GAME_SESSION_KEY);
+        if (raw) gameIdToClear = JSON.parse(raw)?.gameId;
+      } catch {
+        /* ignore */
+      }
+    }
+    if (gameIdToClear) {
+      storage.removeItem(`lobby_${gameIdToClear}`);
+    }
+    storage.removeItem(GAME_SESSION_KEY);
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.origin}${window.location.pathname}`
+    );
     setAppState('lobby');
     setGame(null);
     setUsername('');

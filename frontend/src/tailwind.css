@@ -249,7 +249,8 @@ html.theme-white {
   width: min(100%, 48rem);
   max-width: calc(100vw - 0.5rem);
   padding: 0.25rem 0.35rem;
-  overflow: hidden;
+  /* Must stay visible so language dropdown + settings panel are not clipped */
+  overflow: visible;
 }
 
 .menu-header-row {

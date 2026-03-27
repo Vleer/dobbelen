@@ -36,8 +36,12 @@ const GameTable: React.FC<GameTableProps> = ({
   const { t } = useLanguage();
   const { trackBid } = useStatistics();
   const { animationsEnabled } = useSettings();
-  const { isMobile, isTablet } = useWindowSize();
+  const { isMobile, isTablet, isLandscape } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
+  /** Tablet width + landscape: lg:hidden layout — stack bid readout above controls above local player */
+  const tabletLandscapeStack = isTablet && isLandscape;
+  /** Tablet portrait: center bidding UI in the row */
+  const portraitTablet = isTablet && !isLandscape;
   const [game, setGame] = useState<Game | null>(initialGame || null);
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
@@ -835,9 +839,8 @@ const GameTable: React.FC<GameTableProps> = ({
               💀
             </div>
 
-            {/* Dobbelkoning title — shows who won */}
             <h1
-              className="text-4xl font-extrabold mb-2"
+              className="text-3xl md:text-4xl font-extrabold mb-4"
               style={{
                 color: '#e7be5c',
                 ...(animationsEnabled
@@ -845,21 +848,15 @@ const GameTable: React.FC<GameTableProps> = ({
                   : {}),
               }}
             >
-              {t('game.dobbelkoning')}
+              {t('game.result.opponentHasWonGame', {
+                playerName: winner?.name || t('common.unknownPlayer'),
+              })}
             </h1>
-
-            {/* Winner name */}
-            <h2
-              className="text-2xl font-bold text-white mb-4"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
-            >
-              {winner?.name || t('common.unknownPlayer')}
-            </h2>
 
             {/* You lost message */}
             <div
               className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-[#f5d98f] bg-[#1f3f2b] border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
+              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 400ms forwards', opacity: 0 } : {}}
             >
               {t('game.result.youLoseGame')}
             </div>
@@ -868,7 +865,7 @@ const GameTable: React.FC<GameTableProps> = ({
             <button
               onClick={handleContinue}
               className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
+              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 550ms forwards', opacity: 0 } : {}}
             >
               {t('game.continue')}
             </button>
@@ -1036,6 +1033,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
                     isRoundWinner={game.winner === opponent.id}
                     compactMobile={snugMobileLayout}
+                    landscapeMobile={useMobileLayout && isLandscape}
                   />
                 );
               })}
@@ -1063,7 +1061,9 @@ const GameTable: React.FC<GameTableProps> = ({
           {currentBidFromActivePlayer &&
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
-            showBidDisplay && (() => {
+            showBidDisplay &&
+            !tabletLandscapeStack &&
+            (() => {
               const bidNode = (
                 <BidDisplay
                   currentBid={currentBidFromActivePlayer}
@@ -1072,6 +1072,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   roundNumber={game.roundNumber}
                   winner={game.winner || undefined}
                   isMobile={useMobileLayout}
+                  stacked={false}
                 />
               );
               return isHistoryOpen && historyPanelBottom > 0 ? (
@@ -1082,7 +1083,11 @@ const GameTable: React.FC<GameTableProps> = ({
                   {bidNode}
                 </div>
               ) : (
-                <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>{bidNode}</div>
+                <div
+                  className={`${snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"} ${portraitTablet ? "flex justify-center" : ""}`}
+                >
+                  {bidNode}
+                </div>
               );
             })()}
 
@@ -1190,12 +1195,55 @@ const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Bid Selector - Fixed above local player (only when active turn) */}
+        {/* Tablet landscape: bid readout centered above bidding controls, both above local player */}
+        {tabletLandscapeStack &&
+          showBidDisplay &&
+          !game.showAllDice &&
+          game.state !== "ROUND_ENDED" && (
+            <div
+              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-2 pointer-events-none bottom-28 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
+            >
+              {currentBidFromActivePlayer && (
+                <div className="pointer-events-auto w-full">
+                  <BidDisplay
+                    currentBid={currentBidFromActivePlayer}
+                    currentPlayerId={game.currentPlayerId}
+                    players={game.players}
+                    roundNumber={game.roundNumber}
+                    winner={game.winner || undefined}
+                    isMobile={useMobileLayout}
+                    stacked
+                  />
+                </div>
+              )}
+              {localPlayer && isMyTurn() && !localPlayer.eliminated && (
+                <div className="pointer-events-auto w-full">
+                  <BidSelector
+                    currentBid={game.currentBid}
+                    previousBid={game.previousBid}
+                    onBidSelect={(quantity, faceValue) =>
+                      handleAction("bid", { quantity, faceValue })
+                    }
+                    onDoubt={() => handleAction("doubt")}
+                    onSpotOn={() => handleAction("spotOn")}
+                    disabled={isLoading || bettingDisabled}
+                    isMobile={useMobileLayout}
+                    stacked
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* Bid Selector - Fixed above local player (only when active turn); not when tablet landscape stack handles it */}
         {showBidDisplay &&
           localPlayer &&
           isMyTurn() &&
-          !localPlayer.eliminated && (
-            <div className={`fixed bottom-28 left-0 right-0 z-45 ${snugMobileLayout ? "px-1.5" : "px-2"}`}>
+          !localPlayer.eliminated &&
+          !tabletLandscapeStack && (
+            <div
+              className={`fixed bottom-28 left-0 right-0 z-45 flex ${portraitTablet ? "justify-center" : ""} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
+            >
               <BidSelector
                 currentBid={game.currentBid}
                 previousBid={game.previousBid}
@@ -1233,6 +1281,7 @@ const GameTable: React.FC<GameTableProps> = ({
               isRoundEnded={roundEnded}
               isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
               isRoundWinner={game.winner === localPlayer.id}
+              landscapeMobile={useMobileLayout && isLandscape}
             />
           </div>
         )}
@@ -1261,6 +1310,7 @@ const GameTable: React.FC<GameTableProps> = ({
             isRoundEnded={roundEnded}
             isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
             isRoundWinner={game.winner === localPlayer.id}
+            compactDesktopLandscape={isLandscape}
           />
         )}
 
@@ -1309,23 +1359,10 @@ const GameTable: React.FC<GameTableProps> = ({
               isRoundEnded={roundEnded}
               isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
               isRoundWinner={game.winner === opponent.id}
+              compactDesktopLandscape={isLandscape}
             />
           );
         })}
-
-        {/* Bid Selector - Draggable on desktop */}
-        {localPlayer && isMyTurn() && !localPlayer.eliminated && (
-          <BidSelector
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            onBidSelect={(quantity, faceValue) =>
-              handleAction("bid", { quantity, faceValue })
-            }
-            onDoubt={() => handleAction("doubt")}
-            onSpotOn={() => handleAction("spotOn")}
-            disabled={isLoading || bettingDisabled}
-          />
-        )}
       </div>
 
       {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
@@ -1344,19 +1381,39 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       </div>
 
-      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
-      {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
-        <div className="hidden lg:block">
-          <BidDisplay
-            currentBid={currentBidFromActivePlayer}
-            currentPlayerId={game.currentPlayerId}
-            players={game.players}
-            roundNumber={game.roundNumber}
-            winner={game.winner || undefined}
+      {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
+      <div
+        className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-3 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
+        style={{ bottom: "min(22rem, 38vh)" }}
+      >
+        {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
+          <div className="pointer-events-auto w-full flex justify-center">
+            <BidDisplay
+              currentBid={currentBidFromActivePlayer}
+              currentPlayerId={game.currentPlayerId}
+              players={game.players}
+              roundNumber={game.roundNumber}
+              winner={game.winner || undefined}
+              isMobile={false}
+              stacked
+            />
+          </div>
+        )}
+        {localPlayer && isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
+          <BidSelector
+            currentBid={game.currentBid}
+            previousBid={shouldShowPreviousBid ? game.previousBid : null}
+            onBidSelect={(quantity, faceValue) =>
+              handleAction("bid", { quantity, faceValue })
+            }
+            onDoubt={() => handleAction("doubt")}
+            onSpotOn={() => handleAction("spotOn")}
+            disabled={isLoading || bettingDisabled}
             isMobile={false}
+            stacked
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Game Result Display - Desktop only */}
       <div className="hidden lg:block">

@@ -74,6 +74,7 @@
   "game.result.youWinGame": "Vous êtes le Roi du dé ! 👑",
   "game.result.youLoseGame": "Vous avez perdu ! 💀",
   "game.result.gameWinnerIs": "{{playerName}} gagne la partie !",
+  "game.result.opponentHasWonGame": "{{playerName}} a gagné",
   "game.action.doubt": "{{playerName}} doute",
   "game.action.spotOn": "{{playerName}} dit exact",
   "game.action.raise": "{{playerName}} surenchérit",

@@ -186,6 +186,31 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     return () => clearInterval(interval);
   }, [game?.state, game?.countdownEndTime]);
 
+  // Host: public lobby list TTL — ping while this tab is visible so the room stays listed (idle hosts drop off after ~5 min)
+  useEffect(() => {
+    if (!isHost || !game || !gameId || !myPlayerId) return;
+    if (game.state !== "WAITING_FOR_PLAYERS") return;
+    if (game.isPrivate) return;
+
+    const PING_INTERVAL_MS = 60_000;
+
+    const ping = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      gameApi.lobbyPresence(gameId, myPlayerId).catch(() => {});
+    };
+
+    ping();
+    const interval = setInterval(ping, PING_INTERVAL_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") ping();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [isHost, game, gameId, myPlayerId]);
+
   // Fetch lobby list when on main screen (no game joined)
   useEffect(() => {
     if (game || !isInitialized) return;

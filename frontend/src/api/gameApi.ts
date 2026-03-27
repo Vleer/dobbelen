@@ -98,6 +98,11 @@ export const gameApi = {
     await axiosInstance.post(`/api/games/multiplayer/${gameId}/heartbeat`, { playerId });
   },
 
+  /** Host only: while the lobby tab is visible, keeps the game on the public lobby list */
+  lobbyPresence: async (gameId: string, playerId: string): Promise<void> => {
+    await axiosInstance.post(`/api/games/multiplayer/${gameId}/lobby-presence`, { playerId });
+  },
+
   cancelMultiplayerGame: async (gameId: string, playerId: string): Promise<void> => {
     await axiosInstance.delete(`/api/games/multiplayer/${gameId}`, {
       params: { playerId },
