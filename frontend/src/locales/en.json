@@ -4,6 +4,7 @@
 
   "lobby.createGame": "Create New Game",
   "lobby.privateGame": "Private game",
+  "lobby.minitutorial": "Mini tutorial",
   "lobby.clickToCopyLink": "Click here to copy link",
   "lobby.cancelNewGame": "Cancel",
   "lobby.cancelGame": "Cancel game",
@@ -99,6 +100,9 @@
   "game.leaveConfirmLeave": "Leave",
   "game.leaveConfirmCancel": "Cancel",
   "game.playerLeftNotification": "{{playerName}} has left the game",
+  "game.endGame": "End game",
+  "game.endGameConfirm": "Are you sure you want to end the game for all players?",
+  "game.chat": "Chat",
 
   "game.dobbelkoning": "Dobbelkoning",
 

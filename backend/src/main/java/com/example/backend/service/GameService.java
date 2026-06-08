@@ -877,6 +877,54 @@ public class GameService {
     }
 
     /**
+     * End an in-progress game immediately. Only the host (first player) may call this.
+     * Broadcasts GAME_CANCELLED so all clients return to the lobby.
+     */
+    public void endGameAsHost(String gameId, String playerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getPlayers().isEmpty()) {
+            throw new IllegalArgumentException("Game has no players");
+        }
+        com.example.backend.model.Player host = game.getPlayers().get(0);
+        if (!host.getId().equals(playerId)) {
+            throw new IllegalArgumentException("Only the host can end the game");
+        }
+        // Broadcast cancellation before removing the game so clients receive it
+        messagingTemplate.convertAndSend("/topic/game/" + gameId,
+                new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
+        games.remove(gameId);
+        System.out.println("END GAME: Removed game " + gameId + " (host ended)");
+    }
+
+    /**
+     * Send a chat message from a player. The message is appended to the game's
+     * chat history and broadcast to all players via WebSocket.
+     */
+    public void sendChatMessage(String gameId, String playerId, String playerName, String text) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        String sanitized = text != null ? text.trim() : "";
+        if (sanitized.isEmpty() || sanitized.length() > 200) {
+            throw new IllegalArgumentException("Invalid message");
+        }
+        com.example.backend.model.ChatMessage msg =
+                new com.example.backend.model.ChatMessage(playerId, playerName, sanitized);
+        game.getChatMessages().add(msg);
+        // Keep at most 200 messages to avoid unbounded growth
+        List<com.example.backend.model.ChatMessage> msgs = game.getChatMessages();
+        if (msgs.size() > 200) {
+            msgs.subList(0, msgs.size() - 200).clear();
+        }
+        broadcastGameUpdate(gameId);
+        System.out.println("CHAT: " + playerName + " in game " + gameId + ": " + sanitized);
+    }
+
+    /**
      * Record that a player has clicked "Continue" on the game-over screen.
      * AI players are automatically counted as continued.
      * When all human players have continued, the game resets to WAITING_FOR_PLAYERS.

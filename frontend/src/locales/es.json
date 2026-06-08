@@ -1,7 +1,6 @@
 {
   "game.title": "Dados mentirosos",
   "game.subtitle": "El clásico juego de faroleo",
-
   "lobby.createGame": "Crear partida nueva",
   "lobby.privateGame": "Partida privada",
   "lobby.clickToCopyLink": "Pulsa aquí para copiar el enlace",
@@ -26,7 +25,6 @@
   "lobby.pleaseEnterUsername": "Introduce tu nombre",
   "lobby.failedToCreateGame": "No se pudo crear la partida",
   "lobby.failedToJoinGame": "No se pudo unir a la partida",
-
   "lobby.shareLink": "Comparte este enlace para invitar jugadores:",
   "lobby.copy": "Copiar",
   "lobby.players": "Jugadores",
@@ -39,7 +37,6 @@
   "lobby.needAtLeastTwoPlayers": "Se necesitan al menos 2 jugadores",
   "lobby.gameStarting": "La partida empieza en...",
   "lobby.go": "¡Ya!",
-
   "game.round": "Ronda {{roundNumber}}",
   "game.currentBid": "Puja actual",
   "game.noCurrentBid": "Sin puja actual",
@@ -50,7 +47,6 @@
   "game.fours": "Cuatros",
   "game.fives": "Cincos",
   "game.sixes": "Seises",
-
   "game.makeYourBid": "Haz tu puja",
   "game.yourTurn": "Tu turno",
   "game.waitingForTurn": "Esperando tu turno...",
@@ -58,7 +54,6 @@
   "game.waitingForFirstBid": "Esperando la primera puja",
   "game.doubt": "Dudar",
   "game.spotOn": "Justo",
-
   "game.dealer": "D",
   "game.dice": "dados",
   "game.revealed": "REVELADO",
@@ -69,7 +64,6 @@
   "game.activePlayers": "Jugadores activos",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Ocultos",
-
   "game.result.thereWere": "Había {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "La puja era correcta ✓",
   "game.result.bidWasWrong": "La puja era incorrecta ✗",
@@ -88,7 +82,6 @@
   "game.history.playerBidWasDoubted": "La puja de {{playerName}} fue dudada",
   "game.history.playerBidWasSpotOn": "La puja de {{playerName}} fue spot on",
   "game.action.raise": "{{playerName}} sube a {{quantity}} de {{faceValue}}",
-
   "game.matchpointMessage": "¡A un punto de la victoria!",
   "game.continue": "Continuar",
   "game.continuing": "Continuando...",
@@ -99,17 +92,13 @@
   "game.leaveConfirmLeave": "Salir",
   "game.leaveConfirmCancel": "Cancelar",
   "game.playerLeftNotification": "{{playerName}} ha abandonado la partida",
-
   "game.dobbelkoning": "Rey de los dados",
-
   "errors.failedToAddPlayer": "No se pudo añadir el jugador IA",
   "errors.failedToStart": "No se pudo iniciar la partida",
   "errors.failedToRemove": "No se pudo eliminar el jugador IA",
-
   "common.playAgain": "Jugar otra vez",
   "common.state": "Estado",
   "common.unknownPlayer": "Jugador desconocido",
-
   "game.history.title": "Historial",
   "game.history.currentHand": "Mano actual",
   "game.history.lastHand": "Última mano",
@@ -136,7 +125,6 @@
   "game.history.noStatsYet": "Aún no hay estadísticas",
   "game.history.diceAnalysis": "Análisis de dados",
   "game.history.noBidsYet": "Aún no hay pujas en esta mano",
-
   "instructions.title": "Cómo jugar",
   "instructions.rules": "Reglas",
   "instructions.close": "Cerrar",
@@ -144,11 +132,14 @@
   "instructions.doubt": "Dudar: Desafía la puja anterior si te parece demasiado alta",
   "instructions.spotOn": "Justo: Afirma que la puja es exacta (¡arriesgado!) Si es verdad, la ronda se reinicia.",
   "instructions.winRound": "¡El último jugador en pie gana la ronda!",
-
   "settings.colorScheme": "Esquema de color",
   "settings.colorLight": "Claro",
   "settings.colorDark": "Oscuro",
   "settings.colorWhite": "Blanco",
   "settings.fontSize": "Tamaño de letra",
-  "settings.animations": "Animaciones"
+  "settings.animations": "Animaciones",
+  "game.endGame": "Terminar juego",
+  "game.endGameConfirm": "¿Estás seguro de que quieres terminar el juego para todos los jugadores?",
+  "game.chat": "Chat",
+  "lobby.minitutorial": "Mini tutorial"
 }

@@ -18,6 +18,8 @@ import SettingsPanel from './SettingsPanel';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import ChatPanel from './ChatPanel';
+import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
 
 interface GameTableProps {
@@ -25,13 +27,15 @@ interface GameTableProps {
   username?: string;
   playerId?: string;
   onBack?: () => void;
+  minitutorial?: boolean;
 }
 
 const GameTable: React.FC<GameTableProps> = ({ 
   game: initialGame, 
   username: initialUsername, 
   playerId: initialPlayerId, 
-  onBack
+  onBack,
+  minitutorial = false,
 }) => {
   const { t } = useLanguage();
   const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
@@ -53,6 +57,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [openedForGameStart, setOpenedForGameStart] = useState(false);
   const [showRulesTooltip, setShowRulesTooltip] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -71,6 +76,11 @@ const GameTable: React.FC<GameTableProps> = ({
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
+  // Chat state
+  const [showChat, setShowChat] = useState(false);
+  const [lastSeenChatCount, setLastSeenChatCount] = useState(0);
+  // Mini tutorial state
+  const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -879,16 +889,15 @@ const GameTable: React.FC<GameTableProps> = ({
               backgroundColor: '#0f2a1b',
               borderColor: '#8a6a1d',
               ...(animationsEnabled
-                ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-red 1.6s ease-in-out 0.6s infinite' }
+                ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-red 2.8s ease-in-out 0.6s infinite' }
                 : {}),
             }}
           >
-            {/* Skull emoji */}
+            {/* Skull emoji removed for less flashiness */}
             <div
-              className={`text-7xl mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
-              style={animationsEnabled ? { animationDelay: '0.3s' } : {}}
+              className={`text-5xl mb-4`}
             >
-              💀
+              😔
             </div>
 
             <h1
@@ -973,7 +982,7 @@ const GameTable: React.FC<GameTableProps> = ({
             backgroundColor: '#052e16',
             borderColor: '#8a6a1d',
             ...(animationsEnabled
-              ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 1.6s ease-in-out 0.6s infinite' }
+              ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 2.8s ease-in-out 0.6s infinite' }
               : {}),
           }}
         >
@@ -1533,10 +1542,43 @@ const GameTable: React.FC<GameTableProps> = ({
                 onClose={() => setShowSettings(false)}
                 onLeaveGame={game.isMultiplayer ? () => setShowLeaveConfirm(true) : undefined}
                 leaveGameLabel={t("game.leaveGame")}
+                onEndGame={game.isMultiplayer && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
+                endGameLabel={t("game.endGame")}
                 mobileCentered={useMobileLayout}
                 anchorRef={gameSettingsAnchorRef}
               />
             </div>
+
+            {/* Chat button - only for multiplayer */}
+            {game.isMultiplayer && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChat((prev) => {
+                      const next = !prev;
+                      if (next) {
+                        // Mark all messages as seen when opening
+                        setLastSeenChatCount(game.chatMessages?.length ?? 0);
+                      }
+                      return next;
+                    });
+                  }}
+                  className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative"
+                  aria-label="Chat"
+                >
+                  💬
+                  {(() => {
+                    const unread = (game.chatMessages?.length ?? 0) - lastSeenChatCount;
+                    return unread > 0 ? (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    ) : null;
+                  })()}
+                </button>
+              </div>
+            )}
 
             <div className="relative">
               <button
@@ -1684,6 +1726,72 @@ const GameTable: React.FC<GameTableProps> = ({
         isOpen={showStatistics}
         onClose={() => setShowStatistics(false)}
       />
+
+      {/* Chat Panel - for multiplayer games */}
+      {game.isMultiplayer && (
+        <ChatPanel
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          messages={game.chatMessages ?? []}
+          playerId={localPlayerId}
+          playerName={game.players.find(p => p.id === localPlayerId)?.name ?? ''}
+          gameId={game.id}
+          isMobile={useMobileLayout}
+        />
+      )}
+
+      {/* End Game confirmation dialog (host only) */}
+      {showEndGameConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div
+            className="border-2 rounded-2xl px-6 py-5 md:px-8 md:py-6 shadow-2xl max-w-sm w-full mx-4"
+            style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
+          >
+            <h2 className="text-lg md:text-xl font-bold mb-2 text-center" style={{ color: 'var(--game-accent-text)' }}>
+              {t("game.endGame")}
+            </h2>
+            <p className="text-sm md:text-base text-center mb-4" style={{ color: 'var(--game-text)' }}>
+              {t("game.endGameConfirm")}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={async () => {
+                  setShowEndGameConfirm(false);
+                  if (gameId && localPlayerId) {
+                    try {
+                      await gameApi.endGame(gameId, localPlayerId);
+                    } catch (err) {
+                      console.error("End game failed:", err);
+                    }
+                  }
+                  onBack?.();
+                }}
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border transition-colors"
+                style={{ backgroundColor: '#7f1d1d', borderColor: '#991b1b', color: '#fca5a5' }}
+              >
+                {t("game.endGame")}
+              </button>
+              <button
+                onClick={() => setShowEndGameConfirm(false)}
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
+                style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
+              >
+                {t("game.leaveConfirmCancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mini Tutorial overlay */}
+      {minitutorial && !tutorialDismissed && game.state === 'IN_PROGRESS' && (
+        <MiniTutorial
+          game={game}
+          localPlayerId={localPlayerId}
+          onDismiss={() => setTutorialDismissed(true)}
+          isMobile={useMobileLayout}
+        />
+      )}
 
       {/* Shared animated dealer chip */}
       {dealerChipPos.visible && (

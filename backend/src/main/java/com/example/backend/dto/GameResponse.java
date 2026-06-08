@@ -34,6 +34,7 @@ public class GameResponse {
     private List<BidInfo> currentHandBidHistory;
     private Long countdownEndTime;
     private List<String> playersContinued;
+    private List<ChatMessageInfo> chatMessages;
 
     public GameResponse() {}
 
@@ -72,6 +73,9 @@ public class GameResponse {
         this.countdownEndTime = game.getCountdownEndTime();
         this.playersContinued = game.getPlayersContinued() != null
             ? new ArrayList<>(game.getPlayersContinued())
+            : new ArrayList<>();
+        this.chatMessages = game.getChatMessages() != null
+            ? game.getChatMessages().stream().map(ChatMessageInfo::new).toList()
             : new ArrayList<>();
     }
 
@@ -250,6 +254,41 @@ public class GameResponse {
 
     public void setPlayersContinued(List<String> playersContinued) {
         this.playersContinued = playersContinued;
+    }
+
+    public List<ChatMessageInfo> getChatMessages() {
+        return chatMessages;
+    }
+
+    public void setChatMessages(List<ChatMessageInfo> chatMessages) {
+        this.chatMessages = chatMessages;
+    }
+
+    public static class ChatMessageInfo {
+        private String id;
+        private String playerId;
+        private String playerName;
+        private String text;
+        private long timestamp;
+
+        public ChatMessageInfo(com.example.backend.model.ChatMessage msg) {
+            this.id = msg.getId();
+            this.playerId = msg.getPlayerId();
+            this.playerName = msg.getPlayerName();
+            this.text = msg.getText();
+            this.timestamp = msg.getTimestamp();
+        }
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getPlayerId() { return playerId; }
+        public void setPlayerId(String playerId) { this.playerId = playerId; }
+        public String getPlayerName() { return playerName; }
+        public void setPlayerName(String playerName) { this.playerName = playerName; }
+        public String getText() { return text; }
+        public void setText(String text) { this.text = text; }
+        public long getTimestamp() { return timestamp; }
+        public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
     }
 
     public static class PlayerInfo {

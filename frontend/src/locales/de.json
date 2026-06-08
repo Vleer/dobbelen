@@ -1,7 +1,6 @@
 {
   "game.title": "Lügenwürfel",
   "game.subtitle": "Das klassische Bluffspiel",
-
   "lobby.createGame": "Neues Spiel erstellen",
   "lobby.privateGame": "Privates Spiel",
   "lobby.clickToCopyLink": "Klicken Sie hier, um den Link zu kopieren",
@@ -20,7 +19,6 @@
   "lobby.pleaseEnterUsername": "Bitte geben Sie Ihren Benutzername ein.",
   "lobby.failedToCreateGame": "Spiel konnte nicht erstellt werden",
   "lobby.failedToJoinGame": "Spiel konnte nicht beigetreten werden",
-
   "lobby.shareLink": "Teilen Sie diesen Link, um Spieler einzuladen:",
   "lobby.copy": "Kopieren",
   "lobby.players": "Spieler",
@@ -33,7 +31,6 @@
   "lobby.needAtLeastTwoPlayers": "Mindestens 2 Spieler zum Start erforderlich",
   "lobby.gameStarting": "Spiel startet in...",
   "lobby.go": "Los!",
-
   "game.round": "Runde {{roundNumber}}",
   "game.currentBid": "Aktuelles Gebot",
   "game.noCurrentBid": "Kein aktuelles Gebot",
@@ -44,7 +41,6 @@
   "game.fours": "Vieren",
   "game.fives": "Fünfen",
   "game.sixes": "Sechsen",
-
   "game.makeYourBid": "Machen Sie Ihr Gebot",
   "game.yourTurn": "Du bist dran",
   "game.waitingForTurn": "Warten auf Ihren Zug...",
@@ -52,7 +48,6 @@
   "game.waitingForFirstBid": "Warten auf das erste Gebot",
   "game.doubt": "Zweifel",
   "game.spotOn": "Genau richtig",
-
   "game.dealer": "D",
   "game.dice": "Würfel",
   "game.revealed": "AUFGEDECKT",
@@ -63,7 +58,6 @@
   "game.activePlayers": "Aktive Spieler",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Versteckt",
-
   "game.result.thereWere": "Es gab {{actualCount}} {{faceValue}}",
   "game.result.bidWasCorrect": "Das Gebot war richtig ✓",
   "game.result.bidWasWrong": "Das Gebot war falsch ✗",
@@ -82,7 +76,6 @@
   "game.history.playerBidWasDoubted": "{{playerName}}s Gebot wurde angezweifelt",
   "game.history.playerBidWasSpotOn": "{{playerName}}s Gebot wurde spot on genannt",
   "game.action.raise": "{{playerName}} erhöht",
-
   "game.matchpointMessage": "Ein Punkt vom Sieg entfernt!",
   "game.continue": "Weiter",
   "game.continuing": "Weiter...",
@@ -93,17 +86,13 @@
   "game.leaveConfirmLeave": "Verlassen",
   "game.leaveConfirmCancel": "Abbrechen",
   "game.playerLeftNotification": "{{playerName}} hat das Spiel verlassen",
-
   "game.dobbelkoning": "Würfelkönig",
-
   "errors.failedToAddPlayer": "KI-Spieler konnte nicht hinzugefügt werden",
   "errors.failedToStart": "Spiel konnte nicht gestartet werden",
   "errors.failedToRemove": "KI-Spieler konnte nicht entfernt werden",
-
   "common.playAgain": "Nochmal spielen",
   "common.state": "Status",
   "common.unknownPlayer": "Unbekannter Spieler",
-
   "game.history.title": "Verlauf",
   "game.history.currentHand": "Aktuelle Hand",
   "game.history.lastHand": "Letzte Hand",
@@ -130,7 +119,6 @@
   "game.history.noStatsYet": "Noch keine Statistiken verfügbar",
   "game.history.diceAnalysis": "Würfel Analyse",
   "game.history.noBidsYet": "Noch keine Gebote in dieser Hand",
-
   "instructions.title": "Wie man spielt",
   "instructions.rules": "Regeln",
   "instructions.close": "Schließen",
@@ -140,11 +128,14 @@
   "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
   "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
   "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde",
-
   "settings.colorScheme": "Farbschema",
   "settings.colorLight": "Hell",
   "settings.colorDark": "Dunkel",
   "settings.colorWhite": "Weiß",
   "settings.fontSize": "Schriftgröße",
-  "settings.animations": "Animationen"
+  "settings.animations": "Animationen",
+  "game.endGame": "Spiel beenden",
+  "game.endGameConfirm": "Möchtest du das Spiel für alle Spieler beenden?",
+  "game.chat": "Chat",
+  "lobby.minitutorial": "Mini-Tutorial"
 }

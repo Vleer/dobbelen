@@ -35,6 +35,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [hasJoined, setHasJoined] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isPrivateGame, setIsPrivateGame] = useState(false);
+  const [minitutorialEnabled, setMinitutorialEnabled] = useState(() => localStorage.getItem('minitutorial_enabled') === 'true');
   const [lobbyGames, setLobbyGames] = useState<Game[]>([]);
   const [lobbyExpanded, setLobbyExpanded] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
@@ -514,6 +515,18 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                   className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
                 />
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.privateGame")}</span>
+              </label>
+              <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={minitutorialEnabled}
+                  onChange={(e) => {
+                    setMinitutorialEnabled(e.target.checked);
+                    localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
+                  }}
+                  className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.minitutorial")}</span>
               </label>
               <button
                 onClick={() => {

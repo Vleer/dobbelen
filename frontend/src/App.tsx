@@ -159,6 +159,7 @@ function App() {
                 username={username}
                 playerId={playerId}
                 onBack={handleBackToLobby}
+                minitutorial={localStorage.getItem('minitutorial_enabled') === 'true'}
               />
             ) : null}
           </div>
