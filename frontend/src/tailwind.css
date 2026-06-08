@@ -44,7 +44,16 @@ html.scale-x-large { font-size: 21px; }
   90%  { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
-@keyframes pulse-green {
+@keyframes turn-glow {
+  0%, 100% { 
+    box-shadow: 0 0 24px 8px rgba(242, 201, 109, 0.5);
+    border-color: var(--game-highlight);
+  }
+  50% { 
+    box-shadow: 0 0 48px 16px rgba(242, 201, 109, 0.9);
+    border-color: var(--game-highlight);
+  }
+}
   0%, 100% { box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.35); }
   50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
 }

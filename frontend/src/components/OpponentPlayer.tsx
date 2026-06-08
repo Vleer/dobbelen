@@ -247,13 +247,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           className={`rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
-            player.eliminated ? "opacity-50" : ""
+            player.eliminated ? "opacity-40" : ""
           } ${animClasses} flex flex-col items-center justify-between p-3 ${
             compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(118px,16vh)] max-w-[16rem]" : "w-72 h-[136px]"
           }`}
           style={{
-            backgroundColor: 'var(--game-surface)',
+            backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
+            filter: player.eliminated ? 'brightness(0.6)' : 'none',
           }}
         >
           <div className="w-full h-full flex flex-col items-center justify-between">
@@ -280,8 +281,9 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="text-center text-sm font-medium" style={{ color: 'var(--game-text-muted)' }}>
-                {t("game.diceHidden") || "Hidden"}
+              // Remove "Hidden" text for cleaner UI
+              <div className="text-center text-sm font-medium" style={{ color: 'transparent' }}>
+                &nbsp;
               </div>
             )}
           </div>
