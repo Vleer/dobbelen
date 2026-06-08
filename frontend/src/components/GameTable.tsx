@@ -34,7 +34,7 @@ const GameTable: React.FC<GameTableProps> = ({
   onBack
 }) => {
   const { t } = useLanguage();
-  const { trackBid } = useStatistics();
+  const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
   const { animationsEnabled } = useSettings();
   const { isMobile, isTablet, isLandscape } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
@@ -230,6 +230,13 @@ const GameTable: React.FC<GameTableProps> = ({
       setPreviousRoundWinner('');
       // Reset bid tracking so raise sound can play for first bid of new round
       setPreviousBidKey('');
+      
+      // Track dice rolls for all players at start of new round
+      game.players.forEach(player => {
+        if (player.dice && player.dice.length > 0) {
+          trackDiceRoll(player, player.dice, game);
+        }
+      });
     }
 
     // Play doubt/spot-on sound when action happens (using unique key with player ID and action type)
@@ -258,12 +265,35 @@ const GameTable: React.FC<GameTableProps> = ({
               game.lastActionPlayerId !== localPlayerId
             );
             audioService.playDoubt();
+            
+            // Track doubt statistics
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const doubter = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (doubter) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Success means the doubter was correct (actual count < bid quantity)
+                const success = actualCount < game.lastBidQuantity;
+                trackDoubt(doubter, targetBid, actualCount, success, game);
+              }
+            }
           } else if (game.lastActionType === "SPOT_ON") {
             console.log(
               "Playing spot-on sound for player:",
               game.lastActionPlayerId
             );
             audioService.playSpotOn();
+            
+            // Track spot-on as a perfect doubt (always successful if action occurred)
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const caller = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (caller) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Spot-on is always successful if it resulted in an action
+                trackDoubt(caller, targetBid, actualCount, true, game);
+              }
+            }
           }
         } else {
           console.log(
@@ -304,8 +334,15 @@ const GameTable: React.FC<GameTableProps> = ({
       audioService.playWin();
       setPreviousRoundWinner(game.winner);
       
-      // Check for matchpoint (6 tokens = 1 away from winning)
+      // Track round end statistics
       const winnerPlayer = game.players.find(p => p.id === game.winner);
+      if (winnerPlayer) {
+        // Check if this was the last round (game winner is set)
+        const wasLastRound = !!game.gameWinner;
+        trackRoundEnd(winnerPlayer, game, wasLastRound);
+      }
+      
+      // Check for matchpoint (6 tokens = 1 away from winning)
       if (winnerPlayer && winnerPlayer.winTokens === 6 && matchpointPlayerId !== game.winner) {
         console.log('Matchpoint reached for player:', winnerPlayer.name);
         setShowMatchpoint(true);
@@ -319,6 +356,12 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for game winner:', game.gameWinner);
       audioService.playWin();
       setPreviousGameWinner(game.gameWinner);
+      
+      // Track game end statistics
+      const gameWinnerPlayer = game.players.find(p => p.id === game.gameWinner);
+      if (gameWinnerPlayer) {
+        trackGameEnd(gameWinnerPlayer, game);
+      }
     }
   }, [game, previousRoundNumber, previousActionKey, previousRoundWinner, previousGameWinner, previousBidKey, localPlayerId]);
 
@@ -631,13 +674,11 @@ const GameTable: React.FC<GameTableProps> = ({
           };
           trackBid(bid, game);
         } else if (action === 'doubt' && game.currentBid) {
-          // We'll track the doubt result when we get the game update with the result
-          // Store the doubt info temporarily for when the result comes back
-          (window as any).pendingDoubtTrack = {
-            doubter: localPlayer,
-            targetBid: game.currentBid,
-            game: game
-          };
+          // Doubt tracking happens when the result comes back from the server
+          console.log('Doubt action initiated, will track when result is received');
+        } else if (action === 'spoton' && game.currentBid) {
+          // Spot-on tracking happens when the result comes back from the server
+          console.log('Spot-on action initiated, will track when result is received');
         }
       }
 
