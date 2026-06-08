@@ -61,6 +61,63 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('lastHand');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
+  
+  // Drag functionality for desktop
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState(() => {
+    // Load saved position from localStorage or use default (top-right corner)
+    const saved = localStorage.getItem('historyPanelPosition');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    // Default position: top right with some margin
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      return { x: window.innerWidth - 400, y: 80 };
+    }
+    return { x: 0, y: 0 };
+  });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dragRef = React.useRef<HTMLDivElement>(null);
+
+  // Save position to localStorage when it changes
+  React.useEffect(() => {
+    localStorage.setItem('historyPanelPosition', JSON.stringify(position));
+  }, [position]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Only allow dragging from header area
+    if ((e.target as HTMLElement).closest('.drag-handle')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  }, [isDragging, dragStart]);
+
+  const handleMouseUp = React.useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // When panel opens from game start only: show "Rules" tab. Otherwise keep/remember the last tab.
   const hasAppliedOpenRef = React.useRef(false);
@@ -186,12 +243,29 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
   };
 
   return (
-    <div className="rounded-2xl shadow-2xl border w-[calc(100vw-0.5rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#0f2a1b', borderColor: '#365844', backdropFilter: 'blur(4px)' }}>
-        {/* Header - compact, no title */}
-        <div className="flex items-center justify-end px-1 py-0.5 md:px-2 md:py-1 border-b" style={{ borderColor: '#365844' }}>
+    <div 
+      ref={dragRef}
+      className="rounded-2xl shadow-2xl border w-[calc(100vw-0.5rem)] md:w-96 max-h-[80vh] overflow-y-auto lg:fixed" 
+      style={{ 
+        backgroundColor: '#0f2a1b', 
+        borderColor: '#365844', 
+        backdropFilter: 'blur(4px)',
+        ...(window.innerWidth >= 1024 ? {
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          cursor: isDragging ? 'grabbing' : 'default'
+        } : {})
+      }}
+      onMouseDown={handleMouseDown}
+    >
+        {/* Header - compact, with drag handle on desktop */}
+        <div className="flex items-center justify-between px-1 py-0.5 md:px-2 md:py-1 border-b drag-handle lg:cursor-grab lg:active:cursor-grabbing" style={{ borderColor: '#365844' }}>
+          <div className="hidden lg:block text-[#d9b45a] text-xs font-medium select-none">
+            {t('game.gameInfo')}
+          </div>
           <button
             onClick={onClose}
-            className="p-0.5 md:p-1 text-[#d9b45a] hover:text-[#f7f3e8] rounded text-sm"
+            className="p-0.5 md:p-1 text-[#d9b45a] hover:text-[#f7f3e8] rounded text-sm ml-auto"
             title={t('instructions.close')}
           >
             ✕

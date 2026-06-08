@@ -175,7 +175,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         <div
           className={`rounded-xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[3px]' : isRoundWinner ? 'border-[3px]' : 'border-2'
-          } ${player.eliminated ? "opacity-50" : ""} ${
+          } ${player.eliminated ? "opacity-40" : ""} ${
             landscapeMobile
               ? compactMobile
                 ? "p-1 h-[62px]"
@@ -247,14 +247,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           className={`rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
-            player.eliminated ? "opacity-40" : ""
+            player.eliminated ? "opacity-30" : ""
           } ${animClasses} flex flex-col items-center justify-between p-3 ${
             compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(118px,16vh)] max-w-[16rem]" : "w-72 h-[136px]"
           }`}
           style={{
             backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
-            filter: player.eliminated ? 'brightness(0.6)' : 'none',
+            filter: player.eliminated ? 'brightness(0.7) saturate(0.7)' : 'none',
           }}
         >
           <div className="w-full h-full flex flex-col items-center justify-between">

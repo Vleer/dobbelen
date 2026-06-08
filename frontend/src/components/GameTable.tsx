@@ -51,6 +51,14 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [openedForGameStart, setOpenedForGameStart] = useState(false);
+  
+  // Open history panel when game starts for the first time
+  useEffect(() => {
+    if (game?.state === 'IN_PROGRESS' && game.roundNumber === 1 && !isHistoryOpen && !openedForGameStart) {
+      setIsHistoryOpen(true);
+      setOpenedForGameStart(true);
+    }
+  }, [game?.state, game?.roundNumber, isHistoryOpen, openedForGameStart]);
   const [showRulesTooltip, setShowRulesTooltip] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
@@ -1574,9 +1582,9 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* History Panel - Positioned on the right side for desktop */}
+        {/* History Panel - Desktop: draggable, positioned by component */}
         {isHistoryOpen && (
-          <div ref={historyPanelRef} className="mt-1 md:mt-2 hidden lg:block absolute top-20 right-4 z-40">
+          <div ref={historyPanelRef} className="hidden lg:block">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}
