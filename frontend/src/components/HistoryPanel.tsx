@@ -59,7 +59,7 @@ interface PlayerStats {
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, openedFromGameStart, onClearGameStartOpen }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('instructions');
+  const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('lastHand');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
   // When panel opens from game start only: show "Rules" tab. Otherwise keep/remember the last tab.
@@ -72,6 +72,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
     if (openedFromGameStart && !hasAppliedOpenRef.current) {
       setActiveTab('instructions');
       onClearGameStartOpen?.();
+      hasAppliedOpenRef.current = true;
+    } else if (!hasAppliedOpenRef.current && !openedFromGameStart) {
+      // Default to lastHand tab when opening normally (not from game start)
+      setActiveTab('lastHand');
       hasAppliedOpenRef.current = true;
     }
   }, [isOpen, openedFromGameStart, onClearGameStartOpen]);
@@ -113,10 +117,25 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
       return <span>{t('game.history.noAction')}</span>;
     }
 
+    // The action player is who performed the action (doubter/spot-on caller)
     const actionPlayer = game.players.find(p => p.id === game.lastActionPlayerId)
       || lastHandPlayers.find(p => p.id === game.lastActionPlayerId);
     const actionPlayerName = actionPlayer?.name || t('common.unknownPlayer');
     const playerColor = getPlayerColorFromString(actionPlayer?.color || 'blue');
+
+    // For DOUBT and SPOT_ON, we want to show WHO MADE THE BID (the previous player)
+    // not who doubted/called spot on
+    let targetPlayer = actionPlayer;
+    let targetPlayerName = actionPlayerName;
+    let targetPlayerColor = playerColor;
+    
+    if ((game.lastActionType === 'DOUBT' || game.lastActionType === 'SPOT_ON') && game.previousBid?.playerId) {
+      // Show the player who made the bid that was challenged
+      targetPlayer = game.players.find(p => p.id === game.previousBid!.playerId)
+        || lastHandPlayers.find(p => p.id === game.previousBid!.playerId);
+      targetPlayerName = targetPlayer?.name || t('common.unknownPlayer');
+      targetPlayerColor = getPlayerColorFromString(targetPlayer?.color || 'blue');
+    }
 
     const renderColoredPlayerName = (text: string) => {
       // Replace the {{playerName}} placeholder with colored version
@@ -125,8 +144,8 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
         return (
           <span>
             {parts[0]}
-            <span style={{ color: playerColor, fontWeight: 'bold' }}>
-              {actionPlayerName}
+            <span style={{ color: targetPlayerColor, fontWeight: 'bold' }}>
+              {targetPlayerName}
             </span>
             {parts[1]}
           </span>
@@ -138,9 +157,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
 
     switch (game.lastActionType) {
       case 'DOUBT':
-        return renderColoredPlayerName(t('game.action.doubt', { playerName: '{{playerName}}' }));
+        // Show who made the bid (previous player), not who doubted
+        return renderColoredPlayerName(t('game.history.playerBidWasDoubted', { playerName: '{{playerName}}' }));
       case 'SPOT_ON':
-        return renderColoredPlayerName(t('game.action.spotOn', { playerName: '{{playerName}}' }));
+        // Show who made the bid (previous player), not who called spot on
+        return renderColoredPlayerName(t('game.history.playerBidWasSpotOn', { playerName: '{{playerName}}' }));
       case 'RAISE':
         return renderColoredPlayerName(t('game.action.raise', { playerName: '{{playerName}}' }));
       default:

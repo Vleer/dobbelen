@@ -56,7 +56,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const EyeOpenIcon = () => {
     console.log('Rendering EyeOpenIcon');
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
         <circle cx="12" cy="12" r="3"></circle>
       </svg>
@@ -66,7 +66,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const EyeClosedIcon = () => {
     console.log('Rendering EyeClosedIcon');
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
         <line x1="1" y1="1" x2="23" y2="23"></line>
       </svg>
@@ -287,13 +287,23 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       >
           <div className="w-full h-full flex items-center justify-between gap-4">
             {/* Left meta column */}
-            <div className="min-w-[140px] max-w-[180px] flex flex-col justify-center">
+            <div className="min-w-[140px] max-w-[180px] flex flex-col justify-center gap-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xl truncate" style={{ color: 'var(--game-accent-text)' }}>
               {player.name}
             </span>
               </div>
-            {/* Win Tokens */}
+            {/* Current Bid Display - Show the bid placed by this player */}
+            {previousBid &&
+              previousBid.playerId === player.id &&
+              !player.eliminated && (
+                <div className="text-xs font-bold" style={{ color: 'var(--game-accent-text)' }}>
+                  {t('game.previousBid', {
+                    quantity: previousBid.quantity,
+                    faceValue: previousBid.faceValue,
+                  })}
+                </div>
+              )}
             {/* Eye toggle button - next to name */}
             {!showDice && (
               <button
@@ -315,8 +325,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                 style={{
                   pointerEvents: "auto",
                   padding: compactDesktopLandscape ? 2 : 4,
-                  minWidth: compactDesktopLandscape ? 22 : 30,
-                  minHeight: compactDesktopLandscape ? 22 : 30,
+                  minWidth: compactDesktopLandscape ? 18 : 24,
+                  minHeight: compactDesktopLandscape ? 18 : 24,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -327,7 +337,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                 aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
               >
                 <span
-                  className={compactDesktopLandscape ? "[&_svg]:w-[13px] [&_svg]:h-[13px]" : ""}
+                  className={compactDesktopLandscape ? "[&_svg]:w-[11px] [&_svg]:h-[11px]" : "[&_svg]:w-[14px] [&_svg]:h-[14px]"}
                   style={{
                     position: "relative",
                     zIndex: 1,
@@ -358,17 +368,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             </div>
           </div>
 
-        {/* Previous Bid Display - Only show when relevant to current game state */}
-        {previousBid &&
-          previousBid.playerId === player.id &&
-          !player.eliminated && (
-            <div className="text-center font-bold text-sm mb-2" style={{ color: 'var(--game-accent-text)' }}>
-              {t("game.previousBid", {
-                quantity: previousBid.quantity,
-                faceValue: previousBid.faceValue,
-              })}
-            </div>
-          )}
+        {/* Previous Bid Display removed from here - now shown above */}
 
         {/* Eliminated State */}
         {player.eliminated && (

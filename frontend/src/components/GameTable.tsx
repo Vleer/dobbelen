@@ -34,7 +34,7 @@ const GameTable: React.FC<GameTableProps> = ({
   onBack
 }) => {
   const { t } = useLanguage();
-  const { trackBid } = useStatistics();
+  const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
   const { animationsEnabled } = useSettings();
   const { isMobile, isTablet, isLandscape } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
@@ -69,6 +69,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [showMatchpoint, setShowMatchpoint] = useState(false);
+  const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -228,6 +230,13 @@ const GameTable: React.FC<GameTableProps> = ({
       setPreviousRoundWinner('');
       // Reset bid tracking so raise sound can play for first bid of new round
       setPreviousBidKey('');
+      
+      // Track dice rolls for all players at start of new round
+      game.players.forEach(player => {
+        if (player.dice && player.dice.length > 0) {
+          trackDiceRoll(player, player.dice, game);
+        }
+      });
     }
 
     // Play doubt/spot-on sound when action happens (using unique key with player ID and action type)
@@ -256,12 +265,35 @@ const GameTable: React.FC<GameTableProps> = ({
               game.lastActionPlayerId !== localPlayerId
             );
             audioService.playDoubt();
+            
+            // Track doubt statistics
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const doubter = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (doubter) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Success means the doubter was correct (actual count < bid quantity)
+                const success = actualCount < game.lastBidQuantity;
+                trackDoubt(doubter, targetBid, actualCount, success, game);
+              }
+            }
           } else if (game.lastActionType === "SPOT_ON") {
             console.log(
               "Playing spot-on sound for player:",
               game.lastActionPlayerId
             );
             audioService.playSpotOn();
+            
+            // Track spot-on as a perfect doubt (always successful if action occurred)
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const caller = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (caller) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Spot-on is always successful if it resulted in an action
+                trackDoubt(caller, targetBid, actualCount, true, game);
+              }
+            }
           }
         } else {
           console.log(
@@ -301,6 +333,22 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for round winner:', game.winner);
       audioService.playWin();
       setPreviousRoundWinner(game.winner);
+      
+      // Track round end statistics
+      const winnerPlayer = game.players.find(p => p.id === game.winner);
+      if (winnerPlayer) {
+        // Check if this was the last round (game winner is set)
+        const wasLastRound = !!game.gameWinner;
+        trackRoundEnd(winnerPlayer, game, wasLastRound);
+      }
+      
+      // Check for matchpoint (6 tokens = 1 away from winning)
+      if (winnerPlayer && winnerPlayer.winTokens === 6 && matchpointPlayerId !== game.winner) {
+        console.log('Matchpoint reached for player:', winnerPlayer.name);
+        setShowMatchpoint(true);
+        setMatchpointPlayerId(game.winner);
+        setTimeout(() => setShowMatchpoint(false), 3000);
+      }
     }
 
     // Also play win sound when there's a game winner (final victory)
@@ -308,6 +356,12 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for game winner:', game.gameWinner);
       audioService.playWin();
       setPreviousGameWinner(game.gameWinner);
+      
+      // Track game end statistics
+      const gameWinnerPlayer = game.players.find(p => p.id === game.gameWinner);
+      if (gameWinnerPlayer) {
+        trackGameEnd(gameWinnerPlayer, game);
+      }
     }
   }, [game, previousRoundNumber, previousActionKey, previousRoundWinner, previousGameWinner, previousBidKey, localPlayerId]);
 
@@ -620,13 +674,11 @@ const GameTable: React.FC<GameTableProps> = ({
           };
           trackBid(bid, game);
         } else if (action === 'doubt' && game.currentBid) {
-          // We'll track the doubt result when we get the game update with the result
-          // Store the doubt info temporarily for when the result comes back
-          (window as any).pendingDoubtTrack = {
-            doubter: localPlayer,
-            targetBid: game.currentBid,
-            game: game
-          };
+          // Doubt tracking happens when the result comes back from the server
+          console.log('Doubt action initiated, will track when result is received');
+        } else if (action === 'spoton' && game.currentBid) {
+          // Spot-on tracking happens when the result comes back from the server
+          console.log('Spot-on action initiated, will track when result is received');
         }
       }
 
@@ -1365,17 +1417,27 @@ const GameTable: React.FC<GameTableProps> = ({
         })}
       </div>
 
-      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
+      {/* Center Round & Bid Display - Desktop only (enhanced with more context) */}
       <div className="hidden lg:block">
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/85 px-5 py-3 text-center shadow-xl">
-            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a]">
+          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm">
+            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
               {t("game.round", { roundNumber: game.roundNumber })}
             </div>
-            <div className="text-base text-[#f7f3e8] font-semibold mt-1">
+            {/* Current Turn Indicator */}
+            {game.currentPlayerId && (
+              <div className="text-[10px] uppercase tracking-wider text-[#b9cbbf] mb-2">
+                {t("game.currentTurn")}: {game.players.find(p => p.id === game.currentPlayerId)?.name || t("common.unknownPlayer")}
+              </div>
+            )}
+            <div className="text-base text-[#f7f3e8] font-semibold">
               {currentBidFromActivePlayer
                 ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
                 : t("game.waitingForFirstBid")}
+            </div>
+            {/* Active Players Count */}
+            <div className="text-[10px] text-[#b9cbbf] mt-2">
+              {t("game.activePlayers")}: {game.players.filter(p => !p.eliminated).length}/{game.players.length}
             </div>
           </div>
         </div>
@@ -1512,9 +1574,22 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* History Panel - Positioned below the header */}
+        {/* History Panel - Positioned on the right side for desktop */}
         {isHistoryOpen && (
-          <div ref={historyPanelRef} className="mt-1 md:mt-2 flex justify-end">
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 hidden lg:block absolute top-20 right-4 z-40">
+            <HistoryPanel
+              game={game}
+              isOpen={isHistoryOpen}
+              onClose={() => setIsHistoryOpen(false)}
+              openedFromGameStart={openedForGameStart}
+              onClearGameStartOpen={() => setOpenedForGameStart(false)}
+            />
+          </div>
+        )}
+        
+        {/* History Panel - Mobile/Tablet: Below header, centered */}
+        {isHistoryOpen && (
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 lg:hidden flex justify-end">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}
@@ -1564,6 +1639,31 @@ const GameTable: React.FC<GameTableProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Matchpoint notification - styled prominently, gold/yellow theme */}
+      {showMatchpoint && matchpointPlayerId && (
+        <div
+          className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[9999] border-4 rounded-2xl px-8 py-6 md:px-12 md:py-8 shadow-2xl max-w-[95vw] text-center animate-bounce-in"
+          style={{ 
+            backgroundColor: '#2e2417', 
+            borderColor: '#f2c96d',
+            boxShadow: '0 0 40px 10px rgba(242, 201, 109, 0.6)'
+          }}
+        >
+          <div className="text-4xl md:text-6xl font-extrabold mb-2 animate-pulse" style={{ 
+            color: '#f2c96d',
+            textShadow: '0 0 20px rgba(242, 201, 109, 0.8)'
+          }}>
+            MATCHPOINT!
+          </div>
+          <p className="text-lg md:text-2xl font-bold" style={{ color: '#f7f3e8' }}>
+            {game.players.find(p => p.id === matchpointPlayerId)?.name || t("common.unknownPlayer")}
+          </p>
+          <p className="text-sm md:text-base mt-1" style={{ color: '#d9b45a' }}>
+            {t("game.matchpointMessage")}
+          </p>
         </div>
       )}
 
