@@ -166,7 +166,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
           ...(animationsEnabled
             ? {
                 animation: glowAnimation
-                  ? `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, ${glowAnimation} 1.6s ease-in-out 0.5s infinite`
+                  ? `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, ${glowAnimation} 2.8s ease-in-out 0.5s infinite`
                   : 'bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
               }
             : {}),
@@ -244,7 +244,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
             }`}
             style={animationsEnabled ? {
               // bounce-in starts at 340 ms; flash starts after bounce completes (~840 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 340ms both, flash 0.8s ease-in-out 860ms infinite`,
+              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 340ms both, flash 1.6s ease-in-out 860ms infinite`,
               opacity: 0,
             } : {}}
           >
@@ -260,11 +260,10 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
             className="text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1"
             style={animationsEnabled ? {
               // bounce-in starts at 420 ms; flash starts after bounce completes (~920 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 420ms both, flash 0.8s ease-in-out 940ms infinite`,
+              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 420ms both, flash 1.6s ease-in-out 940ms infinite`,
               opacity: 0,
             } : {}}
           >
-            <span>💀</span>
             <span>
               {t('game.result.isEliminated', {
                 playerName: eliminatedPlayer.name,

@@ -113,4 +113,12 @@ export const gameApi = {
     const response = await axiosInstance.post<import('../types/game').Game>(`/api/games/multiplayer/${gameId}/player-continue`, { playerId });
     return response.data;
   },
+
+  sendChatMessage: async (gameId: string, playerId: string, playerName: string, text: string): Promise<void> => {
+    await axiosInstance.post(`/api/games/multiplayer/${gameId}/chat`, { playerId, playerName, text });
+  },
+
+  endGame: async (gameId: string, playerId: string): Promise<void> => {
+    await axiosInstance.post(`/api/games/multiplayer/${gameId}/end`, { playerId });
+  },
 };

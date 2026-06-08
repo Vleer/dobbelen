@@ -7,6 +7,8 @@ interface SettingsPanelProps {
   onClose: () => void;
   onLeaveGame?: () => void;
   leaveGameLabel?: string;
+  onEndGame?: () => void;
+  endGameLabel?: string;
   mobileCentered?: boolean;
   /** Clicks inside this element (e.g. the settings gear wrapper) do not count as "outside" the panel */
   anchorRef?: React.RefObject<HTMLElement | null>;
@@ -17,6 +19,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onClose,
   onLeaveGame,
   leaveGameLabel,
+  onEndGame,
+  endGameLabel,
   mobileCentered = false,
   anchorRef,
 }) => {
@@ -162,6 +166,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           className="settings-leave-game-btn w-full mt-4 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
         >
           {leaveGameLabel || t('game.leaveGame')}
+        </button>
+      )}
+
+      {onEndGame && (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onEndGame();
+          }}
+          className="w-full mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
+          style={{ borderColor: '#ef4444', color: '#ef4444', backgroundColor: 'transparent' }}
+        >
+          {endGameLabel || t('game.endGame')}
         </button>
       )}
     </div>

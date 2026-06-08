@@ -111,6 +111,8 @@ public class Game {
      * Used to hide idle lobbies from the public list while the game still exists (direct link still works).
      */
     private Long lastHostLobbyPresenceAt;
+    /** Chat messages sent by players in this game/lobby */
+    private List<ChatMessage> chatMessages;
 
     public Game() {
         this.id = generateShortGameId();
@@ -137,6 +139,7 @@ public class Game {
         this.currentHandBidHistory = new ArrayList<>();
         this.playersContinued = new ArrayList<>();
         this.lastHostLobbyPresenceAt = null;
+        this.chatMessages = new ArrayList<>();
     }
 
     /** Reset this game back to WAITING_FOR_PLAYERS so all players can start a new game. */
@@ -426,6 +429,17 @@ public class Game {
 
     public void setLastHostLobbyPresenceAt(Long lastHostLobbyPresenceAt) {
         this.lastHostLobbyPresenceAt = lastHostLobbyPresenceAt;
+    }
+
+    public List<ChatMessage> getChatMessages() {
+        if (chatMessages == null) {
+            chatMessages = new ArrayList<>();
+        }
+        return chatMessages;
+    }
+
+    public void setChatMessages(List<ChatMessage> chatMessages) {
+        this.chatMessages = chatMessages;
     }
 
     public void addBidToCurrentHand(Bid bid) {

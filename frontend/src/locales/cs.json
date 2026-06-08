@@ -1,7 +1,6 @@
 {
   "game.title": "Lhářské kostky",
   "game.subtitle": "Klasická bluffovací hra",
-
   "lobby.createGame": "Nová hra",
   "lobby.privateGame": "Soukromá hra",
   "lobby.clickToCopyLink": "Kliknutím zkopírujete odkaz",
@@ -26,7 +25,6 @@
   "lobby.pleaseEnterUsername": "Zadejte své jméno.",
   "lobby.failedToCreateGame": "Hru se nepodařilo vytvořit",
   "lobby.failedToJoinGame": "K hře se nepodařilo připojit",
-
   "lobby.shareLink": "Sdílejte tento odkaz a pozvěte hráče:",
   "lobby.copy": "Kopírovat",
   "lobby.players": "Hráči",
@@ -39,7 +37,6 @@
   "lobby.needAtLeastTwoPlayers": "Ke startu jsou potřeba alespoň 2 hráči",
   "lobby.gameStarting": "Hra začíná za...",
   "lobby.go": "Start!",
-
   "game.round": "Kolo {{roundNumber}}",
   "game.currentBid": "Aktuální příhoz",
   "game.noCurrentBid": "Žádný příhoz",
@@ -50,7 +47,6 @@
   "game.fours": "Čtyřky",
   "game.fives": "Pětky",
   "game.sixes": "Šestky",
-
   "game.makeYourBid": "Vaše sázka",
   "game.yourTurn": "Jste na řadě",
   "game.waitingForTurn": "Čekáte na tah...",
@@ -58,7 +54,6 @@
   "game.waitingForFirstBid": "Čeká se na první příhoz",
   "game.doubt": "Nevěřím",
   "game.spotOn": "Přesně",
-
   "game.dealer": "D",
   "game.dice": "kostky",
   "game.revealed": "ODHALENO",
@@ -69,7 +64,6 @@
   "game.activePlayers": "Aktivní hráči",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Skryté",
-
   "game.result.thereWere": "Bylo tam {{actualCount}}× {{faceValue}}",
   "game.result.bidWasCorrect": "Příhoz byl správně ✓",
   "game.result.bidWasWrong": "Příhoz byl špatně ✗",
@@ -88,7 +82,6 @@
   "game.history.playerBidWasDoubted": "Příhoz hráče {{playerName}} byl zpochybněn",
   "game.history.playerBidWasSpotOn": "Příhoz hráče {{playerName}} byl spot on",
   "game.action.raise": "{{playerName}} zvyšuje na {{quantity}}× {{faceValue}}",
-
   "game.matchpointMessage": "Jeden bod od vítězství!",
   "game.continue": "Pokračovat",
   "game.continuing": "Pokračuje se...",
@@ -99,17 +92,13 @@
   "game.leaveConfirmLeave": "Opustit",
   "game.leaveConfirmCancel": "Zrušit",
   "game.playerLeftNotification": "{{playerName}} opustil hru",
-
   "game.dobbelkoning": "Král kostek",
-
   "errors.failedToAddPlayer": "Nepodařilo se přidat AI hráče",
   "errors.failedToStart": "Hru se nepodařilo spustit",
   "errors.failedToRemove": "Nepodařilo se odebrat AI hráče",
-
   "common.playAgain": "Hrát znovu",
   "common.state": "Stav",
   "common.unknownPlayer": "Neznámý hráč",
-
   "game.history.title": "Historie",
   "game.history.currentHand": "Aktuální hra",
   "game.history.lastHand": "Poslední hra",
@@ -136,7 +125,6 @@
   "game.history.noStatsYet": "Zatím nejsou žádné statistiky",
   "game.history.diceAnalysis": "Analýza kostek",
   "game.history.noBidsYet": "V této hře zatím nebyly žádné příhozy",
-
   "instructions.title": "Jak hrát",
   "instructions.rules": "Pravidla",
   "instructions.close": "Zavřít",
@@ -144,11 +132,14 @@
   "instructions.doubt": "Nevěřím: Napadněte předchozí příhoz, pokud je příliš vysoký",
   "instructions.spotOn": "Přesně: Tvrdíte, že je příhoz přesně správný (riskantní!) Pokud ano, kolo se resetuje.",
   "instructions.winRound": "Poslední zbývající hráč vyhrává kolo!",
-
   "settings.colorScheme": "Barevné schéma",
   "settings.colorLight": "Světlé",
   "settings.colorDark": "Tmavé",
   "settings.colorWhite": "Bílé",
   "settings.fontSize": "Velikost písma",
-  "settings.animations": "Animace"
+  "settings.animations": "Animace",
+  "game.endGame": "Ukončit hru",
+  "game.endGameConfirm": "Opravdu chcete ukončit hru pro všechny hráče?",
+  "game.chat": "Chat",
+  "lobby.minitutorial": "Mini tutoriál"
 }

@@ -232,4 +232,25 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping("/multiplayer/{gameId}/chat")
+    public ResponseEntity<Void> sendChatMessage(@PathVariable String gameId,
+            @RequestBody ChatMessageRequest request) {
+        try {
+            gameService.sendChatMessage(gameId, request.getPlayerId(), request.getPlayerName(), request.getText());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/end")
+    public ResponseEntity<Void> endGame(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            gameService.endGameAsHost(gameId, request.getPlayerId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
