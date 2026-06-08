@@ -79,8 +79,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} hat gewonnen",
   "game.action.doubt": "{{playerName}} zweifelt",
   "game.action.spotOn": "{{playerName}} sagt genau richtig",
+  "game.history.playerBidWasDoubted": "{{playerName}}s Gebot wurde angezweifelt",
+  "game.history.playerBidWasSpotOn": "{{playerName}}s Gebot wurde spot on genannt",
   "game.action.raise": "{{playerName}} erhöht",
 
+  "game.matchpointMessage": "Ein Punkt vom Sieg entfernt!",
   "game.continue": "Weiter",
   "game.continuing": "Weiter...",
   "game.waitingForOthers": "Warten auf andere Spieler...",

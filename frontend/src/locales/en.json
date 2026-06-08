@@ -85,8 +85,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} has won",
   "game.action.doubt": "{{playerName}}: Doubts",
   "game.action.spotOn": "{{playerName}}: spot on",
+  "game.history.playerBidWasDoubted": "{{playerName}}'s bid was doubted",
+  "game.history.playerBidWasSpotOn": "{{playerName}}'s bid was called spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
 
+  "game.matchpointMessage": "One point away from victory!",
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
   "game.waitingForOthers": "Waiting for others to continue...",

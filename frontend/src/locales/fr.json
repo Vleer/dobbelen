@@ -79,8 +79,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} a gagné",
   "game.action.doubt": "{{playerName}} doute",
   "game.action.spotOn": "{{playerName}} dit exact",
+  "game.history.playerBidWasDoubted": "L'enchère de {{playerName}} a été doutée",
+  "game.history.playerBidWasSpotOn": "L'enchère de {{playerName}} était spot on",
   "game.action.raise": "{{playerName}} surenchérit",
 
+  "game.matchpointMessage": "À un point de la victoire !",
   "game.continue": "Continuer",
   "game.continuing": "En cours...",
   "game.waitingForOthers": "En attente des autres joueurs...",

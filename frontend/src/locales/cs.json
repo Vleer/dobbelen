@@ -85,8 +85,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} vyhrál",
   "game.action.doubt": "{{playerName}}: Nevěřím",
   "game.action.spotOn": "{{playerName}}: Přesně",
+  "game.history.playerBidWasDoubted": "Příhoz hráče {{playerName}} byl zpochybněn",
+  "game.history.playerBidWasSpotOn": "Příhoz hráče {{playerName}} byl spot on",
   "game.action.raise": "{{playerName}} zvyšuje na {{quantity}}× {{faceValue}}",
 
+  "game.matchpointMessage": "Jeden bod od vítězství!",
   "game.continue": "Pokračovat",
   "game.continuing": "Pokračuje se...",
   "game.waitingForOthers": "Čeká se na ostatní hráče...",

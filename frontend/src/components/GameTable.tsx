@@ -69,6 +69,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [showMatchpoint, setShowMatchpoint] = useState(false);
+  const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   const historyPanelRef = useRef<HTMLDivElement>(null);
   const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -301,6 +303,15 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for round winner:', game.winner);
       audioService.playWin();
       setPreviousRoundWinner(game.winner);
+      
+      // Check for matchpoint (6 tokens = 1 away from winning)
+      const winnerPlayer = game.players.find(p => p.id === game.winner);
+      if (winnerPlayer && winnerPlayer.winTokens === 6 && matchpointPlayerId !== game.winner) {
+        console.log('Matchpoint reached for player:', winnerPlayer.name);
+        setShowMatchpoint(true);
+        setMatchpointPlayerId(game.winner);
+        setTimeout(() => setShowMatchpoint(false), 3000);
+      }
     }
 
     // Also play win sound when there's a game winner (final victory)
@@ -1587,6 +1598,31 @@ const GameTable: React.FC<GameTableProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Matchpoint notification - styled prominently, gold/yellow theme */}
+      {showMatchpoint && matchpointPlayerId && (
+        <div
+          className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[9999] border-4 rounded-2xl px-8 py-6 md:px-12 md:py-8 shadow-2xl max-w-[95vw] text-center animate-bounce-in"
+          style={{ 
+            backgroundColor: '#2e2417', 
+            borderColor: '#f2c96d',
+            boxShadow: '0 0 40px 10px rgba(242, 201, 109, 0.6)'
+          }}
+        >
+          <div className="text-4xl md:text-6xl font-extrabold mb-2 animate-pulse" style={{ 
+            color: '#f2c96d',
+            textShadow: '0 0 20px rgba(242, 201, 109, 0.8)'
+          }}>
+            MATCHPOINT!
+          </div>
+          <p className="text-lg md:text-2xl font-bold" style={{ color: '#f7f3e8' }}>
+            {game.players.find(p => p.id === matchpointPlayerId)?.name || t("common.unknownPlayer")}
+          </p>
+          <p className="text-sm md:text-base mt-1" style={{ color: '#d9b45a' }}>
+            {t("game.matchpointMessage")}
+          </p>
         </div>
       )}
 

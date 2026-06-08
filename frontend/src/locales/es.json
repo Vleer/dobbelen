@@ -85,8 +85,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} ha ganado",
   "game.action.doubt": "{{playerName}}: duda",
   "game.action.spotOn": "{{playerName}}: justo",
+  "game.history.playerBidWasDoubted": "La puja de {{playerName}} fue dudada",
+  "game.history.playerBidWasSpotOn": "La puja de {{playerName}} fue spot on",
   "game.action.raise": "{{playerName}} sube a {{quantity}} de {{faceValue}}",
 
+  "game.matchpointMessage": "¡A un punto de la victoria!",
   "game.continue": "Continuar",
   "game.continuing": "Continuando...",
   "game.waitingForOthers": "Esperando a los demás...",

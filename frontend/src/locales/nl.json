@@ -85,8 +85,11 @@
   "game.result.opponentHasWonGame": "{{playerName}} heeft gewonnen",
   "game.action.doubt": "{{playerName}} tilt op",
   "game.action.spotOn": "{{playerName}}: Spot on",
+  "game.history.playerBidWasDoubted": "{{playerName}} werd getwijfeld",
+  "game.history.playerBidWasSpotOn": "{{playerName}} werd spot on genoemd",
   "game.action.raise": "{{playerName}} verhoogt naar {{quantity}} {{faceValue}}en",
 
+  "game.matchpointMessage": "Een punt verwijderd van de overwinning!",
   "game.continue": "Doorgaan",
   "game.continuing": "Doorgaan...",
   "game.waitingForOthers": "Wachten op anderen...",
