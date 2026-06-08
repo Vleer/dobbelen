@@ -56,9 +56,11 @@
   "game.dealer": "D",
   "game.dice": "dés",
   "game.revealed": "RÉVÉLÉ",
-  "game.out": "HORS JEU",
+  "game.out": "Hors",
   "game.eliminated": "ÉLIMINÉ",
   "game.previousBid": "Enchère précédente : {{quantity}} de {{faceValue}}",
+  "game.currentTurn": "Tour actuel",
+  "game.activePlayers": "Joueurs actifs",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Caché",
 

@@ -56,9 +56,11 @@
   "game.dealer": "D",
   "game.dice": "dadi",
   "game.revealed": "RIVELATO",
-  "game.out": "FUORI",
+  "game.out": "Fuori",
   "game.eliminated": "ELIMINATO",
   "game.previousBid": "Offerta precedente: {{quantity}} di {{faceValue}}",
+  "game.currentTurn": "Turno attuale",
+  "game.activePlayers": "Giocatori attivi",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Nascosto",
 

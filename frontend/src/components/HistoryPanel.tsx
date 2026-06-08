@@ -59,7 +59,7 @@ interface PlayerStats {
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, openedFromGameStart, onClearGameStartOpen }) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('instructions');
+  const [activeTab, setActiveTab] = useState<'instructions' | 'currentHand' | 'lastHand' | 'stats'>('lastHand');
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>({});
 
   // When panel opens from game start only: show "Rules" tab. Otherwise keep/remember the last tab.
@@ -72,6 +72,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
     if (openedFromGameStart && !hasAppliedOpenRef.current) {
       setActiveTab('instructions');
       onClearGameStartOpen?.();
+      hasAppliedOpenRef.current = true;
+    } else if (!hasAppliedOpenRef.current && !openedFromGameStart) {
+      // Default to lastHand tab when opening normally (not from game start)
+      setActiveTab('lastHand');
       hasAppliedOpenRef.current = true;
     }
   }, [isOpen, openedFromGameStart, onClearGameStartOpen]);

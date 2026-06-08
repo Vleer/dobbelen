@@ -62,9 +62,11 @@
   "game.dealer": "D",
   "game.dice": "dice",
   "game.revealed": "REVEALED",
-  "game.out": "OUT",
+  "game.out": "Out",
   "game.eliminated": "ELIMINATED",
   "game.previousBid": "Previous Bid: {{quantity}} of {{faceValue}}s",
+  "game.currentTurn": "Current Turn",
+  "game.activePlayers": "Active Players",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Hidden",
 

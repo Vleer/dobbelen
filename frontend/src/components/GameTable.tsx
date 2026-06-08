@@ -1365,17 +1365,27 @@ const GameTable: React.FC<GameTableProps> = ({
         })}
       </div>
 
-      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
+      {/* Center Round & Bid Display - Desktop only (enhanced with more context) */}
       <div className="hidden lg:block">
         <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/85 px-5 py-3 text-center shadow-xl">
-            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a]">
+          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm">
+            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
               {t("game.round", { roundNumber: game.roundNumber })}
             </div>
-            <div className="text-base text-[#f7f3e8] font-semibold mt-1">
+            {/* Current Turn Indicator */}
+            {game.currentPlayerId && (
+              <div className="text-[10px] uppercase tracking-wider text-[#b9cbbf] mb-2">
+                {t("game.currentTurn")}: {game.players.find(p => p.id === game.currentPlayerId)?.name || t("common.unknownPlayer")}
+              </div>
+            )}
+            <div className="text-base text-[#f7f3e8] font-semibold">
               {currentBidFromActivePlayer
                 ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
                 : t("game.waitingForFirstBid")}
+            </div>
+            {/* Active Players Count */}
+            <div className="text-[10px] text-[#b9cbbf] mt-2">
+              {t("game.activePlayers")}: {game.players.filter(p => !p.eliminated).length}/{game.players.length}
             </div>
           </div>
         </div>
@@ -1512,9 +1522,22 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* History Panel - Positioned below the header */}
+        {/* History Panel - Positioned on the right side for desktop */}
         {isHistoryOpen && (
-          <div ref={historyPanelRef} className="mt-1 md:mt-2 flex justify-end">
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 hidden lg:block absolute top-20 right-4 z-40">
+            <HistoryPanel
+              game={game}
+              isOpen={isHistoryOpen}
+              onClose={() => setIsHistoryOpen(false)}
+              openedFromGameStart={openedForGameStart}
+              onClearGameStartOpen={() => setOpenedForGameStart(false)}
+            />
+          </div>
+        )}
+        
+        {/* History Panel - Mobile/Tablet: Below header, centered */}
+        {isHistoryOpen && (
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 lg:hidden flex justify-end">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}

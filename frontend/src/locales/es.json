@@ -62,9 +62,11 @@
   "game.dealer": "D",
   "game.dice": "dados",
   "game.revealed": "REVELADO",
-  "game.out": "FUERA",
+  "game.out": "Fuera",
   "game.eliminated": "ELIMINADO",
   "game.previousBid": "Puja anterior: {{quantity}} de {{faceValue}}",
+  "game.currentTurn": "Turno actual",
+  "game.activePlayers": "Jugadores activos",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Ocultos",
 

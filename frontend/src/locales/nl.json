@@ -62,9 +62,11 @@
   "game.dealer": "D",
   "game.dice": "dobbelstenen",
   "game.revealed": "Onthuld",
-  "game.out": "UIT",
+  "game.out": "Uit",
   "game.eliminated": "UIT",
   "game.previousBid": "Vorige Bod: {{quantity}} {{faceValue}}en",
+  "game.currentTurn": "Huidige beurt",
+  "game.activePlayers": "Actieve spelers",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Verborgen",
 
