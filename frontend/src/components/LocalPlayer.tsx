@@ -27,11 +27,9 @@ interface LocalPlayerProps {
 const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
-  const [isDiceVisible, setIsDiceVisible] = useState(true);
   const [showTurnAnim, setShowTurnAnim] = useState(false);
   const [showElimAnim, setShowElimAnim] = useState(false);
   const [showLoserAnim, setShowLoserAnim] = useState(false);
-  const touchHandledRef = useRef(false);
   const prevIsMyTurnRef = useRef(isMyTurn);
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
@@ -39,53 +37,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   // Use previous round dice if showing reveal, otherwise current dice
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
   
-  // When showDice is true (end of round reveal), always show dice regardless of toggle
-  const shouldShowDice = showDice || isDiceVisible;
-  
-  // Handle toggle click
-  const handleToggleDiceVisibility = () => {
-    console.log('=== Eye Toggle Clicked ===');
-    console.log('Current isDiceVisible:', isDiceVisible);
-    console.log('showDice prop:', showDice);
-    const newValue = !isDiceVisible;
-    console.log('Setting isDiceVisible to:', newValue);
-    setIsDiceVisible(newValue);
-  };
-
-  // Eye icon components - with logging
-  const EyeOpenIcon = () => {
-    console.log('Rendering EyeOpenIcon');
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      </svg>
-    );
-  };
-
-  const EyeClosedIcon = () => {
-    console.log('Rendering EyeClosedIcon');
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-      </svg>
-    );
-  };
-
-  useEffect(() => {
-    console.log('LocalPlayer rendering:', {
-      playerName: player.name,
-      playerColor: player.color,
-      playerId: player.id
-    });
-  }, [player.name, player.color, player.id]);
-
-  // Debug: Log when isDiceVisible changes
-  useEffect(() => {
-    console.log('isDiceVisible state changed to:', isDiceVisible);
-    console.log('shouldShowDice is now:', shouldShowDice);
-  }, [isDiceVisible, shouldShowDice]);
+  // Always show dice (visibility toggle removed)
+  const shouldShowDice = true;
 
   // Animate the container when it becomes the local player's turn
   useEffect(() => {
@@ -167,62 +120,13 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           <div className="h-full flex items-center justify-between gap-2 min-w-0">
             <div className="min-w-0 flex items-center gap-1.5">
               <span className="font-bold text-sm truncate" style={{ color: 'var(--game-accent-text)' }}>{player.name}</span>
-              {!showDice && (
-                <button
-                  type="button"
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    touchHandledRef.current = true;
-                    handleToggleDiceVisibility();
-                    setTimeout(() => { touchHandledRef.current = false; }, 300);
-                  }}
-                  onClick={(e) => {
-                    if (touchHandledRef.current) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      return;
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleToggleDiceVisibility();
-                  }}
-                  className={
-                    landscapeMobile
-                      ? "p-0.5 rounded border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation flex items-center justify-center"
-                      : "p-1 rounded-md border flex-shrink-0 cursor-pointer z-50 relative touch-manipulation min-w-8 min-h-8 flex items-center justify-center"
-                  }
-                  style={{
-                    touchAction: "manipulation",
-                    WebkitTapHighlightColor: "transparent",
-                    borderColor: "var(--game-border-strong)",
-                    backgroundColor: landscapeMobile ? "var(--game-surface)" : "var(--game-surface-soft)",
-                    color: "var(--game-accent-text)",
-                  }}
-                  aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
-                >
-                  <div
-                    className={
-                      landscapeMobile
-                        ? "pointer-events-none flex items-center justify-center [&_svg]:w-[13px] [&_svg]:h-[13px]"
-                        : "pointer-events-none w-3 h-3 [&_svg]:w-3 [&_svg]:h-3"
-                    }
-                  >
-                    {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                  </div>
-                </button>
-              )}
             </div>
             <div className="flex-1 h-full flex items-center justify-end overflow-hidden">
-              {shouldShowDice ? (
-                <div className="flex items-center gap-1 flex-nowrap">
-                  {diceValues.slice(0, 6).map((value, index) => (
-                    <DiceSVG key={index} value={value} size="sm" />
-                  ))}
-                </div>
-              ) : (
-                <span className="text-xs italic" style={{ color: 'var(--game-text-muted)' }}>{t("game.diceHidden") || "Hidden"}</span>
-              )}
+              <div className="flex items-center gap-1 flex-nowrap">
+                {diceValues.slice(0, 6).map((value, index) => (
+                  <DiceSVG key={index} value={value} size="sm" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -304,67 +208,15 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
                   })}
                 </div>
               )}
-            {/* Eye toggle button - next to name */}
-            {!showDice && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  console.log("DESKTOP BUTTON CLICKED!", e);
-                  console.log("isDiceVisible before toggle:", isDiceVisible);
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleToggleDiceVisibility();
-                }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                className={`border transition-all cursor-pointer z-50 relative ${
-                  compactDesktopLandscape ? "rounded p-0.5" : "rounded-md"
-                }`}
-                style={{
-                  pointerEvents: "auto",
-                  padding: compactDesktopLandscape ? 2 : 4,
-                  minWidth: compactDesktopLandscape ? 18 : 24,
-                  minHeight: compactDesktopLandscape ? 18 : 24,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderColor: "var(--game-border-strong)",
-                  backgroundColor: compactDesktopLandscape ? "var(--game-surface)" : "var(--game-surface-soft)",
-                  color: "var(--game-accent-text)",
-                }}
-                aria-label={isDiceVisible ? "Hide dice" : "Show dice"}
-              >
-                <span
-                  className={compactDesktopLandscape ? "[&_svg]:w-[11px] [&_svg]:h-[11px]" : "[&_svg]:w-[14px] [&_svg]:h-[14px]"}
-                  style={{
-                    position: "relative",
-                    zIndex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {isDiceVisible ? <EyeOpenIcon /> : <EyeClosedIcon />}
-                </span>
-              </button>
-            )}
             </div>
 
             {/* Right dice row */}
             <div className="flex-1 flex items-center justify-end overflow-hidden">
-              {shouldShowDice ? (
-                <div className="flex items-center gap-1 flex-nowrap">
-                  {diceValues.slice(0, 6).map((value, index) => (
-                    <DiceSVG key={index} value={value} size="sm" />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-lg italic w-full text-center" style={{ color: 'var(--game-text-muted)' }}>
-                  {t("game.diceHidden") || "Hidden"}
-                </div>
-              )}
+              <div className="flex items-center gap-1 flex-nowrap">
+                {diceValues.slice(0, 6).map((value, index) => (
+                  <DiceSVG key={index} value={value} size="sm" />
+                ))}
+              </div>
             </div>
           </div>
 
@@ -372,7 +224,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
         {/* Eliminated State */}
         {player.eliminated && (
-          <div className="text-center font-bold text-xl rounded-lg p-3 border" style={{ color: 'var(--game-accent-text)', backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)' }}>
+          <div className="text-center font-medium text-sm rounded-lg px-3 py-1.5 border opacity-60" style={{ color: 'var(--game-text-muted)', backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border)' }}>
             {t("game.eliminated")}
           </div>
         )}
