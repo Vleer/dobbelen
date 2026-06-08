@@ -18,6 +18,7 @@ import SettingsPanel from './SettingsPanel';
 import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import DraggableWrapper from './DraggableWrapper';
 import useWindowSize from '../utils/useWindowSize';
 
 interface GameTableProps {
@@ -1425,9 +1426,9 @@ const GameTable: React.FC<GameTableProps> = ({
         })}
       </div>
 
-      {/* Center Round & Bid Display - Desktop only (enhanced with more context) */}
+      {/* Center Round & Bid Display - Desktop only (enhanced with more context) - positioned in left 70% */}
       <div className="hidden lg:block">
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+        <div className="fixed left-[35%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
           <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm">
             <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
               {t("game.round", { roundNumber: game.roundNumber })}
@@ -1451,39 +1452,52 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       </div>
 
-      {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
-      <div
-        className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-2 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
-        style={{ bottom: "min(18rem, 30vh)" }}
+      {/* Desktop: bid readout above bidding controls - draggable */}
+      <DraggableWrapper
+        storageKey="biddingElementPosition"
+        defaultPosition={{
+          x: typeof window !== 'undefined' ? window.innerWidth / 2 - 224 : 0,
+          y: typeof window !== 'undefined' ? window.innerHeight - 300 : 0
+        }}
+        className="hidden lg:flex"
       >
-        {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
-          <div className="pointer-events-auto w-full flex justify-center">
-            <BidDisplay
-              currentBid={currentBidFromActivePlayer}
-              currentPlayerId={game.currentPlayerId}
-              players={game.players}
-              roundNumber={game.roundNumber}
-              winner={game.winner || undefined}
-              isMobile={false}
-              stacked
-            />
+        <div className="flex flex-col items-center gap-2 w-[28rem]">
+          {/* Drag handle */}
+          <div className="drag-handle cursor-grab active:cursor-grabbing w-full text-center py-1 text-[#d9b45a] text-xs select-none">
+            ⋮⋮⋮
           </div>
-        )}
-        {localPlayer && isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
-          <BidSelector
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            onBidSelect={(quantity, faceValue) =>
-              handleAction("bid", { quantity, faceValue })
-            }
-            onDoubt={() => handleAction("doubt")}
-            onSpotOn={() => handleAction("spotOn")}
-            disabled={isLoading || bettingDisabled}
-            isMobile={false}
-            stacked
-          />
-        )}
-      </div>
+          
+          <div className="pointer-events-auto w-full flex flex-col items-center gap-2">
+            {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
+              <div className="w-full flex justify-center">
+                <BidDisplay
+                  currentBid={currentBidFromActivePlayer}
+                  currentPlayerId={game.currentPlayerId}
+                  players={game.players}
+                  roundNumber={game.roundNumber}
+                  winner={game.winner || undefined}
+                  isMobile={false}
+                  stacked
+                />
+              </div>
+            )}
+            {localPlayer && isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
+              <BidSelector
+                currentBid={game.currentBid}
+                previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                onBidSelect={(quantity, faceValue) =>
+                  handleAction("bid", { quantity, faceValue })
+                }
+                onDoubt={() => handleAction("doubt")}
+                onSpotOn={() => handleAction("spotOn")}
+                disabled={isLoading || bettingDisabled}
+                isMobile={false}
+                stacked
+              />
+            )}
+          </div>
+        </div>
+      </DraggableWrapper>
 
       {/* Game Result Display - Desktop only */}
       <div className="hidden lg:block">

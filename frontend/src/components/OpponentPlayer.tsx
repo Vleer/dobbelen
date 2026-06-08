@@ -143,22 +143,24 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   });
 
   const getDesktopPositionStyle = (): React.CSSProperties => {
+    // Adjust all positions to the left 70% of the screen
     // 2 opponents: left and right at same height.
     // 3 opponents: simple arch around the local player.
     if (totalOpponents === 2) {
       return position === 0
-        ? { left: "22%", top: "24%", transform: "translateX(-50%)" }
-        : { left: "78%", top: "24%", transform: "translateX(-50%)" };
+        ? { left: "15%", top: "24%", transform: "translateX(-50%)" }
+        : { left: "55%", top: "24%", transform: "translateX(-50%)" };
     }
     if (totalOpponents === 3) {
-      if (position === 0) return { left: "22%", top: "24%", transform: "translateX(-50%)" };
-      if (position === 1) return { left: "50%", top: "15%", transform: "translateX(-50%)" };
-      return { left: "78%", top: "24%", transform: "translateX(-50%)" };
+      if (position === 0) return { left: "15%", top: "24%", transform: "translateX(-50%)" };
+      if (position === 1) return { left: "35%", top: "15%", transform: "translateX(-50%)" };
+      return { left: "55%", top: "24%", transform: "translateX(-50%)" };
     }
 
+    // Scale positions to left 70% (multiply by 0.7)
     const spread = Math.max(totalOpponents, 1);
     const slot = Math.min(position + 1, spread);
-    const leftPercent = (slot / (spread + 1)) * 100;
+    const leftPercent = ((slot / (spread + 1)) * 100) * 0.7;
     return { left: `${leftPercent}%`, top: "18%", transform: "translateX(-50%)" };
   };
 

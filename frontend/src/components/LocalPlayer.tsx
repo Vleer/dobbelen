@@ -138,7 +138,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
     <div
       className="absolute"
       style={{
-        left: "50%",
+        left: "35%",
         bottom: "2rem",
         transform: "translateX(-50%)",
       }}
