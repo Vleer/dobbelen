@@ -54,6 +54,7 @@ html.scale-x-large { font-size: 21px; }
     border-color: var(--game-highlight);
   }
 }
+@keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.35); }
   50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
 }

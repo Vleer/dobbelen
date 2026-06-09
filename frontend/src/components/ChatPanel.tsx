@@ -295,7 +295,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 backgroundColor: 'var(--panel-bg-soft)',
                 borderColor: 'var(--panel-border)',
                 color: 'var(--text-main)',
-                focusRingColor: '#8a6a1d',
               }}
               maxLength={200}
               disabled={isSending}
