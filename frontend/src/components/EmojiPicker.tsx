@@ -1,5 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 
+/**
+ * EmojiPicker Component
+ * 
+ * A comprehensive emoji picker with:
+ * - 6 categorized emoji collections (Smileys, Gestures, Emotions, Games, Food, Symbols)
+ * - Tab-based category navigation
+ * - Click-outside-to-close functionality
+ * - Smooth animations and hover effects
+ * - Grid layout optimized for mobile and desktop
+ * - Custom scrollbar styling
+ */
 interface EmojiPickerProps {
   onEmojiSelect: (emoji: string) => void;
   isOpen: boolean;

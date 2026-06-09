@@ -1,5 +1,15 @@
 import React from 'react';
 
+/**
+ * FormattedMessage Component
+ * 
+ * Renders chat messages with rich formatting support:
+ * - Detects and converts URLs to clickable links
+ * - Supports basic markdown-style formatting:
+ *   - Bold text: **text** or __text__
+ * - Truncates long URLs for better display
+ * - Links open in new tab with security attributes
+ */
 interface FormattedMessageProps {
   text: string;
 }

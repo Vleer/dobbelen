@@ -5,6 +5,23 @@ import { audioService } from '../services/audioService';
 import EmojiPicker from './EmojiPicker';
 import FormattedMessage from './FormattedMessage';
 
+/**
+ * ChatPanel Component
+ * 
+ * An enhanced chat interface for multiplayer games featuring:
+ * - Real-time messaging with WebSocket support
+ * - Emoji picker with categorized emojis
+ * - Message formatting (bold text with **text** or __text__)
+ * - URL detection and clickable links
+ * - Player color-coded messages
+ * - Typing indicators
+ * - Sound notifications for new messages
+ * - Unread message badges
+ * - Smooth animations and transitions
+ * - Mobile-responsive design
+ * - Character counter (200 char limit)
+ * - Custom scrollbar styling
+ */
 interface ChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
