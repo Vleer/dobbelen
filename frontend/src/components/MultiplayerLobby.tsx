@@ -732,16 +732,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       </span>
                       <span className="font-medium text-sm md:text-base flex-1">
                         {player.name.startsWith("🧠AI ") ? (
-                          <span>
+                          <span className="whitespace-nowrap">
                             {player.name.replace(/^🧠AI /, "")}
-                            <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">
+                            <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
                               🧠 Medium
                             </span>
                           </span>
                         ) : player.name.startsWith("AI ") ? (
-                          <span>
+                          <span className="whitespace-nowrap">
                             {player.name.replace("AI ", "")}
-                            <span className="ml-1 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">
+                            <span className="ml-1 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
                               🎲 Easy
                             </span>
                           </span>
