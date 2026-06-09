@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { audioService } from '../services/audioService';
+import EmojiPicker from './EmojiPicker';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Set<string>>(new Set());
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const prevMessageCountRef = useRef(messages.length);
@@ -92,6 +94,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const getPlayerColor = (playerIdToCheck: string) => {
     return playerColors[playerIdToCheck] || '#f5d98f';
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setInputText((prev) => (prev + emoji).slice(0, 200));
+    inputRef.current?.focus();
   };
 
   if (!isOpen) return null;
@@ -205,10 +212,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
         {/* Input */}
         <div
-          className="px-3 py-3 flex flex-col gap-2 border-t flex-shrink-0"
+          className="px-3 py-3 flex flex-col gap-2 border-t flex-shrink-0 relative"
           style={{ borderColor: 'var(--panel-border)' }}
         >
+          <EmojiPicker
+            isOpen={showEmojiPicker}
+            onClose={() => setShowEmojiPicker(false)}
+            onEmojiSelect={handleEmojiSelect}
+          />
           <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="px-2 py-2 rounded-lg text-lg transition-all hover:scale-110 active:scale-95"
+              style={{
+                backgroundColor: showEmojiPicker ? 'rgba(138, 106, 29, 0.2)' : 'transparent',
+                border: '1px solid var(--panel-border)',
+              }}
+              aria-label="Emoji picker"
+              type="button"
+            >
+              😊
+            </button>
             <input
               ref={inputRef}
               type="text"

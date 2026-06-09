@@ -1571,14 +1571,24 @@ const GameTable: React.FC<GameTableProps> = ({
                       return next;
                     });
                   }}
-                  className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative"
+                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative ${
+                    (game.chatMessages?.length ?? 0) - lastSeenChatCount > 0 ? 'animate-pulse' : ''
+                  }`}
                   aria-label="Chat"
+                  style={{
+                    ...(showChat ? { backgroundColor: 'rgba(138, 106, 29, 0.3)' } : {})
+                  }}
                 >
                   💬
                   {(() => {
                     const unread = (game.chatMessages?.length ?? 0) - lastSeenChatCount;
                     return unread > 0 ? (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
+                      <span 
+                        className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-lg animate-bounce-in"
+                        style={{
+                          animation: 'bounce-in 0.5s ease-out, pulse-red 2s ease-in-out 0.5s infinite'
+                        }}
+                      >
                         {unread > 9 ? '9+' : unread}
                       </span>
                     ) : null;
