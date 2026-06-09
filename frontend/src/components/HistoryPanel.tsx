@@ -257,18 +257,27 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                     const colonIdx = text.indexOf(': ');
                     const action = colonIdx >= 0 ? text.slice(0, colonIdx) : null;
                     const rest = colonIdx >= 0 ? text.slice(colonIdx + 2) : text;
+                    const actionColor: Record<string, string> = {
+                      raise: 'var(--accent-gold)',
+                      doubt: '#ef4444',
+                      spotOn: '#22c55e',
+                      winRound: 'var(--accent-gold)',
+                    };
                     return action ? (
                       <tr key={key}>
-                        <td className="pr-2 py-0.5 md:py-1 font-bold whitespace-nowrap align-top">
+                        <td
+                          className="pr-2 py-0.5 md:py-1 font-bold whitespace-nowrap align-top"
+                          style={{ color: actionColor[key] || 'var(--text-main)' }}
+                        >
                           {action}:
                         </td>
-                        <td className="py-0.5 md:py-1 align-top">
+                        <td className="py-0.5 md:py-1 align-top" style={{ color: 'var(--text-main)' }}>
                           {rest}
                         </td>
                       </tr>
                     ) : (
                       <tr key={key}>
-                        <td colSpan={2} className="py-0.5 md:py-1 font-semibold align-top">
+                        <td colSpan={2} className="py-0.5 md:py-1 font-semibold align-top" style={{ color: actionColor[key] || 'var(--text-main)' }}>
                           {rest}
                         </td>
                       </tr>

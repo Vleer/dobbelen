@@ -72,7 +72,7 @@ const MiniTutorial: React.FC<MiniTutorialProps> = ({ game, localPlayerId, onDism
         return (
           <>
             <div className="text-2xl mb-2">🎲</div>
-            <p className="font-bold text-base mb-1" style={{ color: 'var(--accent-gold)' }}>Mini Tutorial</p>
+            <p className="font-bold text-base mb-1" style={{ color: 'var(--accent-gold)' }}>Tutorial</p>
             <p className="text-sm" style={{ color: 'var(--text-main)' }}>
               The game has started! Each player has hidden dice. Get ready…
             </p>

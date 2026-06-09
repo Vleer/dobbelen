@@ -141,5 +141,5 @@
   "game.endGame": "Terminar juego",
   "game.endGameConfirm": "¿Estás seguro de que quieres terminar el juego para todos los jugadores?",
   "game.chat": "Chat",
-  "lobby.minitutorial": "Mini tutorial"
+  "lobby.minitutorial": "Tutorial"
 }
