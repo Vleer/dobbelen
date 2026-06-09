@@ -149,8 +149,39 @@ const GameTable: React.FC<GameTableProps> = ({
       setShowSettings(false);
       setIsHistoryOpen(false);
       setShowRulesTooltip(false);
+      setShowChat(false);
     }
   }, [isLanguageOpen]);
+
+  useEffect(() => {
+    if (showSettings) {
+      setIsHistoryOpen(false);
+      setShowChat(false);
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [showSettings, isLanguageOpen]);
+
+  useEffect(() => {
+    if (isHistoryOpen) {
+      setShowSettings(false);
+      setShowChat(false);
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [isHistoryOpen, isLanguageOpen]);
+
+  useEffect(() => {
+    if (showChat) {
+      setShowSettings(false);
+      setIsHistoryOpen(false);
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [showChat, isLanguageOpen]);
 
   const activeDealerLikePlayerId = game?.dealerId || null;
 
@@ -1563,6 +1594,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    audioService.playRaise();
                     setShowChat((prev) => {
                       const next = !prev;
                       if (next) {
@@ -1572,15 +1604,16 @@ const GameTable: React.FC<GameTableProps> = ({
                       return next;
                     });
                   }}
-                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center ${
+                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
                     (game.chatMessages?.length ?? 0) - lastSeenChatCount > 0 ? 'animate-pulse' : ''
                   }`}
                   aria-label="Chat"
+                  aria-expanded={showChat}
                   style={{
-                    ...(showChat ? { backgroundColor: 'rgba(138, 106, 29, 0.3)' } : {})
+                    ...(showChat ? { backgroundColor: 'var(--menu-button-hover-bg)', borderColor: 'var(--game-border-strong)' } : {})
                   }}
                 >
-                  <span className="w-5 h-5" style={{ color: '#ffffff' }}>
+                  <span className="w-5 h-5 transition-transform" style={{ color: showChat ? 'var(--game-accent-text)' : 'var(--menu-button-text)' }}>
                     <ChatIcon />
                   </span>
                   {(() => {
