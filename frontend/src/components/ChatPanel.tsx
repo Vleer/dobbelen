@@ -3,6 +3,7 @@ import { ChatMessage } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { audioService } from '../services/audioService';
 import EmojiPicker from './EmojiPicker';
+import FormattedMessage from './FormattedMessage';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -29,10 +30,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const lastMessageIdRef = useRef<string | null>(messages[messages.length - 1]?.id || null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -101,6 +104,25 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     inputRef.current?.focus();
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value.slice(0, 200));
+    
+    // Show typing indicator
+    if (!isTyping && e.target.value.length > 0) {
+      setIsTyping(true);
+    }
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set new timeout to hide typing indicator after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  };
+
   if (!isOpen) return null;
 
   const panelClass = isMobile
@@ -129,17 +151,31 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-4 py-2.5 border-b flex-shrink-0"
+          className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
           style={{ borderColor: 'var(--panel-border)' }}
         >
-          <span className="font-bold text-sm" style={{ color: 'var(--accent-gold)' }}>
-            💬 Chat
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">💬</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm" style={{ color: 'var(--accent-gold)' }}>
+                Chat
+              </span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                {messages.length} {messages.length === 1 ? 'message' : 'messages'}
+              </span>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="text-lg leading-none transition-colors"
+            className="text-xl leading-none transition-all hover:scale-110 active:scale-95 p-1 rounded-full hover:bg-opacity-10"
             style={{ color: 'var(--text-muted)' }}
             aria-label="Close chat"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(138, 106, 29, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
             ✕
           </button>
@@ -198,7 +234,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                           }
                     }
                   >
-                    <div className="whitespace-pre-wrap">{msg.text}</div>
+                    <div className="whitespace-pre-wrap">
+                      <FormattedMessage text={msg.text} />
+                    </div>
                   </div>
                   <span className="text-[9px] mt-0.5 px-1 opacity-70" style={{ color: 'var(--text-muted)' }}>
                     {formatTime(msg.timestamp)}
@@ -206,6 +244,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 </div>
               );
             })
+          )}
+          {isTyping && (
+            <div className="px-2 py-1 flex items-center gap-2 animate-fade-in">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                You're typing...
+              </span>
+            </div>
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -237,7 +287,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               ref={inputRef}
               type="text"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value.slice(0, 200))}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"

@@ -359,3 +359,17 @@ html.theme-white {
     opacity: 1;
   }
 }
+
+/* Bounce animation for typing dots */
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s ease-in-out infinite;
+}
