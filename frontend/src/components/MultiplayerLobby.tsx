@@ -6,6 +6,7 @@ import { aiService } from '../services/aiService';
 import { audioService } from '../services/audioService';
 import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
 import { getSessionLikeStorage } from '../config/storage';
+import ChatPanel from './ChatPanel';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
@@ -40,6 +41,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [lobbyExpanded, setLobbyExpanded] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [lastSeenChatCount, setLastSeenChatCount] = useState(0);
 
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
@@ -461,6 +464,32 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
       {/* Spacer for shared top menu in App.tsx */}
       <div className="flex-shrink-0 h-12 md:h-[3.25rem] flex items-center justify-between px-2" style={{ backgroundColor: 'var(--felt-bg)' }}>
         <div />
+        {game && myPlayerId && (
+          <button
+            onClick={() => {
+              setShowChat(!showChat);
+              if (!showChat) {
+                setLastSeenChatCount(game.chatMessages?.length || 0);
+              }
+            }}
+            className="rounded-full p-2 shadow transition-all duration-200 relative"
+            style={{
+              backgroundColor: 'var(--panel-bg)',
+              borderColor: 'var(--panel-border)',
+              border: '2px solid',
+              minHeight: '44px',
+              minWidth: '44px',
+            }}
+            aria-label="Chat"
+          >
+            💬
+            {(game.chatMessages?.length || 0) > lastSeenChatCount && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {(game.chatMessages?.length || 0) - lastSeenChatCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 flex items-start md:items-center justify-center px-3 pb-3 pt-1 md:px-4 md:pb-4 md:pt-2 overflow-auto">
@@ -505,29 +534,31 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               </div>
             </div>
 
-            {/* Private game checkbox + New Game */}
+            {/* Private game checkbox + Mini tutorial checkbox (side by side) + New Game */}
             <div className="space-y-3">
-              <label className="flex items-center justify-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPrivateGame}
-                  onChange={(e) => setIsPrivateGame(e.target.checked)}
-                  className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.privateGame")}</span>
-              </label>
-              <label className="flex items-center justify-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={minitutorialEnabled}
-                  onChange={(e) => {
-                    setMinitutorialEnabled(e.target.checked);
-                    localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
-                  }}
-                  className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.minitutorial")}</span>
-              </label>
+              <div className="flex items-center justify-center gap-4">
+                <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPrivateGame}
+                    onChange={(e) => setIsPrivateGame(e.target.checked)}
+                    className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.privateGame")}</span>
+                </label>
+                <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={minitutorialEnabled}
+                    onChange={(e) => {
+                      setMinitutorialEnabled(e.target.checked);
+                      localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
+                    }}
+                    className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.minitutorial")}</span>
+                </label>
+              </div>
               <button
                 onClick={() => {
                   audioService.playRaise();
@@ -732,16 +763,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
                       </span>
                       <span className="font-medium text-sm md:text-base flex-1">
                         {player.name.startsWith("🧠AI ") ? (
-                          <span>
+                          <span className="whitespace-nowrap">
                             {player.name.replace(/^🧠AI /, "")}
-                            <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded">
+                            <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
                               🧠 Medium
                             </span>
                           </span>
                         ) : player.name.startsWith("AI ") ? (
-                          <span>
+                          <span className="whitespace-nowrap">
                             {player.name.replace("AI ", "")}
-                            <span className="ml-1 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">
+                            <span className="ml-1 text-xs bg-green-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
                               🎲 Easy
                             </span>
                           </span>
@@ -879,6 +910,19 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         )}
         </div>
       </div>
+      
+      {/* Chat Panel */}
+      {game && myPlayerId && (
+        <ChatPanel
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          messages={game.chatMessages || []}
+          gameId={gameId}
+          playerId={myPlayerId}
+          playerName={playerName}
+          isMobile={typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches}
+        />
+      )}
     </div>
   );
 };

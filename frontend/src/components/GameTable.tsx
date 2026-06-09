@@ -215,10 +215,16 @@ const GameTable: React.FC<GameTableProps> = ({
       setShowRulesTooltip(true);
       if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
       rulesTooltipTimerRef.current = setTimeout(() => setShowRulesTooltip(false), 3000);
+      
+      // Auto-open history panel on desktop when game starts
+      if (!useMobileLayout) {
+        setIsHistoryOpen(true);
+        setOpenedForGameStart(true);
+      }
     }
     
     setPreviousGameState(game.state);
-  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
+  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game, useMobileLayout]);
 
   // Clean up rules tooltip timer on unmount
   useEffect(() => {

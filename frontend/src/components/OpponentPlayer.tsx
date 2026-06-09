@@ -207,7 +207,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                   ))}
                 </div>
               ) : (
-                <span className={`${compactMobile ? "text-[9px]" : "text-[10px]"} font-medium`} style={{ color: 'var(--game-text-muted)' }}>{t("game.diceHidden") || "Hidden"}</span>
+                <span className={`${compactMobile ? "text-[9px]" : "text-[10px]"} font-medium`} style={{ color: 'transparent' }}>&nbsp;</span>
               )}
             </div>
           </div>
