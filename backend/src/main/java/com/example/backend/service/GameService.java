@@ -228,6 +228,7 @@ public class GameService {
         game.setLastActualCount(actualCount);
         game.setLastBidQuantity(currentBid.getQuantity());
         game.setLastBidFaceValue(currentBid.getFaceValue());
+        game.setLastBidPlayerId(currentBid.getPlayerId());
         game.setLastEliminatedPlayerId(eliminatedPlayerId);
         game.setLastActionPlayerId(doubtingPlayerId);
         game.setLastActionType(BidType.DOUBT);
@@ -346,6 +347,7 @@ public class GameService {
             game.setLastActualCount(actualCount);
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
+            game.setLastBidPlayerId(currentBid.getPlayerId());
             game.setLastEliminatedPlayerId(null); // No elimination for correct spot-on
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
@@ -403,6 +405,7 @@ public class GameService {
             game.setLastActualCount(actualCount);
             game.setLastBidQuantity(currentBid.getQuantity());
             game.setLastBidFaceValue(currentBid.getFaceValue());
+            game.setLastBidPlayerId(currentBid.getPlayerId());
             game.setLastEliminatedPlayerId(spotOnPlayerId);
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);

@@ -27,6 +27,7 @@ public class GameResponse {
     private Integer lastActualCount;
     private Integer lastBidQuantity;
     private Integer lastBidFaceValue;
+    private String lastBidPlayerId;
     private String lastEliminatedPlayerId;
     private boolean canContinue;
     private String lastActionPlayerId;
@@ -63,6 +64,7 @@ public class GameResponse {
         this.lastActualCount = game.getLastActualCount();
         this.lastBidQuantity = game.getLastBidQuantity();
         this.lastBidFaceValue = game.getLastBidFaceValue();
+        this.lastBidPlayerId = game.getLastBidPlayerId();
         this.lastEliminatedPlayerId = game.getLastEliminatedPlayerId();
         this.canContinue = game.isCanContinue();
     this.lastActionPlayerId = game.getLastActionPlayerId();
@@ -198,6 +200,14 @@ public class GameResponse {
 
     public void setLastBidFaceValue(Integer lastBidFaceValue) {
         this.lastBidFaceValue = lastBidFaceValue;
+    }
+
+    public String getLastBidPlayerId() {
+        return lastBidPlayerId;
+    }
+
+    public void setLastBidPlayerId(String lastBidPlayerId) {
+        this.lastBidPlayerId = lastBidPlayerId;
     }
 
     public String getLastEliminatedPlayerId() {

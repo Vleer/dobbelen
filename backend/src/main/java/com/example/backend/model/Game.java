@@ -93,6 +93,7 @@ public class Game {
     private Integer lastActualCount; // Store actual count from last doubt/spot-on
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
     private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
+    private String lastBidPlayerId; // Store bidder from last doubt/spot-on
     private String lastEliminatedPlayerId; // Store eliminated player from last action
     // Track the last action performer and type to display in UI
     private String lastActionPlayerId;
@@ -132,6 +133,7 @@ public class Game {
         this.lastActualCount = null;
         this.lastBidQuantity = null;
         this.lastBidFaceValue = null;
+        this.lastBidPlayerId = null;
         this.lastEliminatedPlayerId = null;
         this.lastActionPlayerId = null;
         this.lastActionType = null;
@@ -167,6 +169,7 @@ public class Game {
         lastActualCount = null;
         lastBidQuantity = null;
         lastBidFaceValue = null;
+        lastBidPlayerId = null;
         lastEliminatedPlayerId = null;
         lastActionPlayerId = null;
         lastActionType = null;
@@ -357,6 +360,14 @@ public class Game {
 
     public void setLastBidFaceValue(Integer lastBidFaceValue) {
         this.lastBidFaceValue = lastBidFaceValue;
+    }
+
+    public String getLastBidPlayerId() {
+        return lastBidPlayerId;
+    }
+
+    public void setLastBidPlayerId(String lastBidPlayerId) {
+        this.lastBidPlayerId = lastBidPlayerId;
     }
 
     public String getLastEliminatedPlayerId() {
