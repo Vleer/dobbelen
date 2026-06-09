@@ -7,6 +7,7 @@ import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStatistics } from '../contexts/StatisticsContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { getPlayerColorFromString } from '../utils/playerColors';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
@@ -1743,6 +1744,10 @@ const GameTable: React.FC<GameTableProps> = ({
           playerName={game.players.find(p => p.id === localPlayerId)?.name ?? ''}
           gameId={game.id}
           isMobile={useMobileLayout}
+          playerColors={game.players.reduce((acc, player) => {
+            acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
+            return acc;
+          }, {} as Record<string, string>)}
         />
       )}
 

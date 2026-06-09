@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/game';
 import { gameApi } from '../api/gameApi';
+import { audioService } from '../services/audioService';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ChatPanelProps {
   playerId: string;
   playerName: string;
   isMobile: boolean;
+  playerColors?: Record<string, string>;
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -20,11 +22,15 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   playerId,
   playerName,
   isMobile,
+  playerColors = {},
 }) => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [typingPlayers, setTypingPlayers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevMessageCountRef = useRef(messages.length);
+  const lastMessageIdRef = useRef<string | null>(messages[messages.length - 1]?.id || null);
 
   useEffect(() => {
     if (isOpen) {
@@ -33,6 +39,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, messages.length]);
+
+  // Play sound notification for new messages (not from self)
+  useEffect(() => {
+    if (messages.length > prevMessageCountRef.current) {
+      const newMessage = messages[messages.length - 1];
+      if (newMessage && newMessage.playerId !== playerId && newMessage.id !== lastMessageIdRef.current) {
+        // Play a subtle notification sound
+        try {
+          audioService.playRaise(); // Using existing sound - could add custom chat sound
+        } catch (e) {
+          console.warn('Failed to play chat notification sound', e);
+        }
+      }
+      lastMessageIdRef.current = newMessage?.id || null;
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages, playerId]);
 
   const handleSend = async () => {
     const text = inputText.trim();
@@ -58,14 +81,24 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const formatTime = (ts: number) => {
     const d = new Date(ts);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - d.getTime()) / 60000);
+    
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getPlayerColor = (playerIdToCheck: string) => {
+    return playerColors[playerIdToCheck] || '#f5d98f';
   };
 
   if (!isOpen) return null;
 
   const panelClass = isMobile
-    ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2'
-    : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2';
+    ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
+    : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in';
 
   return (
     <>
@@ -106,34 +139,61 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0" style={{ minHeight: '8rem' }}>
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0 scroll-smooth chat-scrollbar" style={{ minHeight: '8rem' }}>
           {messages.length === 0 ? (
-            <p className="text-center text-xs py-4" style={{ color: 'var(--text-muted)' }}>
-              No messages yet. Say hi! 👋
-            </p>
+            <div className="text-center py-8 animate-fade-in">
+              <div className="text-4xl mb-2">💬</div>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                No messages yet. Say hi! 👋
+              </p>
+            </div>
           ) : (
-            messages.map((msg) => {
+            messages.map((msg, idx) => {
               const isMe = msg.playerId === playerId;
+              const playerColor = getPlayerColor(msg.playerId);
+              const isNew = idx >= messages.length - 1;
+              
               return (
-                <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                <div 
+                  key={msg.id} 
+                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNew ? 'animate-slide-up' : ''}`}
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
                   {!isMe && (
-                    <span className="text-[10px] font-semibold mb-0.5 px-1" style={{ color: 'var(--accent-gold)' }}>
-                      {msg.playerName}
-                    </span>
+                    <div className="flex items-center gap-1 mb-0.5 px-1">
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: playerColor }}
+                      />
+                      <span 
+                        className="text-[10px] font-semibold" 
+                        style={{ color: playerColor }}
+                      >
+                        {msg.playerName}
+                      </span>
+                    </div>
                   )}
                   <div
-                    className={`max-w-[80%] px-3 py-1.5 rounded-2xl text-sm break-words ${
+                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm break-words shadow-md transition-all hover:shadow-lg ${
                       isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'
                     }`}
                     style={
                       isMe
-                        ? { backgroundColor: '#1f3f2b', color: '#f5d98f', border: '1px solid #8a6a1d' }
-                        : { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }
+                        ? { 
+                            backgroundColor: '#1f3f2b', 
+                            color: '#f5d98f', 
+                            border: '1px solid #8a6a1d',
+                          }
+                        : { 
+                            backgroundColor: 'var(--panel-bg-soft)', 
+                            color: 'var(--text-main)', 
+                            border: '1px solid var(--panel-border)',
+                          }
                     }
                   >
-                    {msg.text}
+                    <div className="whitespace-pre-wrap">{msg.text}</div>
                   </div>
-                  <span className="text-[9px] mt-0.5 px-1" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[9px] mt-0.5 px-1 opacity-70" style={{ color: 'var(--text-muted)' }}>
                     {formatTime(msg.timestamp)}
                   </span>
                 </div>
@@ -145,38 +205,52 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
         {/* Input */}
         <div
-          className="px-3 py-2 flex gap-2 items-center border-t flex-shrink-0"
+          className="px-3 py-3 flex flex-col gap-2 border-t flex-shrink-0"
           style={{ borderColor: 'var(--panel-border)' }}
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value.slice(0, 200))}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            className="flex-1 min-w-0 px-3 py-1.5 rounded-lg text-sm border focus:outline-none"
-            style={{
-              backgroundColor: 'var(--panel-bg-soft)',
-              borderColor: 'var(--panel-border)',
-              color: 'var(--text-main)',
-            }}
-            maxLength={200}
-            disabled={isSending}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || isSending}
-            className="px-3 py-1.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-opacity"
-            style={{
-              backgroundColor: '#1f3f2b',
-              color: '#f5d98f',
-              border: '1px solid #8a6a1d',
-            }}
-            aria-label="Send"
-          >
-            ➤
-          </button>
+          <div className="flex gap-2 items-center">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value.slice(0, 200))}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+              style={{
+                backgroundColor: 'var(--panel-bg-soft)',
+                borderColor: 'var(--panel-border)',
+                color: 'var(--text-main)',
+                focusRingColor: '#8a6a1d',
+              }}
+              maxLength={200}
+              disabled={isSending}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || isSending}
+              className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
+              style={{
+                backgroundColor: '#1f3f2b',
+                color: '#f5d98f',
+                border: '1px solid #8a6a1d',
+              }}
+              aria-label="Send"
+            >
+              {isSending ? '...' : '➤'}
+            </button>
+          </div>
+          {inputText.length > 0 && (
+            <div 
+              className="text-[10px] text-right transition-all"
+              style={{ 
+                color: inputText.length >= 180 ? '#ff6b6b' : 'var(--text-muted)',
+                fontWeight: inputText.length >= 180 ? 'bold' : 'normal'
+              }}
+            >
+              {inputText.length}/200
+            </div>
+          )}
         </div>
       </div>
     </>
