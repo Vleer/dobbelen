@@ -54,6 +54,7 @@ html.scale-x-large { font-size: 21px; }
     border-color: var(--game-highlight);
   }
 }
+@keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.35); }
   50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
 }
@@ -329,3 +330,47 @@ html.theme-white {
   background-color: var(--menu-leave-hover-bg);
 }
 
+/* Chat-specific styles */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(138, 106, 29, 0.5);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 106, 29, 0.7);
+}
+
+/* Smooth slide up animation for chat messages */
+@keyframes slide-up {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Bounce animation for typing dots */
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s ease-in-out infinite;
+}
