@@ -22,6 +22,7 @@ import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 import ChatPanel from './ChatPanel';
 import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
+import ChatIcon from './ChatIcon';
 
 interface GameTableProps {
   game?: Game | null;
@@ -1571,7 +1572,7 @@ const GameTable: React.FC<GameTableProps> = ({
                       return next;
                     });
                   }}
-                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative ${
+                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center ${
                     (game.chatMessages?.length ?? 0) - lastSeenChatCount > 0 ? 'animate-pulse' : ''
                   }`}
                   aria-label="Chat"
@@ -1579,7 +1580,9 @@ const GameTable: React.FC<GameTableProps> = ({
                     ...(showChat ? { backgroundColor: 'rgba(138, 106, 29, 0.3)' } : {})
                   }}
                 >
-                  💬
+                  <span className="w-5 h-5" style={{ color: '#ffffff' }}>
+                    <ChatIcon />
+                  </span>
                   {(() => {
                     const unread = (game.chatMessages?.length ?? 0) - lastSeenChatCount;
                     return unread > 0 ? (
