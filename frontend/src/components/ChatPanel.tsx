@@ -4,6 +4,7 @@ import { gameApi } from '../api/gameApi';
 import { audioService } from '../services/audioService';
 import EmojiPicker from './EmojiPicker';
 import FormattedMessage from './FormattedMessage';
+import ChatIcon from './ChatIcon';
 
 /**
  * ChatPanel Component
@@ -53,9 +54,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const prevMessageCountRef = useRef(messages.length);
   const lastMessageIdRef = useRef<string | null>(messages[messages.length - 1]?.id || null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openedAtRef = useRef<number>(0);
 
   useEffect(() => {
     if (isOpen) {
+      openedAtRef.current = Date.now();
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       // Small delay to let panel open animation finish
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -140,6 +143,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     }, 2000);
   };
 
+  const handleMobileBackdropClose = () => {
+    if (Date.now() - openedAtRef.current < 250) return;
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const panelClass = isMobile
@@ -154,27 +162,30 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           type="button"
           aria-label="Close chat"
           className="fixed inset-0 z-[9989] bg-black/40"
-          onClick={onClose}
+          onClick={handleMobileBackdropClose}
         />
       )}
       <div
         className={panelClass}
         style={{
-          backgroundColor: 'var(--panel-bg)',
-          borderColor: 'var(--panel-border)',
+          background: 'linear-gradient(180deg, var(--game-surface-soft) 0%, var(--game-surface) 100%)',
+          borderColor: 'var(--game-border-strong)',
           maxHeight: isMobile ? '60vh' : '70vh',
+          boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
-          style={{ borderColor: 'var(--panel-border)' }}
+          style={{ borderColor: 'var(--game-border)' }}
         >
           <div className="flex items-center gap-2">
-            <span className="text-xl">💬</span>
+            <span className="w-5 h-5" style={{ color: 'var(--game-accent-text)' }}>
+              <ChatIcon />
+            </span>
             <div className="flex flex-col">
-              <span className="font-bold text-sm" style={{ color: 'var(--accent-gold)' }}>
+              <span className="font-bold text-sm" style={{ color: 'var(--game-accent-text)' }}>
                 Chat
               </span>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
@@ -240,14 +251,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                     style={
                       isMe
                         ? { 
-                            backgroundColor: '#1f3f2b', 
-                            color: '#f5d98f', 
-                            border: '1px solid #8a6a1d',
+                            backgroundColor: 'var(--game-surface-strong)', 
+                            color: 'var(--game-accent-text)', 
+                            border: '1px solid var(--game-border-strong)',
                           }
                         : { 
-                            backgroundColor: 'var(--panel-bg-soft)', 
-                            color: 'var(--text-main)', 
-                            border: '1px solid var(--panel-border)',
+                            backgroundColor: 'var(--game-surface-soft)', 
+                            color: 'var(--game-text)', 
+                            border: '1px solid var(--game-border)',
                           }
                     }
                   >
@@ -280,7 +291,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         {/* Input */}
         <div
           className="px-3 py-3 flex flex-col gap-2 border-t flex-shrink-0 relative"
-          style={{ borderColor: 'var(--panel-border)' }}
+          style={{ borderColor: 'var(--game-border)' }}
         >
           <EmojiPicker
             isOpen={showEmojiPicker}
@@ -293,7 +304,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               className="px-2 py-2 rounded-lg text-lg transition-all hover:scale-110 active:scale-95"
               style={{
                 backgroundColor: showEmojiPicker ? 'rgba(138, 106, 29, 0.2)' : 'transparent',
-                border: '1px solid var(--panel-border)',
+                border: '1px solid var(--game-border)',
               }}
               aria-label="Emoji picker"
               type="button"
@@ -309,9 +320,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               placeholder="Type a message..."
               className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
               style={{
-                backgroundColor: 'var(--panel-bg-soft)',
-                borderColor: 'var(--panel-border)',
-                color: 'var(--text-main)',
+                backgroundColor: 'var(--game-surface-soft)',
+                borderColor: 'var(--game-border)',
+                color: 'var(--game-text)',
               }}
               maxLength={200}
               disabled={isSending}
@@ -321,9 +332,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               disabled={!inputText.trim() || isSending}
               className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
               style={{
-                backgroundColor: '#1f3f2b',
-                color: '#f5d98f',
-                border: '1px solid #8a6a1d',
+                backgroundColor: 'var(--game-surface-strong)',
+                color: 'var(--game-accent-text)',
+                border: '1px solid var(--game-border-strong)',
               }}
               aria-label="Send"
             >
