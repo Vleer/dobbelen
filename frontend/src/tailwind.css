@@ -349,7 +349,7 @@ html.theme-white {
   background: rgba(138, 106, 29, 0.7);
 }
 
-/* Smooth slide up animation for chat messages */
+/* Smooth slide up animation for chat messages and panel */
 @keyframes slide-up {
   0% {
     transform: translateY(10px);
