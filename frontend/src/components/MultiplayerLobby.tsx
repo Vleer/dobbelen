@@ -534,29 +534,31 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
               </div>
             </div>
 
-            {/* Private game checkbox + New Game */}
+            {/* Private game checkbox + Mini tutorial checkbox (side by side) + New Game */}
             <div className="space-y-3">
-              <label className="flex items-center justify-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPrivateGame}
-                  onChange={(e) => setIsPrivateGame(e.target.checked)}
-                  className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.privateGame")}</span>
-              </label>
-              <label className="flex items-center justify-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={minitutorialEnabled}
-                  onChange={(e) => {
-                    setMinitutorialEnabled(e.target.checked);
-                    localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
-                  }}
-                  className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.minitutorial")}</span>
-              </label>
+              <div className="flex items-center justify-center gap-4">
+                <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPrivateGame}
+                    onChange={(e) => setIsPrivateGame(e.target.checked)}
+                    className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.privateGame")}</span>
+                </label>
+                <label className="flex items-center justify-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={minitutorialEnabled}
+                    onChange={(e) => {
+                      setMinitutorialEnabled(e.target.checked);
+                      localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
+                    }}
+                    className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t("lobby.minitutorial")}</span>
+                </label>
+              </div>
               <button
                 onClick={() => {
                   audioService.playRaise();
