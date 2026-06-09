@@ -380,13 +380,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
                       <div className="mt-0.5 flex items-center justify-between gap-1">
                         <span className="text-[#d4dfd7] text-xs md:text-sm">
                           {(() => {
-                            // Resolve who made this bid: previousBid (challenged bid), or raiser for RAISE
-                            let bidPlayerId = game.previousBid?.playerId;
+                            // Resolve who made the last challenged bid and keep it stable
+                            let bidPlayerId = game.lastBidPlayerId || game.previousBid?.playerId;
                             if (!bidPlayerId && game.lastActionType === 'RAISE') {
                               bidPlayerId = game.lastActionPlayerId;
-                            }
-                            if (!bidPlayerId) {
-                              bidPlayerId = game.currentBid?.playerId;
                             }
 
                             // Resolve name: prefer previousRoundPlayers (last hand) then current players

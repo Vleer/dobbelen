@@ -45,6 +45,7 @@ export interface Game {
   lastActualCount?: number;
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
+  lastBidPlayerId?: string;
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
@@ -105,6 +106,7 @@ export interface GameResponse {
   lastActualCount?: number;
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
+  lastBidPlayerId?: string;
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
