@@ -95,6 +95,26 @@ const GameTable: React.FC<GameTableProps> = ({
   const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
+  const withStableMultiplayerFlag = useCallback(
+    (incomingGame: Game, previousGame: Game | null = gameRef.current): Game => ({
+      ...incomingGame,
+      isMultiplayer:
+        typeof incomingGame.isMultiplayer === "boolean"
+          ? incomingGame.isMultiplayer
+          : typeof previousGame?.isMultiplayer === "boolean"
+            ? previousGame.isMultiplayer
+            : typeof initialGame?.isMultiplayer === "boolean"
+              ? initialGame.isMultiplayer
+              : false,
+    }),
+    [initialGame?.isMultiplayer]
+  );
+  const isMultiplayerGame =
+    typeof game?.isMultiplayer === "boolean"
+      ? game.isMultiplayer
+      : typeof initialGame?.isMultiplayer === "boolean"
+        ? initialGame.isMultiplayer
+        : false;
   const rulesTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevGameStateRef = useRef<string>('');
   const onBackRef = useRef(onBack);
@@ -470,7 +490,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
-            setGame(updatedGame);
+            setGame(withStableMultiplayerFlag(updatedGame));
           },
           onPlayerLeft: (playerName) => {
             setPlayerLeftNotification(playerName);
@@ -497,7 +517,7 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId]);
+  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
 
   // Handle bid display and betting delay when round ends or showAllDice changes
   useEffect(() => {
@@ -526,7 +546,7 @@ const GameTable: React.FC<GameTableProps> = ({
   // In multiplayer the broadcast response hides all dice. Fetch own dice so the local
   // player can always see their own hand.
   useEffect(() => {
-    if (!game || !localPlayerId || !game.isMultiplayer) return;
+    if (!game || !localPlayerId || !isMultiplayerGame) return;
     if (game.showAllDice) return; // All dice already revealed
     if (game.state !== 'IN_PROGRESS') return;
     let cancelled = false;
@@ -544,18 +564,18 @@ const GameTable: React.FC<GameTableProps> = ({
     }).catch(() => { /* ignore – dice will be fetched on next update */ });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game?.id, game?.state, game?.showAllDice, game?.currentPlayerId, localPlayerId]);
+  }, [game?.id, game?.state, game?.showAllDice, game?.currentPlayerId, localPlayerId, isMultiplayerGame]);
 
   // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
   useEffect(() => {
-    if (!gameId || !localPlayerId || !game?.isMultiplayer) return;
+    if (!gameId || !localPlayerId || !isMultiplayerGame) return;
     if (game.state !== 'IN_PROGRESS' && game.state !== 'ROUND_ENDED') return;
     gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
     const interval = setInterval(() => {
       gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [gameId, localPlayerId, game?.isMultiplayer, game?.state]);
+  }, [gameId, localPlayerId, isMultiplayerGame, game?.state]);
 
   // Polling fallback for all games (in case WebSocket fails)
   useEffect(() => {
@@ -608,7 +628,7 @@ const GameTable: React.FC<GameTableProps> = ({
             );
           }
 
-          setGame(updatedGame);
+          setGame(withStableMultiplayerFlag(updatedGame));
         } catch (err: unknown) {
           console.error("Error polling game updates:", err);
           // Game was removed (e.g. cancelled after last player left) -> return to lobby
@@ -632,7 +652,7 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId]);
+  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
@@ -718,7 +738,7 @@ const GameTable: React.FC<GameTableProps> = ({
     try {
       const request: CreateGameRequest = { playerNames };
       const gameResponse = await gameApi.createGame(request);
-      setGame(gameResponse);
+      setGame(withStableMultiplayerFlag(gameResponse));
 
       // Find the human player (first player in AI mode, or by username)
       const humanPlayer =
@@ -745,7 +765,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
     try {
       const gameResponse = await gameApi.getGame(game.id);
-      setGame(gameResponse);
+      setGame(withStableMultiplayerFlag(gameResponse));
     } catch (err) {
       console.error("Error refreshing game:", err);
     }
@@ -798,17 +818,17 @@ const GameTable: React.FC<GameTableProps> = ({
             faceValue: data.faceValue,
           });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         } else if (action === 'doubt') {
           const response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         } else if (action === 'spotOn') {
           const response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         }
       }
@@ -1627,9 +1647,9 @@ const GameTable: React.FC<GameTableProps> = ({
               <SettingsPanel
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
-                onLeaveGame={game.isMultiplayer ? () => setShowLeaveConfirm(true) : undefined}
+                onLeaveGame={isMultiplayerGame ? () => setShowLeaveConfirm(true) : undefined}
                 leaveGameLabel={t("game.leaveGame")}
-                onEndGame={game.isMultiplayer && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
+                onEndGame={isMultiplayerGame && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
                 endGameLabel={t("game.endGame")}
                 mobileCentered={useMobileLayout}
                 anchorRef={gameSettingsAnchorRef}
@@ -1637,7 +1657,7 @@ const GameTable: React.FC<GameTableProps> = ({
             </div>
 
             {/* Chat button - only for multiplayer */}
-            {game.isMultiplayer && (
+            {isMultiplayerGame && (
               <div className="relative">
                 <button
                   type="button"
@@ -1721,9 +1741,9 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* History + chat panels - desktop */}
-        {(!useMobileLayout && (isHistoryOpen || (game.isMultiplayer && showChat))) && (
+        {(!useMobileLayout && (isHistoryOpen || (isMultiplayerGame && showChat))) && (
           <div className="mt-1 md:mt-2 hidden lg:flex absolute top-20 right-4 z-40 items-start justify-end gap-3">
-            {game.isMultiplayer && showChat && (
+            {isMultiplayerGame && showChat && (
               <ChatPanel
                 isOpen={showChat}
                 onClose={() => setShowChat(false)}
@@ -1852,7 +1872,7 @@ const GameTable: React.FC<GameTableProps> = ({
       />
 
       {/* Chat Panel - for multiplayer games on mobile/tablet */}
-      {game.isMultiplayer && useMobileLayout && (
+      {isMultiplayerGame && useMobileLayout && (
         <ChatPanel
           isOpen={showChat}
           onClose={() => setShowChat(false)}
