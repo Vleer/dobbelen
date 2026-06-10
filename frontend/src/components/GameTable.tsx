@@ -85,7 +85,9 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   // Chat state
-  const [showChat, setShowChat] = useState(initialShowChat);
+  const [showChat, setShowChat] = useState(
+    initialShowChat || (!!initialGame?.isMultiplayer && !useMobileLayout)
+  );
   const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
   // Mini tutorial state
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
@@ -176,22 +178,26 @@ const GameTable: React.FC<GameTableProps> = ({
   useEffect(() => {
     if (isHistoryOpen) {
       setShowSettings(false);
-      setShowChat(false);
+      if (useMobileLayout) {
+        setShowChat(false);
+      }
       if (isLanguageOpen) {
         setLanguageCloseSignal((s) => s + 1);
       }
     }
-  }, [isHistoryOpen, isLanguageOpen]);
+  }, [isHistoryOpen, isLanguageOpen, useMobileLayout]);
 
   useEffect(() => {
     if (showChat) {
       setShowSettings(false);
-      setIsHistoryOpen(false);
+      if (useMobileLayout) {
+        setIsHistoryOpen(false);
+      }
       if (isLanguageOpen) {
         setLanguageCloseSignal((s) => s + 1);
       }
     }
-  }, [showChat, isLanguageOpen]);
+  }, [showChat, isLanguageOpen, useMobileLayout]);
 
   useEffect(() => {
     if (!showChat) return;
@@ -1642,6 +1648,9 @@ const GameTable: React.FC<GameTableProps> = ({
                       if (next) {
                         // Mark all messages as seen when opening
                         setLastSeenChatCount(countIncomingMessages(game.chatMessages));
+                        if (!useMobileLayout) {
+                          setIsHistoryOpen(true);
+                        }
                       }
                       return next;
                     });
@@ -1711,16 +1720,36 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* History Panel - Positioned on the right side for desktop */}
-        {isHistoryOpen && (
-          <div ref={historyPanelRef} className="mt-1 md:mt-2 hidden lg:block absolute top-20 right-4 z-40">
-            <HistoryPanel
-              game={game}
-              isOpen={isHistoryOpen}
-              onClose={() => setIsHistoryOpen(false)}
-              openedFromGameStart={openedForGameStart}
-              onClearGameStartOpen={() => setOpenedForGameStart(false)}
-            />
+        {/* History + chat panels - desktop */}
+        {(!useMobileLayout && (isHistoryOpen || (game.isMultiplayer && showChat))) && (
+          <div className="mt-1 md:mt-2 hidden lg:flex absolute top-20 right-4 z-40 items-start justify-end gap-3">
+            {game.isMultiplayer && showChat && (
+              <ChatPanel
+                isOpen={showChat}
+                onClose={() => setShowChat(false)}
+                messages={game.chatMessages ?? []}
+                playerId={localPlayerId}
+                playerName={game.players.find(p => p.id === localPlayerId)?.name ?? ''}
+                gameId={game.id}
+                isMobile={false}
+                variant="inline"
+                playerColors={game.players.reduce((acc, player) => {
+                  acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
+                  return acc;
+                }, {} as Record<string, string>)}
+              />
+            )}
+            {isHistoryOpen && (
+              <div ref={historyPanelRef}>
+                <HistoryPanel
+                  game={game}
+                  isOpen={isHistoryOpen}
+                  onClose={() => setIsHistoryOpen(false)}
+                  openedFromGameStart={openedForGameStart}
+                  onClearGameStartOpen={() => setOpenedForGameStart(false)}
+                />
+              </div>
+            )}
           </div>
         )}
         
@@ -1822,8 +1851,8 @@ const GameTable: React.FC<GameTableProps> = ({
         onClose={() => setShowStatistics(false)}
       />
 
-      {/* Chat Panel - for multiplayer games */}
-      {game.isMultiplayer && (
+      {/* Chat Panel - for multiplayer games on mobile/tablet */}
+      {game.isMultiplayer && useMobileLayout && (
         <ChatPanel
           isOpen={showChat}
           onClose={() => setShowChat(false)}
