@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import GameTable from "./components/GameTable";
 import MultiplayerLobby from "./components/MultiplayerLobby";
 import LanguageSelector from "./components/LanguageSelector";
@@ -84,7 +84,7 @@ function App() {
   const handleGameStart = (gameData: Game, userPlayerId: string, userUsername: string) => {
     const seenIncomingCount = showLobbyChat
       ? countIncomingMessages(gameData.chatMessages, userPlayerId)
-      : lastSeenLobbyChatCount;
+      : 0;
     setInitialGameChatOpen(showLobbyChat);
     setInitialGameLastSeenChatCount(seenIncomingCount);
     getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
@@ -155,6 +155,11 @@ function App() {
     if (!showLobbyChat) return;
     setLastSeenLobbyChatCount(countIncomingMessages(lobbyGame?.chatMessages, lobbyPlayerId));
   }, [showLobbyChat, lobbyGame?.chatMessages, lobbyPlayerId]);
+
+  const handleGameChatStateChange = useCallback((isOpen: boolean, lastSeenIncomingCount: number) => {
+    setInitialGameChatOpen(isOpen);
+    setInitialGameLastSeenChatCount(lastSeenIncomingCount);
+  }, []);
 
   return (
     <LanguageProvider>
@@ -270,10 +275,7 @@ function App() {
                 onBack={handleBackToLobby}
                 initialShowChat={initialGameChatOpen}
                 initialLastSeenIncomingCount={initialGameLastSeenChatCount}
-                onChatStateChange={(isOpen, lastSeenIncomingCount) => {
-                  setInitialGameChatOpen(isOpen);
-                  setInitialGameLastSeenChatCount(lastSeenIncomingCount);
-                }}
+                onChatStateChange={handleGameChatStateChange}
                 minitutorial={localStorage.getItem('minitutorial_enabled') === 'true'}
               />
             ) : null}
