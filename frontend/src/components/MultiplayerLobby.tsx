@@ -845,7 +845,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     audioService.playRaise();
                     try {
                       console.log("Starting multiplayer game (3s countdown)...");
-                      const startedGame = await gameApi.startMultiplayerGame(gameId);
+                      const startedGame = await gameApi.startMultiplayerGame(gameId, myPlayerId ?? '');
                       setGame(startedGame);
                       setError("");
                     } catch (err: any) {
