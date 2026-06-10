@@ -6,14 +6,14 @@ import { aiService } from '../services/aiService';
 import { audioService } from '../services/audioService';
 import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
 import { getSessionLikeStorage } from '../config/storage';
-import ChatPanel from './ChatPanel';
-import ChatIcon from './ChatIcon';
 import useWindowSize from '../utils/useWindowSize';
-import { getPlayerColorFromString } from '../utils/playerColors';
 
 interface MultiplayerLobbyProps {
   onGameStart: (game: Game, playerId: string, username: string) => void;
   onBack: () => void;
+  onGameStateChange?: (game: Game | null, playerId: string | null, playerName: string) => void;
+  showChat?: boolean;
+  onToggleChat?: () => void;
 }
 
 // Dutch names for random selection
@@ -26,7 +26,13 @@ const DUTCH_NAMES = [
   'Kim', 'Lisa', 'Marijke', 'Nina', 'Olga', 'Petra', 'Rosa', 'Sanne', 'Tessa', 'Ursula'
 ];
 
-const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack }) => {
+const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ 
+  onGameStart, 
+  onBack,
+  onGameStateChange,
+  showChat: externalShowChat,
+  onToggleChat 
+}) => {
   const { t } = useLanguage();
   const storage = getSessionLikeStorage();
   const [gameId, setGameId] = useState("");
@@ -44,9 +50,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   const [lobbyExpanded, setLobbyExpanded] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
-  const [showChat, setShowChat] = useState(false);
-  const [lastSeenChatCount, setLastSeenChatCount] = useState(0);
+  const [internalShowChat, setInternalShowChat] = useState(false);
   const { isMobile, isTablet } = useWindowSize();
+  
+  // Use external chat state if provided, otherwise use internal
+  const showChat = externalShowChat !== undefined ? externalShowChat : internalShowChat;
+  const setShowChat = onToggleChat || setInternalShowChat;
 
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
@@ -296,6 +305,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
     return () => clearInterval(pollInterval);
   }, [game, gameId, isInitialized, playerName, myPlayerId, onGameStart, resetToMainLobby]);
 
+  // Notify parent of game state changes
+  useEffect(() => {
+    if (onGameStateChange) {
+      onGameStateChange(game, myPlayerId, playerName);
+    }
+  }, [game, myPlayerId, playerName, onGameStateChange]);
+
   const createGame = async () => {
     if (!playerName.trim()) {
       setError(t("lobby.pleaseEnterUsername"));
@@ -466,40 +482,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
   return (
     <div className="flex flex-col min-h-screen select-none" style={{ backgroundColor: 'var(--felt-bg)' }}>
       {/* Spacer for shared top menu in App.tsx */}
-      <div className="flex-shrink-0 h-12 md:h-[3.25rem] flex items-center justify-between px-2" style={{ backgroundColor: 'var(--felt-bg)' }}>
-        <div />
-        {game && myPlayerId && (
-          <button
-            onClick={() => {
-              setShowChat((prev) => {
-                const next = !prev;
-                if (next) {
-                  setLastSeenChatCount(game.chatMessages?.length || 0);
-                }
-                return next;
-              });
-            }}
-            className="rounded-full p-2 shadow transition-all duration-200 relative flex items-center justify-center"
-            style={{
-              backgroundColor: 'var(--panel-bg)',
-              borderColor: 'var(--panel-border)',
-              border: '2px solid',
-              minHeight: '44px',
-              minWidth: '44px',
-            }}
-            aria-label="Chat"
-          >
-            <span className="w-5 h-5" style={{ color: '#ffffff' }}>
-              <ChatIcon />
-            </span>
-            {(game.chatMessages?.length || 0) > lastSeenChatCount && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {(game.chatMessages?.length || 0) - lastSeenChatCount}
-              </span>
-            )}
-          </button>
-        )}
-      </div>
+      <div className="flex-shrink-0 h-12 md:h-[3.25rem]" style={{ backgroundColor: 'var(--felt-bg)' }} />
 
       <div className="flex-1 flex items-start md:items-center justify-center px-3 pb-3 pt-1 md:px-4 md:pb-4 md:pt-2 overflow-auto">
         <div className="p-4 md:p-8 rounded-3xl shadow-2xl max-w-sm md:max-w-lg w-full border-2" style={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--panel-border)', color: 'var(--text-main)' }}>
@@ -919,23 +902,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ onGameStart, onBack
         )}
         </div>
       </div>
-      
-      {/* Chat Panel */}
-      {game && myPlayerId && (
-        <ChatPanel
-          isOpen={showChat}
-          onClose={() => setShowChat(false)}
-          messages={game.chatMessages || []}
-          gameId={gameId}
-          playerId={myPlayerId}
-          playerName={playerName}
-          isMobile={isMobile || isTablet}
-          playerColors={game.players.reduce((acc, player) => {
-            acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
-            return acc;
-          }, {} as Record<string, string>)}
-        />
-      )}
     </div>
   );
 };
