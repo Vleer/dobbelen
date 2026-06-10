@@ -37,7 +37,14 @@ function App() {
   const [lobbyPlayerName, setLobbyPlayerName] = useState('');
   const [showLobbyChat, setShowLobbyChat] = useState(false);
   const [lastSeenLobbyChatCount, setLastSeenLobbyChatCount] = useState(0);
+  const [initialGameChatOpen, setInitialGameChatOpen] = useState(false);
+  const [initialGameLastSeenChatCount, setInitialGameLastSeenChatCount] = useState(0);
   const { isMobile, isTablet } = useWindowSize();
+
+  const countIncomingMessages = (messages: Game["chatMessages"] | undefined, currentPlayerId: string | null) => {
+    if (!messages || !currentPlayerId) return 0;
+    return messages.filter((message) => message.playerId !== currentPlayerId).length;
+  };
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -75,6 +82,11 @@ function App() {
   }, [restored]);
 
   const handleGameStart = (gameData: Game, userPlayerId: string, userUsername: string) => {
+    const seenIncomingCount = showLobbyChat
+      ? countIncomingMessages(gameData.chatMessages, userPlayerId)
+      : lastSeenLobbyChatCount;
+    setInitialGameChatOpen(showLobbyChat);
+    setInitialGameLastSeenChatCount(seenIncomingCount);
     getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
       gameId: gameData.id,
       playerId: userPlayerId,
@@ -110,6 +122,10 @@ function App() {
     setGame(null);
     setUsername('');
     setPlayerId('');
+    setShowLobbyChat(false);
+    setLastSeenLobbyChatCount(0);
+    setInitialGameChatOpen(false);
+    setInitialGameLastSeenChatCount(0);
     setLobbyKey((k) => k + 1);
   };
 
@@ -127,13 +143,18 @@ function App() {
     audioService.playRaise();
     setShowLobbyChat((prev) => {
       const next = !prev;
-      if (next && lobbyGame) {
+      if (next) {
         // Mark all messages as seen when opening
-        setLastSeenLobbyChatCount(lobbyGame.chatMessages?.length ?? 0);
+        setLastSeenLobbyChatCount(countIncomingMessages(lobbyGame?.chatMessages, lobbyPlayerId));
       }
       return next;
     });
   };
+
+  useEffect(() => {
+    if (!showLobbyChat) return;
+    setLastSeenLobbyChatCount(countIncomingMessages(lobbyGame?.chatMessages, lobbyPlayerId));
+  }, [showLobbyChat, lobbyGame?.chatMessages, lobbyPlayerId]);
 
   return (
     <LanguageProvider>
@@ -177,7 +198,7 @@ function App() {
                       type="button"
                       onClick={handleToggleLobbyChat}
                       className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
-                        (lobbyGame.chatMessages?.length ?? 0) - lastSeenLobbyChatCount > 0 ? 'animate-pulse' : ''
+                        Math.max(0, countIncomingMessages(lobbyGame.chatMessages, lobbyPlayerId) - lastSeenLobbyChatCount) > 0 ? 'animate-pulse' : ''
                       }`}
                       aria-label="Chat"
                       aria-expanded={showLobbyChat}
@@ -189,7 +210,10 @@ function App() {
                         <ChatIcon />
                       </span>
                       {(() => {
-                        const unread = (lobbyGame.chatMessages?.length ?? 0) - lastSeenLobbyChatCount;
+                        const unread = Math.max(
+                          0,
+                          countIncomingMessages(lobbyGame.chatMessages, lobbyPlayerId) - lastSeenLobbyChatCount
+                        );
                         return unread > 0 ? (
                           <span 
                             className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-lg animate-bounce-in"
@@ -244,6 +268,12 @@ function App() {
                 username={username}
                 playerId={playerId}
                 onBack={handleBackToLobby}
+                initialShowChat={initialGameChatOpen}
+                initialLastSeenIncomingCount={initialGameLastSeenChatCount}
+                onChatStateChange={(isOpen, lastSeenIncomingCount) => {
+                  setInitialGameChatOpen(isOpen);
+                  setInitialGameLastSeenChatCount(lastSeenIncomingCount);
+                }}
                 minitutorial={localStorage.getItem('minitutorial_enabled') === 'true'}
               />
             ) : null}

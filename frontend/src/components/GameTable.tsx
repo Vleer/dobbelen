@@ -29,6 +29,9 @@ interface GameTableProps {
   username?: string;
   playerId?: string;
   onBack?: () => void;
+  initialShowChat?: boolean;
+  initialLastSeenIncomingCount?: number;
+  onChatStateChange?: (isOpen: boolean, lastSeenIncomingCount: number) => void;
   minitutorial?: boolean;
 }
 
@@ -37,6 +40,9 @@ const GameTable: React.FC<GameTableProps> = ({
   username: initialUsername, 
   playerId: initialPlayerId, 
   onBack,
+  initialShowChat = false,
+  initialLastSeenIncomingCount = 0,
+  onChatStateChange,
   minitutorial = false,
 }) => {
   const { t } = useLanguage();
@@ -79,8 +85,8 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   // Chat state
-  const [showChat, setShowChat] = useState(false);
-  const [lastSeenChatCount, setLastSeenChatCount] = useState(0);
+  const [showChat, setShowChat] = useState(initialShowChat);
+  const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
   // Mini tutorial state
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const historyPanelRef = useRef<HTMLDivElement>(null);
@@ -91,6 +97,10 @@ const GameTable: React.FC<GameTableProps> = ({
   const prevGameStateRef = useRef<string>('');
   const onBackRef = useRef(onBack);
   const gameId = game?.id;
+  const countIncomingMessages = useCallback((messages: Game["chatMessages"] | undefined) => {
+    if (!messages || !localPlayerId) return 0;
+    return messages.filter((message) => message.playerId !== localPlayerId).length;
+  }, [localPlayerId]);
 
   useEffect(() => {
     gameRef.current = game;
@@ -182,6 +192,15 @@ const GameTable: React.FC<GameTableProps> = ({
       }
     }
   }, [showChat, isLanguageOpen]);
+
+  useEffect(() => {
+    if (!showChat) return;
+    setLastSeenChatCount(countIncomingMessages(game?.chatMessages));
+  }, [showChat, game?.chatMessages, countIncomingMessages]);
+
+  useEffect(() => {
+    onChatStateChange?.(showChat, lastSeenChatCount);
+  }, [showChat, lastSeenChatCount, onChatStateChange]);
 
   const activeDealerLikePlayerId = game?.dealerId || null;
 
@@ -1622,13 +1641,13 @@ const GameTable: React.FC<GameTableProps> = ({
                       const next = !prev;
                       if (next) {
                         // Mark all messages as seen when opening
-                        setLastSeenChatCount(game.chatMessages?.length ?? 0);
+                        setLastSeenChatCount(countIncomingMessages(game.chatMessages));
                       }
                       return next;
                     });
                   }}
                   className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
-                    (game.chatMessages?.length ?? 0) - lastSeenChatCount > 0 ? 'animate-pulse' : ''
+                    Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount) > 0 ? 'animate-pulse' : ''
                   }`}
                   aria-label="Chat"
                   aria-expanded={showChat}
@@ -1640,7 +1659,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     <ChatIcon />
                   </span>
                   {(() => {
-                    const unread = (game.chatMessages?.length ?? 0) - lastSeenChatCount;
+                    const unread = Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount);
                     return unread > 0 ? (
                       <span 
                         className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-lg animate-bounce-in"
