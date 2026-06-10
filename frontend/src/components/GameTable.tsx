@@ -498,6 +498,29 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game]);
 
+  // In multiplayer the broadcast response hides all dice. Fetch own dice so the local
+  // player can always see their own hand.
+  useEffect(() => {
+    if (!game || !localPlayerId || !game.isMultiplayer) return;
+    if (game.showAllDice) return; // All dice already revealed
+    if (game.state !== 'IN_PROGRESS') return;
+    let cancelled = false;
+    gameApi.getMyDice(game.id, localPlayerId).then((myDice) => {
+      if (cancelled) return;
+      setGame((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          players: prev.players.map((p) =>
+            p.id === localPlayerId ? { ...p, dice: myDice } : p
+          ),
+        };
+      });
+    }).catch(() => { /* ignore – dice will be fetched on next update */ });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.id, game?.state, game?.showAllDice, game?.currentPlayerId, localPlayerId]);
+
   // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
   useEffect(() => {
     if (!gameId || !localPlayerId || !game?.isMultiplayer) return;

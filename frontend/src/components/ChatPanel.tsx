@@ -88,7 +88,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setIsSending(true);
     setInputText('');
     try {
-      await gameApi.sendChatMessage(gameId, playerId, playerName, text);
+      await gameApi.sendChatMessage(gameId, playerId, text);
     } catch (err) {
       console.error('Failed to send chat message:', err);
       setInputText(text); // restore on failure

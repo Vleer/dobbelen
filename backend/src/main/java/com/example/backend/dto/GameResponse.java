@@ -39,10 +39,35 @@ public class GameResponse {
 
     public GameResponse() {}
 
+    /**
+     * Build a response that is safe to broadcast to ALL players.
+     * In multiplayer games the dice values of each player are hidden (set to an
+     * empty list) unless the round-reveal flag {@code showAllDice} is active.
+     * Use {@link #GameResponse(Game, String)} to build a personalised response
+     * that includes the requesting player's own dice.
+     */
     public GameResponse(Game game) {
+        this(game, null);
+    }
+
+    /**
+     * Build a personalised response.  When {@code viewerPlayerId} is supplied
+     * and the game is multiplayer the response includes full dice values only
+     * for the player whose id matches {@code viewerPlayerId}; all other players'
+     * dice are hidden.  Pass {@code null} to produce a broadcast-safe response
+     * (all dice hidden in multiplayer unless {@code showAllDice} is set).
+     */
+    public GameResponse(Game game, String viewerPlayerId) {
+        boolean hideDice = game.isMultiplayer() && !game.isShowAllDice();
         this.id = game.getId();
         this.players = game.getPlayers().stream()
-                .map(PlayerInfo::new)
+                .map(p -> {
+                    PlayerInfo info = new PlayerInfo(p);
+                    if (hideDice && !p.getId().equals(viewerPlayerId)) {
+                        info.setDice(new ArrayList<>());
+                    }
+                    return info;
+                })
                 .toList();
         this.state = game.getState().name();
         this.currentPlayerId = game.getCurrentPlayer() != null ? game.getCurrentPlayer().getId() : null;

@@ -114,6 +114,23 @@ public class GameController {
         return ResponseEntity.ok("Game service is running!");
     }
 
+    /**
+     * Returns only the requesting player's own dice.
+     * In multiplayer the broadcast hides all dice; this endpoint lets each
+     * player retrieve their own values without exposing opponents' dice.
+     */
+    @GetMapping("/{gameId}/my-dice")
+    public ResponseEntity<List<Integer>> getMyDice(
+            @PathVariable String gameId,
+            @RequestParam String playerId) {
+        try {
+            List<Integer> dice = gameService.getPlayerDice(gameId, playerId);
+            return ResponseEntity.ok(dice);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     // Multiplayer endpoints
     @GetMapping("/multiplayer")
     public ResponseEntity<List<GameResponse>> listMultiplayerGames() {
@@ -159,9 +176,10 @@ public class GameController {
     }
 
     @PostMapping("/multiplayer/{gameId}/start")
-    public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId) {
+    public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId,
+            @RequestBody ActionRequest request) {
         try {
-            gameService.startMultiplayerGame(gameId);
+            gameService.startMultiplayerGame(gameId, request.getPlayerId());
             GameResponse response = gameService.getGameResponse(gameId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -237,7 +255,7 @@ public class GameController {
     public ResponseEntity<Void> sendChatMessage(@PathVariable String gameId,
             @RequestBody ChatMessageRequest request) {
         try {
-            gameService.sendChatMessage(gameId, request.getPlayerId(), request.getPlayerName(), request.getText());
+            gameService.sendChatMessage(gameId, request.getPlayerId(), request.getText());
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

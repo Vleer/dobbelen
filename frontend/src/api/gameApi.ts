@@ -80,8 +80,8 @@ export const gameApi = {
     return response.data;
   },
 
-  startMultiplayerGame: async (gameId: string): Promise<GameResponse> => {
-    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/start`);
+  startMultiplayerGame: async (gameId: string, playerId: string): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/start`, { playerId });
     return response.data;
   },
 
@@ -114,11 +114,19 @@ export const gameApi = {
     return response.data;
   },
 
-  sendChatMessage: async (gameId: string, playerId: string, playerName: string, text: string): Promise<void> => {
-    await axiosInstance.post(`/api/games/multiplayer/${gameId}/chat`, { playerId, playerName, text });
+  sendChatMessage: async (gameId: string, playerId: string, text: string): Promise<void> => {
+    await axiosInstance.post(`/api/games/multiplayer/${gameId}/chat`, { playerId, text });
   },
 
   endGame: async (gameId: string, playerId: string): Promise<void> => {
     await axiosInstance.post(`/api/games/multiplayer/${gameId}/end`, { playerId });
+  },
+
+  /** Fetch only the requesting player's own dice (hidden in broadcasts for multiplayer). */
+  getMyDice: async (gameId: string, playerId: string): Promise<number[]> => {
+    const response = await axiosInstance.get<number[]>(`/api/games/${gameId}/my-dice`, {
+      params: { playerId },
+    });
+    return response.data;
   },
 };

@@ -52,15 +52,37 @@ public class GameService {
         System.out.println("STARTUP: Cleared all persisted games from database");
     }
 
+    private static final int MAX_PLAYERS = 8;
+    private static final int MAX_PLAYER_NAME_LENGTH = 20;
+
+    /** Validate a player name: AI players have prefixed names; human players are alphanumeric, max 12 chars. */
+    private void validatePlayerName(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Player name cannot be empty");
+        }
+        boolean isAi = name.startsWith("AI ") || name.startsWith("🧠AI ");
+        if (!isAi && !name.matches("[a-zA-Z0-9]{1,12}")) {
+            throw new IllegalArgumentException(
+                    "Player name must be letters/numbers only, max 12 characters: " + name);
+        }
+        if (name.length() > MAX_PLAYER_NAME_LENGTH) {
+            throw new IllegalArgumentException("Player name too long: " + name);
+        }
+    }
+
     public Game createGame(List<String> playerNames) {
         if (playerNames == null || playerNames.size() < 3) {
             throw new IllegalArgumentException("Game requires at least 3 players");
+        }
+        if (playerNames.size() > MAX_PLAYERS) {
+            throw new IllegalArgumentException("Game supports at most " + MAX_PLAYERS + " players");
         }
 
         List<Player> players = new ArrayList<>();
         for (int i = 0; i < playerNames.size(); i++) {
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
             String name = playerNames.get(i);
+            validatePlayerName(name);
             // Check if player name starts with "AI " for easy AI or "🧠AI " for medium AI
             String aiType = null;
             if (name.startsWith("🧠AI ")) {
@@ -88,10 +110,14 @@ public class GameService {
         if (playerInfos == null || playerInfos.size() < 3) {
             throw new IllegalArgumentException("Game requires at least 3 players");
         }
+        if (playerInfos.size() > MAX_PLAYERS) {
+            throw new IllegalArgumentException("Game supports at most " + MAX_PLAYERS + " players");
+        }
 
         List<Player> players = new ArrayList<>();
         for (int i = 0; i < playerInfos.size(); i++) {
             CreateGameRequest.PlayerInfo info = playerInfos.get(i);
+            validatePlayerName(info.getName());
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
             System.out.println("Creating player " + info.getName() + " with color " + color +
                     " (AI: " + info.isAI() + ", type: " + info.getAiType() + ")");
@@ -185,6 +211,12 @@ public class GameService {
     public GameResult processDoubt(String gameId, String doubtingPlayerId) {
         recordActivity(gameId, doubtingPlayerId);
         Game game = getGame(gameId);
+        // Verify the doubting player is an active (non-eliminated) member of this game
+        boolean isActivePlayer = game.getActivePlayers().stream()
+                .anyMatch(p -> p.getId().equals(doubtingPlayerId));
+        if (!isActivePlayer) {
+            throw new IllegalArgumentException("Player is not an active participant in this game");
+        }
         Bid currentBid = game.getCurrentBid();
         
         if (currentBid == null) {
@@ -312,6 +344,12 @@ public class GameService {
     public GameResult processSpotOn(String gameId, String spotOnPlayerId) {
         recordActivity(gameId, spotOnPlayerId);
         Game game = getGame(gameId);
+        // Verify the player is an active (non-eliminated) member of this game
+        boolean isActivePlayer = game.getActivePlayers().stream()
+                .anyMatch(p -> p.getId().equals(spotOnPlayerId));
+        if (!isActivePlayer) {
+            throw new IllegalArgumentException("Player is not an active participant in this game");
+        }
         Bid currentBid = game.getCurrentBid();
         
         if (currentBid == null) {
@@ -490,6 +528,17 @@ public class GameService {
     public GameResult processBid(String gameId, String playerId, int quantity, int faceValue) {
         recordActivity(gameId, playerId);
         Game game = getGame(gameId);
+
+        // Validate dice face value and quantity bounds
+        if (faceValue < 1 || faceValue > 6) {
+            throw new IllegalArgumentException("Face value must be between 1 and 6");
+        }
+        int maxPossibleDice = game.getActivePlayers().stream()
+                .mapToInt(p -> p.getDice().size())
+                .sum();
+        if (quantity < 1 || quantity > maxPossibleDice) {
+            throw new IllegalArgumentException("Quantity must be between 1 and " + maxPossibleDice);
+        }
 
         if (game.getState() != GameState.IN_PROGRESS) {
             throw new IllegalStateException("Game is not in progress. Current state: " + game.getState());
@@ -905,18 +954,26 @@ public class GameService {
     /**
      * Send a chat message from a player. The message is appended to the game's
      * chat history and broadcast to all players via WebSocket.
+     * The player's display name is looked up from the game state to prevent
+     * impersonation via a crafted request body.
      */
-    public void sendChatMessage(String gameId, String playerId, String playerName, String text) {
+    public void sendChatMessage(String gameId, String playerId, String text) {
         Game game = getGame(gameId);
         if (game == null) {
             throw new IllegalArgumentException("Game not found");
         }
+        // Resolve the player name from game state — never trust the client-supplied name
+        String resolvedName = game.getPlayers().stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .map(Player::getName)
+                .orElseThrow(() -> new IllegalArgumentException("Player not found in game"));
         String sanitized = text != null ? text.trim() : "";
         if (sanitized.isEmpty() || sanitized.length() > 200) {
             throw new IllegalArgumentException("Invalid message");
         }
         com.example.backend.model.ChatMessage msg =
-                new com.example.backend.model.ChatMessage(playerId, playerName, sanitized);
+                new com.example.backend.model.ChatMessage(playerId, resolvedName, sanitized);
         game.getChatMessages().add(msg);
         // Keep at most 200 messages to avoid unbounded growth
         List<com.example.backend.model.ChatMessage> msgs = game.getChatMessages();
@@ -924,7 +981,7 @@ public class GameService {
             msgs.subList(0, msgs.size() - 200).clear();
         }
         broadcastGameUpdate(gameId);
-        System.out.println("CHAT: " + playerName + " in game " + gameId + ": " + sanitized);
+        System.out.println("CHAT: " + resolvedName + " in game " + gameId + ": " + sanitized);
     }
 
     /**
@@ -973,6 +1030,50 @@ public class GameService {
         return getGameResponse(gameId);
     }
 
+    /**
+     * Returns the dice values for a specific player in a game.
+     * Used by the personal /my-dice endpoint so each player can retrieve their
+     * own hidden dice without exposing opponents' values.
+     */
+    public List<Integer> getPlayerDice(String gameId, String playerId) {
+        Game game = getGame(gameId);
+        return game.getPlayers().stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .map(Player::getDice)
+                .map(dice -> new ArrayList<>(dice))
+                .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
+    }
+
+    public void startMultiplayerGame(String gameId, String requestingPlayerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getPlayers().isEmpty()) {
+            throw new IllegalArgumentException("Game has no players");
+        }
+        // Only the host (first player) may start the game
+        if (!game.getPlayers().get(0).getId().equals(requestingPlayerId)) {
+            throw new IllegalArgumentException("Only the host can start the game");
+        }
+        if (game.getPlayers().size() < 2) {
+            throw new IllegalArgumentException("Not enough players to start game. Minimum 2 players required");
+        }
+
+        game.setState(GameState.COUNTDOWN);
+        game.setCountdownEndTime(System.currentTimeMillis() + 3000L);
+        broadcastGameUpdate(gameId);
+
+        new java.util.Timer().schedule(new java.util.TimerTask() {
+            @Override
+            public void run() {
+                doActualStart(gameId);
+            }
+        }, 3000);
+    }
+
+    /** Internal overload used by the WebSocket join flow (host not yet determined). */
     public void startMultiplayerGame(String gameId) {
         Game game = getGame(gameId);
         if (game == null) {
