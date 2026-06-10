@@ -98,9 +98,10 @@ function App() {
     setAppState('game');
   };
 
-  const handleBackToLobby = () => {
+  const handleBackToLobby = (options?: { preserveLobby?: boolean; game?: Game | null }) => {
     const storage = getSessionLikeStorage();
-    let gameIdToClear: string | undefined = game?.id;
+    const currentGame = options?.game ?? game;
+    let gameIdToClear: string | undefined = currentGame?.id;
     if (!gameIdToClear) {
       try {
         const raw = storage.getItem(GAME_SESSION_KEY);
@@ -109,19 +110,40 @@ function App() {
         /* ignore */
       }
     }
-    if (gameIdToClear) {
+
+    if (options?.preserveLobby && gameIdToClear) {
+      const currentUsername = username || lobbyPlayerName;
+      const currentPlayerId = playerId || lobbyPlayerId || "";
+      const isHost = !!currentGame?.players[0] && currentGame.players[0].id === currentPlayerId;
+
+      if (currentUsername) {
+        storage.setItem(
+          `lobby_${gameIdToClear}`,
+          JSON.stringify({ playerName: currentUsername, isHost })
+        );
+      }
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.origin}${window.location.pathname}?gameId=${gameIdToClear}`
+      );
+    } else if (gameIdToClear) {
       storage.removeItem(`lobby_${gameIdToClear}`);
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.origin}${window.location.pathname}`
+      );
     }
+
     storage.removeItem(GAME_SESSION_KEY);
-    window.history.replaceState(
-      {},
-      "",
-      `${window.location.origin}${window.location.pathname}`
-    );
     setAppState('lobby');
     setGame(null);
     setUsername('');
     setPlayerId('');
+    setLobbyGame(null);
+    setLobbyPlayerId(null);
+    setLobbyPlayerName('');
     setShowLobbyChat(false);
     setLastSeenLobbyChatCount(0);
     setInitialGameChatOpen(false);
