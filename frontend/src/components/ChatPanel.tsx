@@ -46,14 +46,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [typingPlayers, setTypingPlayers] = useState<Set<string>>(new Set());
+  const [typingPlayers] = useState<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const lastMessageIdRef = useRef<string | null>(messages[messages.length - 1]?.id || null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openedAtRef = useRef<number>(0);
 
   useEffect(() => {
@@ -126,21 +124,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value.slice(0, 200));
-    
-    // Show typing indicator
-    if (!isTyping && e.target.value.length > 0) {
-      setIsTyping(true);
-    }
-    
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    // Set new timeout to hide typing indicator after 2 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-    }, 2000);
   };
 
   const handleMobileBackdropClose = () => {
@@ -149,6 +132,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   };
 
   if (!isOpen) return null;
+
+  const otherTypingPlayersCount = Array.from(typingPlayers).filter((id) => id !== playerId).length;
 
   const panelClass = isMobile
     ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
@@ -273,7 +258,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               );
             })
           )}
-          {isTyping && (
+          {otherTypingPlayersCount > 0 && (
             <div className="px-2 py-1 flex items-center gap-2 animate-fade-in">
               <div className="flex gap-1">
                 <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '0ms' }}></div>
@@ -281,7 +266,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                You're typing...
+                {otherTypingPlayersCount > 1 ? 'Players are typing...' : 'A player is typing...'}
               </span>
             </div>
           )}
