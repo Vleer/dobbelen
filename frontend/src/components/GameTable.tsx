@@ -28,7 +28,7 @@ interface GameTableProps {
   game?: Game | null;
   username?: string;
   playerId?: string;
-  onBack?: () => void;
+  onBack?: (options?: { preserveLobby?: boolean; game?: Game | null }) => void;
   initialShowChat?: boolean;
   initialLastSeenIncomingCount?: number;
   onChatStateChange?: (isOpen: boolean, lastSeenIncomingCount: number) => void;
@@ -119,7 +119,7 @@ const GameTable: React.FC<GameTableProps> = ({
     const curr = game?.state ?? '';
     prevGameStateRef.current = curr;
     if (prev === 'GAME_ENDED' && curr === 'WAITING_FOR_PLAYERS') {
-      onBackRef.current?.();
+      onBackRef.current?.({ preserveLobby: true, game });
     }
   }, [game?.state]);
 
