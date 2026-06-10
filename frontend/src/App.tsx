@@ -112,8 +112,9 @@ function App() {
     }
 
     if (options?.preserveLobby && gameIdToClear) {
-      const currentUsername = username || lobbyPlayerName;
       const currentPlayerId = playerId || lobbyPlayerId || "";
+      const fallbackUsername = currentGame?.players.find((player) => player.id === currentPlayerId)?.name || "";
+      const currentUsername = username || lobbyPlayerName || fallbackUsername;
       const isHost = !!currentGame?.players[0] && currentGame.players[0].id === currentPlayerId;
 
       if (currentUsername) {
