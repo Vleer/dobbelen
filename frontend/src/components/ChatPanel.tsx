@@ -32,6 +32,7 @@ interface ChatPanelProps {
   playerName: string;
   isMobile: boolean;
   playerColors?: Record<string, string>;
+  variant?: 'overlay' | 'inline';
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -43,6 +44,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   playerName,
   isMobile,
   playerColors = {},
+  variant = 'overlay',
 }) => {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -135,14 +137,16 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const otherTypingPlayersCount = Array.from(typingPlayers).filter((id) => id !== playerId).length;
 
-  const panelClass = isMobile
-    ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
-    : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in';
+  const panelClass = variant === 'inline'
+    ? 'w-[calc(100vw-0.5rem)] md:w-96 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in overflow-hidden'
+    : isMobile
+      ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
+      : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in';
 
   return (
     <>
       {/* Backdrop for mobile */}
-      {isMobile && (
+      {variant === 'overlay' && isMobile && (
         <button
           type="button"
           aria-label="Close chat"
@@ -155,7 +159,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         style={{
           background: 'linear-gradient(180deg, var(--game-surface-soft) 0%, var(--game-surface) 100%)',
           borderColor: 'var(--game-border-strong)',
-          maxHeight: isMobile ? '60vh' : '70vh',
+          maxHeight: variant === 'inline' ? '80vh' : isMobile ? '60vh' : '70vh',
           boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
         }}
         onClick={(e) => e.stopPropagation()}
