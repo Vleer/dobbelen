@@ -86,7 +86,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   if (isMobile) {
     return (
-      <div className={`relative pt-4 ${landscapeMobile ? "max-w-[min(100%,22rem)] mx-auto" : ""}`} data-player-card={player.id}>
+      <div className={`relative z-[1200] pt-4 ${landscapeMobile ? "max-w-[min(100%,22rem)] mx-auto" : ""}`} data-player-card={player.id}>
         <div
           data-dealer-anchor={player.id}
           data-dealer-placement="above"
@@ -136,7 +136,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   return (
     <div
-      className="absolute z-[1100]"
+      className="absolute z-[1200]"
       style={{
         left: "50%",
         bottom: "2rem",
