@@ -1428,7 +1428,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* Local Player - Fixed to bottom */}
         {localPlayer && (
-          <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div
+            className="fixed bottom-0 left-0 right-0 z-[1200]"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
             <LocalPlayer
               player={localPlayer}
               isMyTurn={isMyTurn()}
