@@ -490,7 +490,19 @@ const GameTable: React.FC<GameTableProps> = ({
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
-            setGame(withStableMultiplayerFlag(updatedGame));
+            setGame((prev) => {
+              const next = withStableMultiplayerFlag(updatedGame);
+              // In multiplayer with hidden dice, preserve already-fetched local player dice
+              // so broadcasts don't wipe them out between getMyDice refreshes.
+              if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
+                const prevLocal = prev.players.find(p => p.id === localPlayerId);
+                const nextLocal = next.players.find(p => p.id === localPlayerId);
+                if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
+                  return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
+                }
+              }
+              return next;
+            });
           },
           onPlayerLeft: (playerName) => {
             setPlayerLeftNotification(playerName);
@@ -628,7 +640,19 @@ const GameTable: React.FC<GameTableProps> = ({
             );
           }
 
-          setGame(withStableMultiplayerFlag(updatedGame));
+          setGame((prev) => {
+            const next = withStableMultiplayerFlag(updatedGame);
+            // In multiplayer with hidden dice, preserve already-fetched local player dice
+            // so the 1-second polling cycle doesn't wipe them out between getMyDice refreshes.
+            if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
+              const prevLocal = prev.players.find(p => p.id === localPlayerId);
+              const nextLocal = next.players.find(p => p.id === localPlayerId);
+              if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
+                return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
+              }
+            }
+            return next;
+          });
         } catch (err: unknown) {
           console.error("Error polling game updates:", err);
           // Game was removed (e.g. cancelled after last player left) -> return to lobby
@@ -1410,7 +1434,7 @@ const GameTable: React.FC<GameTableProps> = ({
           !localPlayer.eliminated &&
           !tabletLandscapeStack && (
             <div
-              className={`fixed left-0 right-0 z-45 flex ${portraitTablet ? "bottom-[6.5rem] justify-center" : "bottom-28"} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
+              className={`fixed left-0 right-0 z-[45] flex ${portraitTablet ? "bottom-[6.5rem] justify-center" : "bottom-28"} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
             >
               <BidSelector
                 currentBid={game.currentBid}
