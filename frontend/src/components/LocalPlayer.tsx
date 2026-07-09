@@ -191,7 +191,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
       >
           <div className="w-full h-full flex items-center justify-between gap-4">
             {/* Left meta column */}
-            <div className="min-w-[140px] max-w-[180px] flex flex-col justify-center gap-1">
+            <div className={`${compactDesktopLandscape ? "w-[120px]" : "w-[140px]"} shrink-0 flex flex-col justify-center gap-1`}>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xl truncate" style={{ color: 'var(--game-accent-text)' }}>
               {player.name}
@@ -214,7 +214,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             <div className="flex-1 flex items-center justify-end overflow-hidden">
               <div className="flex items-center gap-1 flex-nowrap">
                 {diceValues.slice(0, 6).map((value, index) => (
-                  <DiceSVG key={index} value={value} size="sm" />
+                  <DiceSVG key={index} value={value} size={compactDesktopLandscape ? "xs" : "sm"} />
                 ))}
               </div>
             </div>
