@@ -75,8 +75,10 @@ export const gameApi = {
     return response.data;
   },
 
-  getMultiplayerGame: async (gameId: string): Promise<GameResponse> => {
-    const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`);
+  getMultiplayerGame: async (gameId: string, playerId?: string): Promise<GameResponse> => {
+    const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`, {
+      params: playerId ? { playerId } : {},
+    });
     return response.data;
   },
 

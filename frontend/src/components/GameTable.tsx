@@ -601,7 +601,7 @@ const GameTable: React.FC<GameTableProps> = ({
       const pollInterval = setInterval(async () => {
         try {
           console.log("Polling game updates for game:", gameId);
-          const updatedGame = await gameApi.getMultiplayerGame(gameId);
+          const updatedGame = await gameApi.getMultiplayerGame(gameId, localPlayerId);
           const previousGame = gameRef.current;
 
           if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
@@ -788,12 +788,12 @@ const GameTable: React.FC<GameTableProps> = ({
     if (!game) return;
 
     try {
-      const gameResponse = await gameApi.getGame(game.id);
+      const gameResponse = await gameApi.getGame(game.id, localPlayerId);
       setGame(withStableMultiplayerFlag(gameResponse));
     } catch (err) {
       console.error("Error refreshing game:", err);
     }
-  }, [game]);
+  }, [game, localPlayerId]);
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;

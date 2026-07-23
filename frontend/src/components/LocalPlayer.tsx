@@ -34,11 +34,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
   
-  // Use previous round dice if showing reveal, otherwise current dice
+  // Always show current dice for local player during round; use previous round dice when reveal is shown
   const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
-  
-  // Always show dice for local player
-  const shouldShowDice = true;
 
   // Animate the container when it becomes the local player's turn
   useEffect(() => {

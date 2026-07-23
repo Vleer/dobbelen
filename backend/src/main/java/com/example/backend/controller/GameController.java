@@ -34,11 +34,11 @@ public class GameController {
         }
     }
 
-    @GetMapping("/{gameId}")
-    public ResponseEntity<GameResponse> getGame(@PathVariable String gameId) {
+     @GetMapping("/{gameId}")
+    public ResponseEntity<GameResponse> getGame(@PathVariable String gameId, @RequestParam(required = false) String playerId) {
         try {
             Game game = gameService.getGame(gameId);
-            GameResponse response = new GameResponse(game);
+            GameResponse response = playerId != null ? new GameResponse(game, playerId) : new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -166,9 +166,10 @@ public class GameController {
     }
 
     @GetMapping("/multiplayer/{gameId}")
-    public ResponseEntity<GameResponse> getMultiplayerGame(@PathVariable String gameId) {
+    public ResponseEntity<GameResponse> getMultiplayerGame(@PathVariable String gameId, @RequestParam(required = false) String playerId) {
         try {
-            GameResponse response = gameService.getGameResponse(gameId);
+            Game game = gameService.getGame(gameId);
+            GameResponse response = playerId != null ? new GameResponse(game, playerId) : new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
