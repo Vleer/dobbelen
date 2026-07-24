@@ -136,7 +136,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
 
   const getBidButtonClass = (quantity: number, faceValue: number): string => {
     const baseClass =
-      "w-12 h-12 flex items-center justify-center text-sm font-bold rounded-xl border-2 transition-all duration-200";
+      "flex-1 aspect-square max-w-12 min-w-0 flex items-center justify-center text-sm font-bold rounded-xl border-2 transition-all duration-200";
 
     if (disabled) return `${baseClass} cursor-not-allowed`;
     if (isBidValid(quantity, faceValue)) return `${baseClass} hover:scale-105 cursor-pointer shadow-md`;
@@ -147,15 +147,15 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     return (
       <div
         ref={containerRef}
-        className={`p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10 ${stacked ? "mx-auto" : ""}`}
+        className="p-3 rounded-2xl shadow-lg border-2 w-full max-w-sm select-none relative z-10 mx-auto"
         style={{ backgroundColor: 'var(--game-surface-strong)', borderColor: 'var(--game-border)' }}
       >
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 w-full">
           {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
           {displayQuantities.map((quantity) => (
             <div
               key={quantity}
-              className="flex items-center justify-center gap-0.5"
+              className="flex items-center justify-center gap-0.5 w-full"
             >
               {faceValues.map((faceValue) => {
                 const bidKey = `${quantity}-${faceValue}`;
@@ -191,11 +191,11 @@ const BidSelector: React.FC<BidSelectorProps> = ({
           ))}
 
           {/* Face Value Headers with Dice - smaller so they line up with buttons */}
-          <div className="flex items-center justify-center gap-0.5 pt-0.5">
+          <div className="flex items-center justify-center gap-0.5 pt-0.5 w-full">
             {faceValues.map((faceValue) => (
               <div
                 key={faceValue}
-                className="w-12 h-12 flex justify-center items-center"
+                className="flex-1 aspect-square max-w-12 min-w-0 flex justify-center items-center"
               >
                 <DiceHandSVG diceValues={[faceValue]} size="sm" />
               </div>
@@ -204,7 +204,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         </div>
 
         {/* Action Buttons */}
-          <div className="mt-2 flex gap-2 w-[18.625rem] mx-auto">
+        <div className="mt-2 flex gap-2 w-full">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -242,7 +242,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               toggleExpanded();
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="w-10 h-10 rounded-xl hover:scale-105 font-bold text-base shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
+            className="w-10 h-10 shrink-0 rounded-xl hover:scale-105 font-bold text-base shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
             style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
           >
             {isExpanded ? "−" : "+"}
@@ -273,16 +273,16 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       className={
         stacked
           ? 'p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10 pointer-events-auto mx-auto'
-          : 'p-3 rounded-2xl shadow-lg border-2 max-w-sm select-none relative z-10'
+          : 'p-3 rounded-2xl shadow-lg border-2 w-full max-w-sm select-none relative z-10'
       }
       style={desktopShellStyle}
     >
-      <div className="space-y-1">
+      <div className="space-y-1 w-full">
         {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
         {displayQuantities.map((quantity) => (
           <div
             key={quantity}
-            className="flex items-center justify-center gap-1"
+            className="flex items-center justify-center gap-1 w-full"
           >
             {faceValues.map((faceValue) => {
               const bidKey = `${quantity}-${faceValue}`;
@@ -318,11 +318,11 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         ))}
 
         {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-        <div className="flex items-center justify-center gap-1 pt-1">
+        <div className="flex items-center justify-center gap-1 pt-1 w-full">
           {faceValues.map((faceValue) => (
             <div
               key={faceValue}
-              className="w-12 h-12 flex justify-center items-center"
+              className="flex-1 aspect-square max-w-12 min-w-0 flex justify-center items-center"
             >
               <DiceHandSVG diceValues={[faceValue]} size="lg" />
             </div>
@@ -331,7 +331,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className={`mt-2 flex gap-2 w-[19.25rem] mx-auto ${stacked ? 'max-w-full' : ''}`}>
+      <div className="mt-2 flex gap-2 w-full">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -367,7 +367,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             e.stopPropagation();
             toggleExpanded();
           }}
-          className="w-12 h-11 rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
+          className="w-12 h-11 shrink-0 rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
           style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
         >
           {isExpanded ? "−" : "+"}

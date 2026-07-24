@@ -106,7 +106,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         <div
           className={`w-full p-3 shadow-2xl select-none transition-all duration-300 rounded-t-3xl border-x border-t ${
             activeTurn ? 'border-t-4' : isRoundWinner ? 'border-t-4' : 'border-t-2'
-          } ${player.eliminated ? "opacity-70" : ""} ${animClasses} ${landscapeMobile ? "h-[72px] p-2" : "h-[86px]"}`}
+          } ${player.eliminated ? "opacity-70" : ""} ${animClasses} ${landscapeMobile ? "h-[64px] p-2" : "h-[76px]"}`}
           style={{
             backgroundColor: 'var(--game-surface-strong)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
@@ -168,7 +168,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         </div>
         {/* Player Container */}
         <div
-          className={`p-6 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
+          className={`p-4 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px] scale-[1.03]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-50" : ""
@@ -177,7 +177,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           backgroundColor: 'var(--game-surface-strong)',
           borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
           width: compactDesktopLandscape ? "min(360px, 88vw)" : "420px",
-          height: compactDesktopLandscape ? "168px" : "190px",
+          height: compactDesktopLandscape ? "128px" : "140px",
           maxWidth: "95vw",
           display: "flex",
           flexDirection: "column",
@@ -208,9 +208,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
             {/* Right dice row */}
             <div className="flex-1 flex items-center justify-end overflow-visible">
-              <div className="flex items-center gap-1 flex-nowrap relative z-50">
+              <div className="flex items-center gap-1.5 flex-nowrap relative z-50">
                 {diceValues.slice(0, 6).map((value, index) => (
-                  <DiceSVG key={index} value={value} size={compactDesktopLandscape ? "xs" : "sm"} />
+                  <DiceSVG key={index} value={value} size={compactDesktopLandscape ? "sm" : "md"} />
                 ))}
               </div>
             </div>

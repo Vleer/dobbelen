@@ -1193,7 +1193,7 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Mobile/Tablet Layout - Clean Vertical Stack with fixed bottom elements */}
       <div className="lg:hidden flex flex-col h-screen">
         {/* Scrollable content area - opponents and results/bid display */}
-        <div className={`flex-1 overflow-y-auto pt-20 ${snugMobileLayout ? "pb-72" : "pb-80"}`}>
+        <div className={`flex-1 overflow-y-auto pt-14 ${snugMobileLayout ? "pb-72" : "pb-80"}`}>
           {/* Opponent Players - Top section with natural flow, below header */}
           <div className={snugMobileLayout ? "px-2" : "px-3"}>
             <div className={`grid grid-cols-2 items-start ${snugMobileLayout ? "gap-1" : "gap-2"}`}>
@@ -1393,7 +1393,7 @@ const GameTable: React.FC<GameTableProps> = ({
           !game.showAllDice &&
           game.state !== "ROUND_ENDED" && (
             <div
-              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-1 pointer-events-none bottom-[6.5rem] w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
+              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-1 pointer-events-none bottom-[5.5rem] w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
             >
               {currentBidFromActivePlayer && (
                 <div className="pointer-events-auto w-full">
@@ -1434,7 +1434,7 @@ const GameTable: React.FC<GameTableProps> = ({
           !localPlayer.eliminated &&
           !tabletLandscapeStack && (
             <div
-              className={`fixed left-0 right-0 z-[45] flex ${portraitTablet ? "bottom-[6.5rem] justify-center" : "bottom-28"} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
+              className={`fixed left-0 right-0 z-[45] flex bottom-24 ${portraitTablet ? "justify-center" : ""} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
             >
               <BidSelector
                 currentBid={game.currentBid}

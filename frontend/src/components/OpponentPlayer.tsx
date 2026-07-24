@@ -147,19 +147,19 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     // 3 opponents: simple arch around the local player.
     if (totalOpponents === 2) {
       return position === 0
-        ? { left: "22%", top: "24%", transform: "translateX(-50%)" }
-        : { left: "78%", top: "24%", transform: "translateX(-50%)" };
+        ? { left: "22%", top: "16%", transform: "translateX(-50%)" }
+        : { left: "78%", top: "16%", transform: "translateX(-50%)" };
     }
     if (totalOpponents === 3) {
-      if (position === 0) return { left: "22%", top: "24%", transform: "translateX(-50%)" };
-      if (position === 1) return { left: "50%", top: "15%", transform: "translateX(-50%)" };
-      return { left: "78%", top: "24%", transform: "translateX(-50%)" };
+      if (position === 0) return { left: "22%", top: "16%", transform: "translateX(-50%)" };
+      if (position === 1) return { left: "50%", top: "10%", transform: "translateX(-50%)" };
+      return { left: "78%", top: "16%", transform: "translateX(-50%)" };
     }
 
     const spread = Math.max(totalOpponents, 1);
     const slot = Math.min(position + 1, spread);
     const leftPercent = (slot / (spread + 1)) * 100;
-    return { left: `${leftPercent}%`, top: "18%", transform: "translateX(-50%)" };
+    return { left: `${leftPercent}%`, top: "12%", transform: "translateX(-50%)" };
   };
 
   const revealedDice = previousRoundPlayer?.dice || [];
