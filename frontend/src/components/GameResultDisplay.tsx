@@ -65,7 +65,6 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
     return null;
   }
 
-  // Derive outcome information
   const roundWinner = game.players.find((p) => p.id === game.winner);
   const eliminatedPlayer = game.players.find(
     (p) => p.id === game.lastEliminatedPlayerId
@@ -74,33 +73,10 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
   const isCurrentPlayerEliminated =
     !!currentPlayerId && game.lastEliminatedPlayerId === currentPlayerId;
 
-  // Determine bid correctness
   const bidWasCorrect =
     game.lastActualCount !== undefined &&
     game.lastBidQuantity !== undefined &&
     game.lastActualCount >= game.lastBidQuantity;
-
-  // Theme colours based on personal outcome
-  let borderColor = '#78350f';
-  let bgColor = '#3d1f0d';
-  let glowAnimation = '';
-  if (isCurrentPlayerWinner) {
-    borderColor = '#22c55e';
-    bgColor = '#052e16';
-    glowAnimation = 'pulse-green';
-  } else if (isCurrentPlayerEliminated) {
-    borderColor = '#ef4444';
-    bgColor = '#2d0a0a';
-    glowAnimation = 'pulse-red';
-  }
-
-  const getActionIcon = () => {
-    switch (game.lastActionType) {
-      case 'DOUBT':   return '🤔';
-      case 'SPOT_ON': return '🎯';
-      default:         return '🎲';
-    }
-  };
 
   const getActionMessage = () => {
     if (!game.lastActionType || !game.lastActionPlayerId) return '';
@@ -127,24 +103,14 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
           actualCount: game.lastActualCount,
           faceValue,
         });
-      } else {
-        return t('game.result.thereWereOnly', {
-          actualCount: game.lastActualCount,
-          faceValue,
-        });
       }
+      return t('game.result.thereWereOnly', {
+        actualCount: game.lastActualCount,
+        faceValue,
+      });
     }
     return '';
   };
-
-  // Detect mobile mode
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-  // Animation helper: staggered fade-in via inline style
-  const stagger = (delayMs: number): React.CSSProperties =>
-    animationsEnabled
-      ? { animation: `fade-in 0.45s ease-out ${delayMs}ms forwards`, opacity: 0 }
-      : {};
 
   return (
     <div
@@ -159,47 +125,38 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
-        className="border-4 rounded-3xl p-6 shadow-2xl text-center min-w-80 max-w-lg select-none"
+        className={`rounded-2xl border shadow-xl text-center min-w-80 max-w-lg select-none px-6 py-5 ${
+          animationsEnabled ? 'animate-fade-in' : ''
+        }`}
         style={{
-          backgroundColor: bgColor,
-          borderColor,
-          ...(animationsEnabled
-            ? {
-                animation: glowAnimation
-                  ? `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, ${glowAnimation} 2.8s ease-in-out 0.5s infinite`
-                  : 'bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
-              }
-            : {}),
+          backgroundColor: 'var(--game-surface)',
+          borderColor: 'var(--game-border)',
         }}
       >
-        {/* ── Action header ──────────────────────────────────────────── */}
+        {/* Action header */}
         <div
-          className="text-2xl font-bold text-amber-200 mb-3 flex items-center justify-center gap-2"
-          style={stagger(0)}
+          className="text-sm font-semibold uppercase tracking-wide mb-2"
+          style={{ color: 'var(--game-accent-text)' }}
         >
-          <span className="text-3xl">{getActionIcon()}</span>
-          <span>{getActionMessage()}</span>
+          {getActionMessage()}
         </div>
 
-        {/* ── Dice count result ──────────────────────────────────────── */}
+        {/* Dice count result */}
         {getResultMessage() && (
-          <div
-            className="text-lg font-semibold text-amber-100 mb-2"
-            style={stagger(80)}
-          >
+          <div className="text-base font-semibold mb-3" style={{ color: 'var(--game-text)' }}>
             {getResultMessage()}
           </div>
         )}
 
-        {/* ── Bid correctness badge ─────────────────────────────────── */}
+        {/* Bid correctness */}
         {game.lastActualCount !== undefined && (
           <div
-            className={`inline-block px-4 py-1 rounded-full text-sm font-bold mb-4 ${
-              bidWasCorrect
-                ? 'bg-green-800 text-green-300 border border-green-500'
-                : 'bg-red-900 text-red-300 border border-red-600'
-            }`}
-            style={stagger(160)}
+            className="inline-block px-3 py-1 rounded-lg text-xs font-semibold mb-3 border"
+            style={{
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border-strong)',
+              color: 'var(--game-accent-text)',
+            }}
           >
             {bidWasCorrect
               ? t('game.result.bidWasCorrect')
@@ -207,46 +164,30 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
           </div>
         )}
 
-        {/* ── Round winner banner ────────────────────────────────────── */}
+        {/* Round winner */}
         {roundWinner && (
-          <div
-            className="flex items-center justify-center gap-2 mb-3"
-            style={stagger(260)}
-          >
-            <span
-              className="inline-block"
-              style={{
-                fontSize: '2rem',
-                ...(animationsEnabled
-                  ? {
-                      // trophy-pop: 280ms delay + 650ms duration = 930ms; float starts at 950ms
-                      animation:
-                        'trophy-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 280ms both, float 2.4s ease-in-out 950ms infinite',
-                    }
-                  : {}),
-              }}
+          <div className="mb-3">
+            <div
+              className="text-[10px] uppercase tracking-wide font-semibold mb-0.5"
+              style={{ color: 'var(--game-text-muted)' }}
             >
-              🏆
-            </span>
-            <span className="text-2xl font-extrabold text-amber-400">
+              Round winner
+            </div>
+            <div className="text-lg font-bold" style={{ color: 'var(--game-accent-text)' }}>
               {t('game.result.winsRound', { playerName: roundWinner.name })}
-            </span>
+            </div>
           </div>
         )}
 
-        {/* ── Personal outcome highlight ────────────────────────────── */}
+        {/* Personal outcome */}
         {(isCurrentPlayerWinner || isCurrentPlayerEliminated) && (
           <div
-            className={`rounded-2xl px-5 py-3 mb-3 text-xl font-extrabold tracking-wide ${
-              isCurrentPlayerWinner
-                ? 'bg-green-800 text-green-300 border-2 border-green-500'
-                : 'bg-red-900 text-red-300 border-2 border-red-600'
-            }`}
-            style={animationsEnabled ? {
-              // bounce-in starts at 340 ms; flash starts after bounce completes (~840 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 340ms both, flash 1.6s ease-in-out 860ms infinite`,
-              opacity: 0,
-            } : {}}
+            className="rounded-xl px-4 py-2 mb-3 text-sm font-bold border"
+            style={{
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border-strong)',
+              color: 'var(--game-accent-text)',
+            }}
           >
             {isCurrentPlayerWinner
               ? t('game.result.youWinRound')
@@ -254,34 +195,22 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
           </div>
         )}
 
-        {/* ── Eliminated player ─────────────────────────────────────── */}
-        {!isMobile && eliminatedPlayer && (
+        {/* Eliminated player */}
+        {eliminatedPlayer && (
           <div
-            className="text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1"
-            style={animationsEnabled ? {
-              // bounce-in starts at 420 ms; flash starts after bounce completes (~920 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 420ms both, flash 1.6s ease-in-out 940ms infinite`,
-              opacity: 0,
-            } : {}}
+            className="text-sm font-semibold mb-3"
+            style={{ color: 'var(--game-text-muted)' }}
           >
-            <span>
-              {t('game.result.isEliminated', {
-                playerName: eliminatedPlayer.name,
-              })}
-            </span>
+            {t('game.result.isEliminated', {
+              playerName: eliminatedPlayer.name,
+            })}
           </div>
         )}
 
-        {/* ── Dice analysis chart ───────────────────────────────────── */}
-        {!isMobile && (
-          <div style={stagger(500)}>
-            <DiceAnalysisChart game={game} />
-          </div>
-        )}
+        <DiceAnalysisChart game={game} />
       </div>
     </div>
   );
 };
 
 export default GameResultDisplay;
-

@@ -12,6 +12,7 @@ import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
+import DesktopPlayerDock from './DesktopPlayerDock';
 import DraggableGameInfo from './DraggableGameInfo';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
@@ -49,7 +50,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const { t } = useLanguage();
   const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
   const { animationsEnabled } = useSettings();
-  const { isMobile, isTablet, isLandscape } = useWindowSize();
+  const { isMobile, isTablet, isLandscape, isDesktop } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
   /** Tablet width + landscape: lg:hidden layout — stack bid readout above controls above local player */
   const tabletLandscapeStack = isTablet && isLandscape;
@@ -1174,60 +1175,48 @@ const GameTable: React.FC<GameTableProps> = ({
     if (!isCurrentPlayerGameWinner) {
       // ── LOSER SCREEN ──────────────────────────────────────────────
       return (
-        <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0b2a1a' }}>
-          {/* Background */}
+        <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--felt-bg)' }}>
           <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
+            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-20"
             style={{ backgroundImage: "url(resources/bg.webp)" }}
           />
-          {/* Dark vignette overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-70" />
-
-          {/* Loser card */}
           <div
-            className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
+            className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
             style={{
-              backgroundColor: '#0f2a1b',
-              borderColor: '#8a6a1d',
-              ...(animationsEnabled
-                ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-red 2.8s ease-in-out 0.6s infinite' }
-                : {}),
+              backgroundColor: 'var(--game-surface)',
+              borderColor: 'var(--game-border)',
             }}
           >
-            {/* Skull emoji removed for less flashiness */}
-            <div
-              className={`text-5xl mb-4`}
-            >
-              😔
-            </div>
+            {!isDesktop && <div className="text-4xl mb-3">😔</div>}
 
             <h1
-              className="text-3xl md:text-4xl font-extrabold mb-4"
-              style={{
-                color: '#e7be5c',
-                ...(animationsEnabled
-                  ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
-                  : {}),
-              }}
+              className="text-2xl md:text-3xl font-bold mb-3"
+              style={{ color: 'var(--game-accent-text)' }}
             >
               {t('game.result.opponentHasWonGame', {
                 playerName: winner?.name || t('common.unknownPlayer'),
               })}
             </h1>
 
-            {/* You lost message */}
             <div
-              className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-[#f5d98f] bg-[#1f3f2b] border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 400ms forwards', opacity: 0 } : {}}
+              className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+              style={{
+                color: 'var(--game-accent-text)',
+                backgroundColor: 'var(--game-surface-soft)',
+                borderColor: 'var(--game-border-strong)',
+              }}
             >
               {t('game.result.youLoseGame')}
             </div>
 
-            {/* Continue button */}
             <button
               onClick={handleContinue}
-              className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 550ms forwards', opacity: 0 } : {}}
+              className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+              style={{
+                backgroundColor: 'var(--game-surface-soft)',
+                borderColor: 'var(--game-border-strong)',
+                color: 'var(--game-accent-text)',
+              }}
             >
               {t('game.continue')}
             </button>
@@ -1237,25 +1226,20 @@ const GameTable: React.FC<GameTableProps> = ({
     }
 
     // ── WINNER SCREEN (Dobbelkoning) ───────────────────────────────
-    // Confetti particles (deterministic positions to avoid hydration issues)
     const confettiItems = ['👑', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎆', '🏆', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎇', '👑', '🎊', '✨', '🎉', '🌟', '🎈'];
     const confettiPositions = [4, 10, 17, 25, 33, 42, 50, 58, 66, 74, 81, 88, 7, 19, 30, 44, 56, 68, 79, 91, 13, 37, 62, 86];
     const confettiDelays = [0, 0.3, 0.15, 0.6, 0.45, 0.9, 0.2, 0.75, 1.0, 0.5, 0.35, 0.8, 0.1, 0.65, 0.25, 0.55, 0.4, 0.7, 0.05, 0.85, 0.95, 0.4, 0.7, 0.3];
     const confettiSizes = [28, 22, 18, 24, 20, 26, 22, 28, 18, 24, 20, 22, 28, 24, 18, 26, 20, 22, 28, 18, 24, 20, 26, 22];
 
     return (
-      <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0d1a0d' }}>
-        {/* Background */}
+      <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--felt-bg)' }}>
         <div
           className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-20"
           style={{ backgroundImage: "url(resources/bg.webp)" }}
         />
 
-        {/* Dark vignette overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50" />
-
-        {/* Floating confetti particles */}
-        {animationsEnabled && (
+        {/* Confetti only on mobile/tablet */}
+        {animationsEnabled && !isDesktop && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             {confettiItems.map((emoji, i) => (
               <span
@@ -1276,64 +1260,53 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         )}
 
-        {/* Victory card */}
         <div
-          className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
+          className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
           style={{
-            backgroundColor: '#052e16',
-            borderColor: '#8a6a1d',
-            ...(animationsEnabled
-              ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 2.8s ease-in-out 0.6s infinite' }
-              : {}),
+            backgroundColor: 'var(--game-surface)',
+            borderColor: 'var(--game-border)',
           }}
         >
-          {/* Animated crown — larger and with float delay for extra drama */}
           <div
-            className={`mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
-            style={{
-              fontSize: '5.5rem',
-              lineHeight: 1,
-              ...(animationsEnabled ? { animationDelay: '0.2s', animationDuration: '1.8s' } : {}),
-            }}
+            className={`mb-3 ${animationsEnabled && !isDesktop ? 'animate-float' : ''}`}
+            style={{ fontSize: isDesktop ? '2.5rem' : '5.5rem', lineHeight: 1 }}
           >
             👑
           </div>
 
-          {/* Dobbelkoning title with golden glow */}
           <h1
-            className="text-4xl font-extrabold mb-2"
-            style={{
-              color: '#fbbf24',
-              textShadow: '0 0 18px rgba(251, 191, 36, 0.85), 0 0 36px rgba(251, 191, 36, 0.45)',
-              ...(animationsEnabled
-                ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
-                : {}),
-            }}
+            className="text-3xl font-bold mb-2"
+            style={{ color: 'var(--game-accent-text)' }}
           >
             {t('game.dobbelkoning')}
           </h1>
 
-          {/* Winner name */}
           <h2
-            className="text-2xl font-bold text-white mb-4"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
+            className="text-xl font-semibold mb-4"
+            style={{ color: 'var(--game-text)' }}
           >
             {winner?.name || t('common.unknownPlayer')}
           </h2>
 
-          {/* You win message */}
           <div
-            className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-[#f5d98f] bg-[#1f3f2b] border-[#8a6a1d]"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
+            className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+            style={{
+              color: 'var(--game-accent-text)',
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border-strong)',
+            }}
           >
             {t('game.result.youWinGame')}
           </div>
 
-          {/* Continue button */}
           <button
             onClick={handleContinue}
-            className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d]"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
+            className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+            style={{
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border-strong)',
+              color: 'var(--game-accent-text)',
+            }}
           >
             {t('game.continue')}
           </button>
@@ -1646,21 +1619,58 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Desktop Layout */}
       <div className="hidden lg:block">
-        {/* Local Player - Bottom Center */}
+        {/* Local player + bid display + bid selector — one draggable dock */}
         {localPlayer && (
-          <LocalPlayer
-            player={localPlayer}
-            isMyTurn={isMyTurn()}
-            isDealer={false}
-            onAction={handleAction}
-            disabled={isLoading || bettingDisabled}
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            isRoundEnded={roundEnded}
-            isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
-            isRoundWinner={game.winner === localPlayer.id}
-            compactDesktopLandscape={isLandscape}
-          />
+          <DesktopPlayerDock
+            bidDisplay={
+              currentBidFromActivePlayer &&
+              game.state !== "ROUND_ENDED" &&
+              !game.showAllDice &&
+              showBidDisplay ? (
+                <BidDisplay
+                  currentBid={currentBidFromActivePlayer}
+                  currentPlayerId={game.currentPlayerId}
+                  players={game.players}
+                  roundNumber={game.roundNumber}
+                  winner={game.winner || undefined}
+                  isMobile={false}
+                  stacked
+                />
+              ) : null
+            }
+            playerSlot={
+              <LocalPlayer
+                player={localPlayer}
+                isMyTurn={isMyTurn()}
+                isDealer={false}
+                onAction={handleAction}
+                disabled={isLoading || bettingDisabled}
+                currentBid={game.currentBid}
+                previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                isRoundEnded={roundEnded}
+                isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
+                isRoundWinner={game.winner === localPlayer.id}
+                compactDesktopLandscape={isLandscape}
+                docked
+              />
+            }
+          >
+            {isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
+              <BidSelector
+                currentBid={game.currentBid}
+                previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                onBidSelect={(quantity, faceValue) =>
+                  handleAction("bid", { quantity, faceValue })
+                }
+                onDoubt={() => handleAction("doubt")}
+                onSpotOn={() => handleAction("spotOn")}
+                disabled={isLoading || bettingDisabled}
+                isMobile={false}
+                stacked
+                compactDesktopLandscape={isLandscape}
+              />
+            )}
+          </DesktopPlayerDock>
         )}
 
         {/* Opponents */}
@@ -1730,40 +1740,6 @@ const GameTable: React.FC<GameTableProps> = ({
           }
           activePlayersLabel={`${t("game.activePlayers")}: ${game.players.filter(p => !p.eliminated).length}/${game.players.length}`}
         />
-      </div>
-
-      {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
-      <div
-        className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-2 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
-        style={{ bottom: "min(12.5rem, 22vh)" }}
-      >
-        {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
-          <div className="pointer-events-auto w-full flex justify-center">
-            <BidDisplay
-              currentBid={currentBidFromActivePlayer}
-              currentPlayerId={game.currentPlayerId}
-              players={game.players}
-              roundNumber={game.roundNumber}
-              winner={game.winner || undefined}
-              isMobile={false}
-              stacked
-            />
-          </div>
-        )}
-        {localPlayer && isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
-          <BidSelector
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            onBidSelect={(quantity, faceValue) =>
-              handleAction("bid", { quantity, faceValue })
-            }
-            onDoubt={() => handleAction("doubt")}
-            onSpotOn={() => handleAction("spotOn")}
-            disabled={isLoading || bettingDisabled}
-            isMobile={false}
-            stacked
-          />
-        )}
       </div>
 
       {/* Game Result Display - Desktop only */}

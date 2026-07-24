@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Game } from '../types/game';
 import DiceSVG from './DiceSVG';
 import DiceAnalysisChart from './DiceAnalysisChart';
@@ -185,13 +185,128 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
     );
   };
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [dragPosition, setDragPosition] = useState<{ left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  // Reset drag position whenever the panel is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setDragPosition(null);
+      draggingRef.current = false;
+      setDragging(false);
+    }
+  }, [isOpen]);
+
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 320;
+    const height = el?.offsetHeight ?? 200;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  const isInteractiveTarget = (target: EventTarget | null) => {
+    if (!(target instanceof Element)) return false;
+    return Boolean(
+      target.closest('button, a, input, textarea, select, [role="button"], [data-no-drag], [data-history-scroll]')
+    );
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if (isInteractiveTarget(e.target)) return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setDragPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setDragPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [clampToViewport]);
+
+  useEffect(() => {
+    if (!dragPosition) return;
+    const onResize = () =>
+      setDragPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [dragPosition, clampToViewport]);
+
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <div className="rounded-2xl shadow-2xl border w-[calc(100vw-0.5rem)] md:w-96 max-h-[80vh] overflow-y-auto" style={{ backgroundColor: '#0f2a1b', borderColor: '#365844', backdropFilter: 'blur(4px)' }}>
-        {/* Header - compact, no title */}
-        <div className="flex items-center justify-end px-1 py-0.5 md:px-2 md:py-1 border-b" style={{ borderColor: '#365844' }}>
+    <div
+      ref={panelRef}
+      onPointerDown={onPointerDown}
+      className={`rounded-2xl shadow-2xl border w-[calc(100vw-0.5rem)] md:w-96 max-h-[80vh] overflow-y-auto select-none touch-none ${
+        dragging ? 'cursor-grabbing' : 'cursor-grab'
+      } ${dragPosition ? 'fixed z-40' : 'relative'}`}
+      style={{
+        backgroundColor: '#0f2a1b',
+        borderColor: '#365844',
+        backdropFilter: 'blur(4px)',
+        ...(dragPosition
+          ? { left: dragPosition.left, top: dragPosition.top, transform: 'none' }
+          : {}),
+      }}
+      title="Drag to move"
+    >
+        {/* Header — drag handle */}
+        <div className="flex items-center gap-2 px-2 py-1.5 md:px-3 md:py-2 border-b" style={{ borderColor: '#365844' }}>
+          <span
+            className="flex-1 flex items-center justify-center"
+            aria-hidden
+          >
+            <span className="block w-10 h-1 rounded-full bg-[#8a6a1d]/80" />
+          </span>
           <button
             onClick={onClose}
-            className="p-0.5 md:p-1 text-[#d9b45a] hover:text-[#f7f3e8] rounded text-sm"
+            className="p-0.5 md:p-1 text-[#d9b45a] hover:text-[#f7f3e8] rounded text-sm cursor-pointer"
             title={t('instructions.close')}
           >
             ✕
@@ -247,7 +362,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ game, isOpen, onClose, open
         </div>
 
         {/* Tab Content */}
-        <div className="p-2 md:p-4">
+        <div className="p-2 md:p-4" data-history-scroll>
           {activeTab === 'instructions' && (
             <div className="text-[#f7f3e8]">
               <table className="w-full text-xs md:text-base border-collapse">

@@ -14,6 +14,8 @@ interface BidSelectorProps {
   isMobile?: boolean; // Mobile layout flag
   /** When true, no fixed positioning — parent column stacks this under BidDisplay */
   stacked?: boolean;
+  /** Desktop: match LocalPlayer width in landscape */
+  compactDesktopLandscape?: boolean;
 }
 
 const BidSelector: React.FC<BidSelectorProps> = ({
@@ -25,6 +27,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   disabled,
   isMobile = false,
   stacked = false,
+  compactDesktopLandscape = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -254,37 +257,38 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     );
   }
 
-  const desktopShellStyle: CSSProperties = stacked
-    ? {
-        backgroundColor: 'var(--game-surface-strong)',
-        borderColor: 'var(--game-border)',
-      }
-    : {
-        backgroundColor: 'var(--game-surface-strong)',
-        borderColor: 'var(--game-border)',
-        position: 'fixed',
-        left: '50%',
-        bottom: '12rem',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-      };
+  const desktopShellStyle: CSSProperties = {
+    backgroundColor: 'var(--game-surface-strong)',
+    borderColor: 'var(--game-border)',
+    width: compactDesktopLandscape ? 'min(360px, 88vw)' : '420px',
+    maxWidth: '95vw',
+    ...(stacked
+      ? {}
+      : {
+          position: 'fixed',
+          left: '50%',
+          bottom: '12rem',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+        }),
+  };
 
   return (
     <div
       ref={containerRef}
       className={
         stacked
-          ? 'p-3 rounded-2xl shadow-lg border-2 inline-flex flex-col max-w-full select-none relative z-10 pointer-events-auto mx-auto'
-          : 'p-3 rounded-2xl shadow-lg border-2 inline-flex flex-col max-w-full select-none relative z-10'
+          ? 'p-3 rounded-2xl shadow-lg border-2 flex flex-col select-none relative z-10 pointer-events-auto mx-auto'
+          : 'p-3 rounded-2xl shadow-lg border-2 flex flex-col select-none relative z-10'
       }
       style={desktopShellStyle}
     >
-      <div className="space-y-1">
+      <div className="space-y-1 w-full">
         {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
         {displayQuantities.map((quantity) => (
           <div
             key={quantity}
-            className="flex items-center justify-center gap-1"
+            className="flex items-center justify-center gap-1 w-full"
           >
             {faceValues.map((faceValue) => {
               const bidKey = `${quantity}-${faceValue}`;
@@ -320,7 +324,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         ))}
 
         {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-        <div className="flex items-center justify-center gap-1 pt-1">
+        <div className="flex items-center justify-center gap-1 pt-1 w-full">
           {faceValues.map((faceValue) => (
             <div
               key={faceValue}
@@ -332,8 +336,8 @@ const BidSelector: React.FC<BidSelectorProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons — stretch to match dice/bid grid width */}
-      <div className="mt-2 flex gap-2 w-full self-stretch">
+      {/* Action Buttons — stretch to panel width (matches own player) */}
+      <div className="mt-2 flex gap-2 w-full">
         <button
           onClick={(e) => {
             e.stopPropagation();

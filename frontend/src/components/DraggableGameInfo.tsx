@@ -7,7 +7,7 @@ interface DraggableGameInfoProps {
   activePlayersLabel: string;
 }
 
-const DEFAULT_TOP_PERCENT = 58;
+const DEFAULT_TOP_PERCENT = 42;
 
 const DraggableGameInfo: React.FC<DraggableGameInfoProps> = ({
   roundLabel,
@@ -16,15 +16,15 @@ const DraggableGameInfo: React.FC<DraggableGameInfoProps> = ({
   activePlayersLabel,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const dragOffset = useRef<{ x: number; y: number } | null>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const clampToViewport = useCallback((left: number, top: number) => {
     const el = panelRef.current;
-    const width = el?.offsetWidth ?? 0;
-    const height = el?.offsetHeight ?? 0;
+    const width = el?.offsetWidth ?? 200;
+    const height = el?.offsetHeight ?? 100;
     const maxLeft = Math.max(8, window.innerWidth - width - 8);
     const maxTop = Math.max(8, window.innerHeight - height - 8);
     return {
@@ -33,41 +33,62 @@ const DraggableGameInfo: React.FC<DraggableGameInfoProps> = ({
     };
   }, []);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only primary button / touch
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
     const el = panelRef.current;
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
-    const next = position ?? { left: rect.left, top: rect.top };
-    setPosition(next);
-    dragOffset.current = { x: e.clientX - next.left, y: e.clientY - next.top };
+    // Lock to pixel coords immediately (drop % + translate centering)
+    const origin = { left: rect.left, top: rect.top };
+    setPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
     draggingRef.current = true;
     setDragging(true);
-    el.setPointerCapture(e.pointerId);
+
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore — window listeners below still handle the drag
+    }
     e.preventDefault();
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || !dragOffset.current) return;
-    setPosition(
-      clampToViewport(e.clientX - dragOffset.current.x, e.clientY - dragOffset.current.y)
-    );
-  };
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
 
-  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    dragOffset.current = null;
-    draggingRef.current = false;
-    setDragging(false);
-    if (panelRef.current?.hasPointerCapture(e.pointerId)) {
-      panelRef.current.releasePointerCapture(e.pointerId);
-    }
-  };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [clampToViewport]);
 
   useEffect(() => {
     if (!position) return;
-    const onResize = () => setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    const onResize = () =>
+      setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [position, clampToViewport]);
@@ -75,30 +96,49 @@ const DraggableGameInfo: React.FC<DraggableGameInfoProps> = ({
   return (
     <div
       ref={panelRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-      className={`fixed z-30 rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm select-none touch-none ${
+      onPointerDown={onPointerDown}
+      className={`fixed z-[1] rounded-2xl border shadow-xl backdrop-blur-sm px-6 py-4 text-center select-none touch-none ${
         dragging ? 'cursor-grabbing' : 'cursor-grab'
       }`}
-      style={
-        position
-          ? { left: position.left, top: position.top }
-          : { left: '50%', top: `${DEFAULT_TOP_PERCENT}%`, transform: 'translateX(-50%)' }
-      }
+      style={{
+        backgroundColor: 'var(--game-surface)',
+        borderColor: 'var(--game-border)',
+        ...(position
+          ? { left: position.left, top: position.top, transform: 'none' }
+          : {
+              left: '50%',
+              top: `${DEFAULT_TOP_PERCENT}%`,
+              transform: 'translate(-50%, -50%)',
+            }),
+      }}
       title="Drag to move"
     >
-      <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
+      <div
+        className="pointer-events-none text-xs uppercase tracking-wide font-semibold mb-1"
+        style={{ color: 'var(--game-accent-text)' }}
+      >
         {roundLabel}
       </div>
       {currentTurnLabel && (
-        <div className="text-[10px] uppercase tracking-wider text-[#b9cbbf] mb-2">
+        <div
+          className="pointer-events-none text-[10px] uppercase tracking-wider mb-2"
+          style={{ color: 'var(--game-text-muted)' }}
+        >
           {currentTurnLabel}
         </div>
       )}
-      <div className="text-base text-[#f7f3e8] font-semibold">{bidLabel}</div>
-      <div className="text-[10px] text-[#b9cbbf] mt-2">{activePlayersLabel}</div>
+      <div
+        className="pointer-events-none text-base font-semibold"
+        style={{ color: 'var(--game-text)' }}
+      >
+        {bidLabel}
+      </div>
+      <div
+        className="pointer-events-none text-[10px] mt-2"
+        style={{ color: 'var(--game-text-muted)' }}
+      >
+        {activePlayersLabel}
+      </div>
     </div>
   );
 };

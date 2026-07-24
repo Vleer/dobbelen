@@ -216,7 +216,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           {Array.from({ length: scoreSlots }, (_, index) => (
             <div
               key={`opp-mobile-score-${player.id}-${index}`}
-              className={`${compactMobile ? "h-1" : "h-1.5"} flex-1 rounded-[2px] border ${
+              className={`${compactMobile ? "h-1" : "h-1.5"} flex-1 rounded-md border ${
                 index < filledScore ? "" : "bg-transparent"
               }`}
               style={{
@@ -235,7 +235,12 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
       className="absolute"
       style={getDesktopPositionStyle()}
     >
-      <div className="relative pb-6 flex flex-col items-center" data-player-card={player.id}>
+      <div
+        className={`relative pb-6 flex flex-col items-center ${
+          compactDesktopLandscape ? "w-[min(360px,88vw)]" : "w-[420px]"
+        }`}
+        data-player-card={player.id}
+      >
         <div
           data-dealer-anchor={player.id}
           data-dealer-placement="below"
@@ -244,12 +249,12 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         {/* Player Container - Rounded Rectangle with Green Background */}
         <div
           ref={containerRef}
-          className={`rounded-2xl shadow-lg select-none transition-all duration-300 ${
+          className={`w-full rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-40" : ""
           } ${animClasses} flex flex-col items-center justify-between p-2 ${
-            compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(96px,13vh)] max-w-[16rem]" : "w-72 h-[108px]"
+            compactDesktopLandscape ? "h-[100px]" : "h-[112px]"
           }`}
           style={{
             backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
@@ -302,11 +307,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
 
         </div>
         </div>
-        <div className="mt-1 w-72 flex items-center justify-between gap-1 px-1">
+        <div className="mt-1 w-full flex items-center justify-between gap-1 px-1">
           {Array.from({ length: scoreSlots }, (_, index) => (
             <div
               key={`opp-desktop-score-${player.id}-${index}`}
-              className={`h-2 flex-1 rounded-[2px] border ${
+              className={`h-2 flex-1 rounded-md border ${
                 index < filledScore ? "" : "bg-transparent"
               }`}
               style={{

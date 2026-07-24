@@ -20,9 +20,11 @@ interface LocalPlayerProps {
   landscapeMobile?: boolean;
   /** Desktop: slightly smaller card in landscape */
   compactDesktopLandscape?: boolean;
+  /** Desktop dock: no absolute positioning — parent places the card */
+  docked?: boolean;
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false, docked = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showTurnAnim, setShowTurnAnim] = useState(false);
@@ -92,7 +94,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             {Array.from({ length: scoreSlots }, (_, index) => (
               <div
                 key={`local-mobile-score-${index}`}
-                className={`h-2.5 flex-1 rounded-sm border ${
+                className={`h-2.5 flex-1 rounded-md border ${
                   index < filledScore ? "" : "bg-transparent"
                 }`}
                 style={{
@@ -132,21 +134,25 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
 
   return (
     <div
-      className="absolute z-[1200]"
-      style={{
-        left: "50%",
-        bottom: "2rem",
-        transform: "translateX(-50%)",
-      }}
+      className={docked ? "relative z-[1200]" : "absolute z-[1200]"}
+      style={
+        docked
+          ? undefined
+          : {
+              left: "50%",
+              bottom: "2rem",
+              transform: "translateX(-50%)",
+            }
+      }
     >
       {/* Relative wrapper for badge + card */}
-      <div className="relative pt-5" data-player-card={player.id}>
+      <div className={`relative ${docked ? "pt-0" : "pt-5"}`} data-player-card={player.id}>
         <div
           data-dealer-anchor={player.id}
           data-dealer-placement="above"
-          className="absolute left-1/2 top-0 w-0 h-0"
+          className={`absolute left-1/2 w-0 h-0 ${docked ? "-top-1" : "top-0"}`}
         />
-        <div className="w-full mb-2 px-1">
+        <div className={`w-full px-1 ${docked ? "mb-1.5 mt-0.5" : "mb-2"}`}>
           <div
             className={`flex items-center justify-between gap-1.5 max-w-[95vw] ${
               compactDesktopLandscape ? "w-[min(360px,88vw)]" : "w-[420px]"
@@ -155,7 +161,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             {Array.from({ length: scoreSlots }, (_, index) => (
               <div
                 key={`local-desktop-score-${index}`}
-                className={`h-3.5 flex-1 rounded-sm border ${
+                className={`${docked ? "h-3" : "h-3.5"} flex-1 rounded-md border ${
                   index < filledScore ? "" : "bg-transparent"
                 }`}
                 style={{
