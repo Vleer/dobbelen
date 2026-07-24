@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Player } from "../types/game";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -62,6 +62,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [dragPosition, setDragPosition] = useState<{ left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     console.log("OpponentPlayer rendering:", {
@@ -111,6 +116,75 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     }
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
+
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 420;
+    const height = el?.offsetHeight ?? 140;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  const onDesktopPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setDragPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (isMobile) return;
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setDragPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [isMobile, clampToViewport]);
+
+  useEffect(() => {
+    if (isMobile || !dragPosition) return;
+    const onResize = () =>
+      setDragPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [isMobile, dragPosition, clampToViewport]);
 
   const scoreSlots = 7;
   const filledScore = Math.min(player.winTokens || 0, scoreSlots);
@@ -232,8 +306,17 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
 
   return (
     <div
-      className="absolute"
-      style={getDesktopPositionStyle()}
+      ref={panelRef}
+      onPointerDown={onDesktopPointerDown}
+      className={`touch-none select-none ${
+        dragPosition ? "fixed z-[1100]" : "absolute z-[1000]"
+      } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+      style={
+        dragPosition
+          ? { left: dragPosition.left, top: dragPosition.top, transform: "none" }
+          : getDesktopPositionStyle()
+      }
+      title="Drag to move"
     >
       <div
         className={`relative pb-6 flex flex-col items-center ${
