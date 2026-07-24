@@ -1546,7 +1546,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Center Round & Bid Display - Desktop only (enhanced with more context) */}
       <div className="hidden lg:block">
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+        <div className="fixed left-1/2 top-[58%] -translate-x-1/2 z-30">
           <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm">
             <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
               {t("game.round", { roundNumber: game.roundNumber })}
@@ -1573,7 +1573,7 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
       <div
         className="hidden lg:flex fixed left-1/2 -translate-x-1/2 z-[1000] flex-col items-center gap-2 pointer-events-none px-2 w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)]"
-        style={{ bottom: "min(18rem, 30vh)" }}
+        style={{ bottom: "min(12.5rem, 22vh)" }}
       >
         {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
           <div className="pointer-events-auto w-full flex justify-center">

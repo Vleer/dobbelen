@@ -248,8 +248,8 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-40" : ""
-          } ${animClasses} flex flex-col items-center justify-between p-3 ${
-            compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(118px,16vh)] max-w-[16rem]" : "w-72 h-[136px]"
+          } ${animClasses} flex flex-col items-center justify-between p-2 ${
+            compactDesktopLandscape ? "w-[min(16rem,22vw)] h-[min(96px,13vh)] max-w-[16rem]" : "w-72 h-[108px]"
           }`}
           style={{
             backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
@@ -259,7 +259,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         >
           <div className="w-full h-full flex flex-col items-center justify-between">
           {/* Username with Dealer Button and Win Tokens */}
-          <div className="text-center mb-1 min-h-8 flex items-center justify-center">
+          <div className="text-center min-h-6 flex items-center justify-center">
             <div className="flex items-center justify-center space-x-1">
               <span className="font-bold text-sm break-words" style={{ color: 'var(--game-accent-text)' }}>
                 {player.name}

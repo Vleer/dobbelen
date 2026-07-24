@@ -168,7 +168,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         </div>
         {/* Player Container */}
         <div
-          className={`p-4 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
+          className={`p-3 rounded-3xl shadow-2xl select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px] scale-[1.03]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
             player.eliminated ? "opacity-50" : ""
@@ -177,11 +177,11 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           backgroundColor: 'var(--game-surface-strong)',
           borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
           width: compactDesktopLandscape ? "min(360px, 88vw)" : "420px",
-          height: compactDesktopLandscape ? "128px" : "140px",
+          height: compactDesktopLandscape ? "100px" : "112px",
           maxWidth: "95vw",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-start",
+          justifyContent: "center",
           overflow: "visible",
         }}
       >
