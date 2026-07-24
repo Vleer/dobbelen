@@ -12,8 +12,6 @@ interface LocalPlayerProps {
   disabled: boolean;
   currentBid: any;
   previousBid?: { quantity: number; faceValue: number; playerId: string } | null;
-  showDice?: boolean; // Show dice when revealed at end of round
-  previousRoundPlayer?: Player; // Player from previous round for dice display
   isMobile?: boolean; // Mobile layout flag
   isRoundEnded?: boolean; // Round has ended – suppress turn-indicator animations
   isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
@@ -24,7 +22,7 @@ interface LocalPlayerProps {
   compactDesktopLandscape?: boolean;
 }
 
-const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, showDice = false, previousRoundPlayer, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false }) => {
+const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, onAction, disabled, currentBid, previousBid, isMobile = false, isRoundEnded = false, isRoundLoser = false, isRoundWinner = false, landscapeMobile = false, compactDesktopLandscape = false }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showTurnAnim, setShowTurnAnim] = useState(false);
@@ -34,8 +32,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
   
-  // Always show current dice for local player during round; use previous round dice when reveal is shown
-  const diceValues = (showDice && previousRoundPlayer) ? previousRoundPlayer.dice : (player.dice || []);
+  // Always show the local player's dice - never hide them
+  const diceValues = player.dice || [];
 
   // Animate the container when it becomes the local player's turn
   useEffect(() => {
@@ -112,14 +110,15 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           style={{
             backgroundColor: 'var(--game-surface-strong)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
+            overflow: "visible",
           }}
         >
           <div className="h-full flex items-center justify-between gap-2 min-w-0">
             <div className="min-w-0 flex items-center gap-1.5">
               <span className="font-bold text-sm truncate" style={{ color: 'var(--game-accent-text)' }}>{player.name}</span>
             </div>
-            <div className="flex-1 h-full flex items-center justify-end overflow-hidden">
-              <div className="flex items-center gap-1 flex-nowrap">
+            <div className="flex-1 h-full flex items-center justify-end overflow-visible">
+              <div className="flex items-center gap-1 flex-nowrap relative z-50">
                 {diceValues.slice(0, 6).map((value, index) => (
                   <DiceSVG key={index} value={value} size="sm" />
                 ))}
@@ -183,7 +182,7 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-start",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
           <div className="w-full h-full flex items-center justify-between gap-4">
@@ -208,8 +207,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
             </div>
 
             {/* Right dice row */}
-            <div className="flex-1 flex items-center justify-end overflow-hidden">
-              <div className="flex items-center gap-1 flex-nowrap">
+            <div className="flex-1 flex items-center justify-end overflow-visible">
+              <div className="flex items-center gap-1 flex-nowrap relative z-50">
                 {diceValues.slice(0, 6).map((value, index) => (
                   <DiceSVG key={index} value={value} size={compactDesktopLandscape ? "xs" : "sm"} />
                 ))}

@@ -1464,14 +1464,6 @@ const GameTable: React.FC<GameTableProps> = ({
               disabled={isLoading || bettingDisabled}
               currentBid={game.currentBid}
               previousBid={shouldShowPreviousBid ? game.previousBid : null}
-              showDice={
-                game.showAllDice ||
-                game.state === "ROUND_ENDED" ||
-                game.winner !== null
-              }
-              previousRoundPlayer={game.previousRoundPlayers?.find(
-                (p) => p.id === localPlayer.id
-              )}
               isMobile={useMobileLayout}
               isRoundEnded={roundEnded}
               isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
@@ -1494,14 +1486,6 @@ const GameTable: React.FC<GameTableProps> = ({
             disabled={isLoading || bettingDisabled}
             currentBid={game.currentBid}
             previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            showDice={
-              game.showAllDice ||
-              game.state === "ROUND_ENDED" ||
-              game.winner !== null
-            }
-            previousRoundPlayer={game.previousRoundPlayers?.find(
-              (p) => p.id === localPlayer.id
-            )}
             isRoundEnded={roundEnded}
             isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
             isRoundWinner={game.winner === localPlayer.id}

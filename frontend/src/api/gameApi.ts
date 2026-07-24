@@ -15,8 +15,10 @@ export const gameApi = {
   },
 
   // Get game by ID
-  getGame: async (gameId: string): Promise<GameResponse> => {
-    const response = await axiosInstance.get<GameResponse>(`/api/games/${gameId}`);
+  getGame: async (gameId: string, playerId?: string): Promise<GameResponse> => {
+    const response = await axiosInstance.get<GameResponse>(`/api/games/${gameId}`, {
+      params: playerId ? { playerId } : {},
+    });
     return response.data;
   },
 
