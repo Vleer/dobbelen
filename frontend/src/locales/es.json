@@ -141,5 +141,8 @@
   "game.endGame": "Terminar juego",
   "game.endGameConfirm": "¿Estás seguro de que quieres terminar el juego para todos los jugadores?",
   "game.chat": "Chat",
+  "game.pressEnterToChat": "Pulsa",
+  "game.pressEnterToChatSuffix": "para chatear",
+  "game.closeEsc": "esc",
   "lobby.minitutorial": "Tutorial"
 }

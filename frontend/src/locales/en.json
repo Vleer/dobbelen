@@ -103,6 +103,9 @@
   "game.endGame": "End game",
   "game.endGameConfirm": "Are you sure you want to end the game for all players?",
   "game.chat": "Chat",
+  "game.pressEnterToChat": "Press",
+  "game.pressEnterToChatSuffix": "to chat",
+  "game.closeEsc": "esc",
 
   "game.dobbelkoning": "Dobbelkoning",
 

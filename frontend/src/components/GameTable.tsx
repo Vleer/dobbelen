@@ -22,6 +22,7 @@ import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 import ChatPanel from './ChatPanel';
+import ChatMessageToasts from './ChatMessageToasts';
 import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
 import ChatIcon from './ChatIcon';
@@ -233,6 +234,61 @@ const GameTable: React.FC<GameTableProps> = ({
   useEffect(() => {
     onChatStateChange?.(showChat, lastSeenChatCount);
   }, [showChat, lastSeenChatCount, onChatStateChange]);
+
+  // ESC closes overlays in priority order (confirm → settings → chat → history)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showLeaveConfirm) {
+        setShowLeaveConfirm(false);
+        return;
+      }
+      if (showEndGameConfirm) {
+        setShowEndGameConfirm(false);
+        return;
+      }
+      if (showSettings) {
+        setShowSettings(false);
+        return;
+      }
+      if (showChat) {
+        setShowChat(false);
+        return;
+      }
+      if (isHistoryOpen) {
+        setIsHistoryOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showLeaveConfirm, showEndGameConfirm, showSettings, showChat, isHistoryOpen]);
+
+  // Desktop: Enter opens chat (when not typing elsewhere / chat already open)
+  useEffect(() => {
+    if (useMobileLayout || !isMultiplayerGame) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return;
+      if (showChat || showSettings || showLeaveConfirm || showEndGameConfirm || showStatistics) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('input, textarea, select, [contenteditable="true"], button')) return;
+      e.preventDefault();
+      audioService.playRaise();
+      setShowChat(true);
+      setLastSeenChatCount(countIncomingMessages(game?.chatMessages));
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [
+    useMobileLayout,
+    isMultiplayerGame,
+    showChat,
+    showSettings,
+    showLeaveConfirm,
+    showEndGameConfirm,
+    showStatistics,
+    game?.chatMessages,
+    countIncomingMessages,
+  ]);
 
   const activeDealerLikePlayerId = game?.dealerId || null;
   const dealerReturnRafRef = useRef<number | null>(null);
@@ -1796,7 +1852,7 @@ const GameTable: React.FC<GameTableProps> = ({
               <SettingsPanel
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
-                onLeaveGame={isMultiplayerGame ? () => setShowLeaveConfirm(true) : undefined}
+                onLeaveGame={() => setShowLeaveConfirm(true)}
                 leaveGameLabel={t("game.leaveGame")}
                 onEndGame={isMultiplayerGame && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
                 endGameLabel={t("game.endGame")}
@@ -1815,27 +1871,47 @@ const GameTable: React.FC<GameTableProps> = ({
                     setShowChat((prev) => {
                       const next = !prev;
                       if (next) {
-                        // Mark all messages as seen when opening
                         setLastSeenChatCount(countIncomingMessages(game.chatMessages));
-                        if (!useMobileLayout) {
-                          setIsHistoryOpen(true);
-                        }
                       }
                       return next;
                     });
                   }}
-                  className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
+                  className={`rounded-full menu-pill menu-pill-fixed font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] relative flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 ${
+                    useMobileLayout ? 'menu-pill-icon min-w-[44px]' : 'menu-pill-label px-3'
+                  } ${
                     Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount) > 0 ? 'animate-pulse' : ''
                   }`}
-                  aria-label="Chat"
+                  aria-label={useMobileLayout ? t('game.chat') : `${t('game.pressEnterToChat')} Enter ${t('game.pressEnterToChatSuffix')}`}
                   aria-expanded={showChat}
                   style={{
                     ...(showChat ? { backgroundColor: 'var(--menu-button-hover-bg)', borderColor: 'var(--game-border-strong)' } : {})
                   }}
                 >
-                  <span className="w-5 h-5 transition-transform" style={{ color: showChat ? 'var(--game-accent-text)' : 'var(--menu-button-text)' }}>
-                    <ChatIcon />
-                  </span>
+                  {useMobileLayout ? (
+                    <span className="w-5 h-5 transition-transform" style={{ color: showChat ? 'var(--game-accent-text)' : 'var(--menu-button-text)' }}>
+                      <ChatIcon />
+                    </span>
+                  ) : showChat ? (
+                    <span className="w-5 h-5" style={{ color: 'var(--game-accent-text)' }}>
+                      <ChatIcon />
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[13px] whitespace-nowrap" style={{ color: 'var(--menu-button-text)' }}>
+                      <span>{t('game.pressEnterToChat')}</span>
+                      <kbd
+                        className="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1 rounded border text-[11px] font-semibold leading-none"
+                        style={{
+                          borderColor: 'var(--menu-border)',
+                          backgroundColor: 'var(--menu-button-hover-bg)',
+                          color: 'var(--menu-button-text)',
+                        }}
+                        aria-hidden
+                      >
+                        ↵
+                      </kbd>
+                      <span>{t('game.pressEnterToChatSuffix')}</span>
+                    </span>
+                  )}
                   {(() => {
                     const unread = Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount);
                     return unread > 0 ? (
@@ -1850,6 +1926,12 @@ const GameTable: React.FC<GameTableProps> = ({
                     ) : null;
                   })()}
                 </button>
+                <ChatMessageToasts
+                  messages={game.chatMessages ?? []}
+                  localPlayerId={localPlayerId}
+                  chatOpen={showChat}
+                  compact={useMobileLayout}
+                />
               </div>
             )}
 

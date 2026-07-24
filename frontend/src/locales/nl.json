@@ -143,5 +143,8 @@
   "game.endGame": "Spel beëindigen",
   "game.endGameConfirm": "Weet je zeker dat je het spel voor alle spelers wil beëindigen?",
   "game.chat": "Chat",
+  "game.pressEnterToChat": "Druk op",
+  "game.pressEnterToChatSuffix": "om te chatten",
+  "game.closeEsc": "esc",
   "lobby.minitutorial": "Tutorial"
 }

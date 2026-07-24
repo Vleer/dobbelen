@@ -5,6 +5,7 @@ import LanguageSelector from "./components/LanguageSelector";
 import SettingsPanel from "./components/SettingsPanel";
 import ChatPanel from "./components/ChatPanel";
 import ChatIcon from "./components/ChatIcon";
+import ChatMessageToasts from "./components/ChatMessageToasts";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { StatisticsProvider } from "./contexts/StatisticsContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -254,6 +255,12 @@ function App() {
                         ) : null;
                       })()}
                     </button>
+                    <ChatMessageToasts
+                      messages={lobbyGame.chatMessages ?? []}
+                      localPlayerId={lobbyPlayerId}
+                      chatOpen={showLobbyChat}
+                      compact={isMobile || isTablet}
+                    />
                   </div>
                 )}
 

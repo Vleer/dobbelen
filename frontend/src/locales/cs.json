@@ -141,5 +141,8 @@
   "game.endGame": "Ukončit hru",
   "game.endGameConfirm": "Opravdu chcete ukončit hru pro všechny hráče?",
   "game.chat": "Chat",
+  "game.pressEnterToChat": "Stiskni",
+  "game.pressEnterToChatSuffix": "pro chat",
+  "game.closeEsc": "esc",
   "lobby.minitutorial": "Tutoriál"
 }

@@ -2,6 +2,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { Game } from '../types/game';
 import { getWsBaseUrl } from '../config/backend';
+import { normalizeGame } from '../utils/normalizeGame';
 
 export interface WebSocketCallbacks {
   onGameUpdate: (game: Game) => void;
@@ -93,7 +94,7 @@ export class WebSocketService {
                 if (data.data && typeof data.data === 'object' && 'showAllDice' in data.data) {
                   console.log('🟠 WEBSOCKET: Received showAllDice update:', data.data.showAllDice, 'at', new Date().toISOString());
                 }
-                this.onGameUpdate?.(data.data);
+                this.onGameUpdate?.(normalizeGame(data.data));
               }
             } catch (parseError) {
               console.error('❌ Error parsing WebSocket message:', parseError);

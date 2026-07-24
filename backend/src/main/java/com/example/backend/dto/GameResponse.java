@@ -2,6 +2,7 @@ package com.example.backend.dto;
 
 import com.example.backend.model.Game;
 import com.example.backend.model.Player;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +19,12 @@ public class GameResponse {
     private String winner;
     private String gameWinner;
     private String dealerId;
+    @JsonProperty("isMultiplayer")
     private boolean isMultiplayer;
+    @JsonProperty("isPrivate")
     private boolean isPrivate;
     private int maxPlayers;
+    @JsonProperty("isWaitingForPlayers")
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
     private List<PlayerInfo> previousRoundPlayers;

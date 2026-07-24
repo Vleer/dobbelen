@@ -1,27 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { audioService } from '../services/audioService';
 import EmojiPicker from './EmojiPicker';
 import FormattedMessage from './FormattedMessage';
 import ChatIcon from './ChatIcon';
+import { useLanguage } from '../contexts/LanguageContext';
+
+type DragPos = { left: number; top: number };
+
+const chatPosKey = (gameId: string) => `dobbelen-chat-pos:${gameId}`;
+
+const loadChatPos = (gameId: string): DragPos | null => {
+  try {
+    const raw = sessionStorage.getItem(chatPosKey(gameId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DragPos;
+    if (typeof parsed?.left !== 'number' || typeof parsed?.top !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const saveChatPos = (gameId: string, pos: DragPos | null) => {
+  try {
+    if (!pos) {
+      sessionStorage.removeItem(chatPosKey(gameId));
+      return;
+    }
+    sessionStorage.setItem(chatPosKey(gameId), JSON.stringify(pos));
+  } catch {
+    // ignore quota / private mode
+  }
+};
 
 /**
- * ChatPanel Component
- * 
- * An enhanced chat interface for multiplayer games featuring:
- * - Real-time messaging with WebSocket support
- * - Emoji picker with categorized emojis
- * - Message formatting (bold text with **text** or __text__)
- * - URL detection and clickable links
- * - Player color-coded messages
- * - Typing indicators
- * - Sound notifications for new messages
- * - Unread message badges
- * - Smooth animations and transitions
- * - Mobile-responsive design
- * - Character counter (200 char limit)
- * - Custom scrollbar styling
+ * ChatPanel — multiplayer chat with emoji, formatting, drag (desktop), and ESC close.
  */
 interface ChatPanelProps {
   isOpen: boolean;
@@ -46,33 +61,102 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   playerColors = {},
   variant = 'overlay',
 }) => {
+  const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [typingPlayers] = useState<Set<string>>(new Set());
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(messages.length);
   const lastMessageIdRef = useRef<string | null>(messages[messages.length - 1]?.id || null);
   const openedAtRef = useRef<number>(0);
+
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [dragPosition, setDragPosition] = useState<DragPos | null>(() =>
+    !isMobile ? loadChatPos(gameId) : null
+  );
+  const [dragging, setDragging] = useState(false);
+
+  const canDrag = !isMobile;
+
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 320;
+    const height = el?.offsetHeight ?? 360;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  // Restore saved position when game changes (or remount after close)
+  useEffect(() => {
+    if (!canDrag) {
+      setDragPosition(null);
+      return;
+    }
+    setDragPosition(loadChatPos(gameId));
+  }, [gameId, canDrag]);
 
   useEffect(() => {
     if (isOpen) {
       openedAtRef.current = Date.now();
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      // Small delay to let panel open animation finish
       setTimeout(() => inputRef.current?.focus(), 100);
+      // Re-clamp remembered position to the current viewport after layout
+      if (canDrag) {
+        requestAnimationFrame(() => {
+          setDragPosition((prev) => {
+            const saved = prev ?? loadChatPos(gameId);
+            if (!saved) return prev;
+            const clamped = clampToViewport(saved.left, saved.top);
+            saveChatPos(gameId, clamped);
+            return clamped;
+          });
+        });
+      }
+    } else {
+      setShowEmojiPicker(false);
+      draggingRef.current = false;
+      setDragging(false);
+      // Keep dragPosition so reopen restores it (also persisted to sessionStorage)
+    }
+  }, [isOpen, canDrag, gameId, clampToViewport]);
+
+  useEffect(() => {
+    if (isOpen) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isOpen, messages.length]);
+
+  // ESC: close emoji picker first, then panel
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      if (showEmojiPicker) {
+        setShowEmojiPicker(false);
+        return;
+      }
+      onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose, showEmojiPicker]);
 
   // Play sound notification for new messages (not from self)
   useEffect(() => {
     if (messages.length > prevMessageCountRef.current) {
       const newMessage = messages[messages.length - 1];
       if (newMessage && newMessage.playerId !== playerId && newMessage.id !== lastMessageIdRef.current) {
-        // Play a subtle notification sound
         try {
-          audioService.playRaise(); // Using existing sound - could add custom chat sound
+          audioService.playRaise();
         } catch (e) {
           console.warn('Failed to play chat notification sound', e);
         }
@@ -82,6 +166,81 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     prevMessageCountRef.current = messages.length;
   }, [messages, playerId]);
 
+  const isInteractiveTarget = (target: EventTarget | null) => {
+    if (!(target instanceof Element)) return false;
+    return Boolean(
+      target.closest(
+        'button, a, input, textarea, select, [role="button"], [data-no-drag], .chat-scrollbar'
+      )
+    );
+  };
+
+  const onHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canDrag) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if (isInteractiveTarget(e.target)) return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setDragPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!canDrag) return;
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setDragPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+      setDragPosition((prev) => {
+        if (prev) saveChatPos(gameId, prev);
+        return prev;
+      });
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [canDrag, clampToViewport, gameId]);
+
+  useEffect(() => {
+    if (!dragPosition) return;
+    const onResize = () =>
+      setDragPosition((prev) => {
+        if (!prev) return prev;
+        const next = clampToViewport(prev.left, prev.top);
+        saveChatPos(gameId, next);
+        return next;
+      });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [dragPosition, clampToViewport, gameId]);
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || isSending) return;
@@ -91,7 +250,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       await gameApi.sendChatMessage(gameId, playerId, text);
     } catch (err) {
       console.error('Failed to send chat message:', err);
-      setInputText(text); // restore on failure
+      setInputText(text);
     } finally {
       setIsSending(false);
     }
@@ -102,17 +261,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       e.preventDefault();
       handleSend();
     }
-  };
-
-  const formatTime = (ts: number) => {
-    const d = new Date(ts);
-    const now = new Date();
-    const diffMinutes = Math.floor((now.getTime() - d.getTime()) / 60000);
-    
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const getPlayerColor = (playerIdToCheck: string) => {
@@ -137,15 +285,23 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const otherTypingPlayersCount = Array.from(typingPlayers).filter((id) => id !== playerId).length;
 
-  const panelClass = variant === 'inline'
-    ? 'w-[calc(100vw-0.5rem)] md:w-96 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in overflow-hidden'
-    : isMobile
-      ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
-      : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in';
+  const basePanelClass =
+    variant === 'inline'
+      ? 'w-[calc(100vw-0.5rem)] md:w-96 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in overflow-hidden'
+      : isMobile
+        ? 'fixed inset-x-0 bottom-0 z-[9990] flex flex-col rounded-t-2xl shadow-2xl border-t-2 animate-slide-up'
+        : 'fixed right-4 bottom-4 z-[9990] w-80 flex flex-col rounded-2xl shadow-2xl border-2 animate-fade-in';
+
+  const panelClass = [
+    basePanelClass,
+    dragPosition ? 'fixed z-[9990]' : variant === 'inline' ? 'relative' : '',
+    canDrag ? (dragging ? 'cursor-grabbing' : '') : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <>
-      {/* Backdrop for mobile */}
       {variant === 'overlay' && isMobile && (
         <button
           type="button"
@@ -155,51 +311,54 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         />
       )}
       <div
+        ref={panelRef}
         className={panelClass}
         style={{
           background: 'linear-gradient(180deg, var(--game-surface-soft) 0%, var(--game-surface) 100%)',
           borderColor: 'var(--game-border-strong)',
           maxHeight: variant === 'inline' ? '80vh' : isMobile ? '60vh' : '70vh',
           boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
+          ...(dragPosition
+            ? { left: dragPosition.left, top: dragPosition.top, right: 'auto', bottom: 'auto', transform: 'none' }
+            : {}),
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header — drag handle on desktop */}
         <div
-          className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+          className={`flex items-center justify-between px-3 py-2 border-b flex-shrink-0 select-none ${
+            canDrag ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : ''
+          }`}
           style={{ borderColor: 'var(--game-border)' }}
+          onPointerDown={onHeaderPointerDown}
+          title={canDrag ? 'Drag to move' : undefined}
         >
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5" style={{ color: 'var(--game-accent-text)' }}>
-              <ChatIcon />
-            </span>
-            <div className="flex flex-col">
-              <span className="font-bold text-sm" style={{ color: 'var(--game-accent-text)' }}>
-                Chat
-              </span>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {messages.length} {messages.length === 1 ? 'message' : 'messages'}
-              </span>
-            </div>
-          </div>
+          <span className="w-5 h-5 shrink-0" style={{ color: 'var(--game-accent-text)' }} aria-hidden>
+            <ChatIcon />
+          </span>
           <button
+            type="button"
+            data-no-drag
             onClick={onClose}
-            className="text-xl leading-none transition-all hover:scale-110 active:scale-95 p-1 rounded-full hover:bg-opacity-10"
-            style={{ color: 'var(--text-muted)' }}
-            aria-label="Close chat"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(138, 106, 29, 0.2)';
+            className="text-[10px] font-semibold leading-none transition-all hover:opacity-90 active:scale-95 px-1.5 py-1 rounded border cursor-pointer uppercase tracking-wide"
+            style={{
+              color: 'var(--text-muted)',
+              borderColor: 'var(--game-border)',
+              backgroundColor: 'var(--game-surface-soft)',
             }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
+            aria-label={`${t('game.closeEsc')} — close chat`}
+            title={t('game.closeEsc')}
           >
-            ✕
+            [{t('game.closeEsc')}]
           </button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0 scroll-smooth chat-scrollbar" style={{ minHeight: '8rem' }}>
+        <div
+          data-no-drag
+          className="flex-1 overflow-y-auto px-2.5 py-1.5 space-y-0.5 min-h-0 scroll-smooth chat-scrollbar"
+          style={{ minHeight: '8rem' }}
+        >
           {messages.length === 0 ? (
             <div className="text-center py-8 animate-fade-in">
               <div className="text-4xl mb-2">💬</div>
@@ -212,52 +371,40 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               const isMe = msg.playerId === playerId;
               const playerColor = getPlayerColor(msg.playerId);
               const isNew = idx >= messages.length - 1;
-              
+
               return (
-                <div 
-                  key={msg.id} 
-                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} ${isNew ? 'animate-slide-up' : ''}`}
+                <div
+                  key={msg.id}
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isNew ? 'animate-slide-up' : ''}`}
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
-                  {!isMe && (
-                    <div className="flex items-center gap-1 mb-0.5 px-1">
-                      <div 
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: playerColor }}
-                      />
-                      <span 
-                        className="text-[10px] font-semibold" 
-                        style={{ color: playerColor }}
-                      >
-                        {msg.playerName}
-                      </span>
-                    </div>
-                  )}
                   <div
-                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm break-words shadow-md transition-all hover:shadow-lg ${
+                    className={`max-w-[90%] px-2 py-1 rounded-xl text-sm break-words ${
                       isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'
                     }`}
                     style={
                       isMe
-                        ? { 
-                            backgroundColor: 'var(--game-surface-strong)', 
-                            color: 'var(--game-accent-text)', 
+                        ? {
+                            backgroundColor: 'var(--game-surface-strong)',
+                            color: 'var(--game-accent-text)',
                             border: '1px solid var(--game-border-strong)',
                           }
-                        : { 
-                            backgroundColor: 'var(--game-surface-soft)', 
-                            color: 'var(--game-text)', 
+                        : {
+                            backgroundColor: 'var(--game-surface-soft)',
+                            color: 'var(--game-text)',
                             border: '1px solid var(--game-border)',
                           }
                     }
                   >
-                    <div className="whitespace-pre-wrap">
+                    <div className="whitespace-pre-wrap leading-snug">
+                      {!isMe && (
+                        <span className="font-semibold mr-1.5" style={{ color: playerColor }}>
+                          {msg.playerName}
+                        </span>
+                      )}
                       <FormattedMessage text={msg.text} />
                     </div>
                   </div>
-                  <span className="text-[9px] mt-0.5 px-1 opacity-70" style={{ color: 'var(--text-muted)' }}>
-                    {formatTime(msg.timestamp)}
-                  </span>
                 </div>
               );
             })
@@ -265,9 +412,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           {otherTypingPlayersCount > 0 && (
             <div className="px-2 py-1 flex items-center gap-2 animate-fade-in">
               <div className="flex gap-1">
-                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-[#8a6a1d] animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 {otherTypingPlayersCount > 1 ? 'Players are typing...' : 'A player is typing...'}
@@ -279,6 +426,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
         {/* Input */}
         <div
+          data-no-drag
           className="px-3 py-3 flex flex-col gap-2 border-t flex-shrink-0 relative"
           style={{ borderColor: 'var(--game-border)' }}
         >
@@ -331,11 +479,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             </button>
           </div>
           {inputText.length > 0 && (
-            <div 
+            <div
               className="text-[10px] text-right transition-all"
-              style={{ 
+              style={{
                 color: inputText.length >= 180 ? '#ff6b6b' : 'var(--text-muted)',
-                fontWeight: inputText.length >= 180 ? 'bold' : 'normal'
+                fontWeight: inputText.length >= 180 ? 'bold' : 'normal',
               }}
             >
               {inputText.length}/200
