@@ -86,7 +86,8 @@ function App() {
     const seenIncomingCount = showLobbyChat
       ? countIncomingMessages(gameData.chatMessages, userPlayerId)
       : 0;
-    setInitialGameChatOpen(showLobbyChat);
+    // Chat always starts closed when entering a game
+    setInitialGameChatOpen(false);
     setInitialGameLastSeenChatCount(seenIncomingCount);
     getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
       gameId: gameData.id,

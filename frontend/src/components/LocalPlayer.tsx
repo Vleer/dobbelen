@@ -154,8 +154,8 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         />
         <div className={`w-full px-1 ${docked ? "mb-1.5 mt-0.5" : "mb-2"}`}>
           <div
-            className={`flex items-center justify-between gap-1.5 max-w-[95vw] ${
-              compactDesktopLandscape ? "w-[min(360px,88vw)]" : "w-[420px]"
+            className={`flex items-center justify-between gap-1.5 max-w-[80vw] ${
+              compactDesktopLandscape ? "w-[min(360px,80vw)]" : "w-[min(420px,80vw)]"
             }`}
           >
             {Array.from({ length: scoreSlots }, (_, index) => (
@@ -182,9 +182,9 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
         style={{
           backgroundColor: 'var(--game-surface-strong)',
           borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
-          width: compactDesktopLandscape ? "min(360px, 88vw)" : "420px",
+          width: compactDesktopLandscape ? "min(360px, 80vw)" : "min(420px, 80vw)",
           height: compactDesktopLandscape ? "100px" : "112px",
-          maxWidth: "95vw",
+          maxWidth: "80vw",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",

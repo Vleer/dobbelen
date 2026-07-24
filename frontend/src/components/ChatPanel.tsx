@@ -359,15 +359,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           className="flex-1 overflow-y-auto px-2.5 py-1.5 space-y-0.5 min-h-0 scroll-smooth chat-scrollbar"
           style={{ minHeight: '8rem' }}
         >
-          {messages.length === 0 ? (
-            <div className="text-center py-8 animate-fade-in">
-              <div className="text-4xl mb-2">💬</div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                No messages yet. Say hi! 👋
-              </p>
-            </div>
-          ) : (
-            messages.map((msg, idx) => {
+          {messages.map((msg, idx) => {
               const isMe = msg.playerId === playerId;
               const playerColor = getPlayerColor(msg.playerId);
               const isNew = idx >= messages.length - 1;
@@ -407,8 +399,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                   </div>
                 </div>
               );
-            })
-          )}
+            })}
           {otherTypingPlayersCount > 0 && (
             <div className="px-2 py-1 flex items-center gap-2 animate-fade-in">
               <div className="flex gap-1">

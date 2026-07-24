@@ -260,8 +260,8 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   const desktopShellStyle: CSSProperties = {
     backgroundColor: 'var(--game-surface-strong)',
     borderColor: 'var(--game-border)',
-    width: compactDesktopLandscape ? 'min(360px, 88vw)' : '420px',
-    maxWidth: '95vw',
+    width: compactDesktopLandscape ? 'min(360px, 80vw)' : 'min(420px, 80vw)',
+    maxWidth: '80vw',
     ...(stacked
       ? {}
       : {

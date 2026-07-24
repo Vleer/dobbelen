@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -14,13 +14,32 @@ interface BidDisplayProps {
   isMobile?: boolean;
   /** When true, no fixed positioning — parent stacks this above BidSelector (centered column) */
   stacked?: boolean;
+  /** Desktop: independently draggable (default when not stacked/mobile) */
+  draggable?: boolean;
 }
 
-const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false, stacked = false }) => {
+const BidDisplay: React.FC<BidDisplayProps> = ({
+  currentBid,
+  currentPlayerId,
+  players,
+  roundNumber,
+  winner,
+  playerName,
+  isMobile = false,
+  stacked = false,
+  draggable = false,
+}) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showSlideAnim, setShowSlideAnim] = useState(false);
   const prevBidKeyRef = useRef('');
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const canDrag = draggable && !isMobile && !stacked;
 
   // Animate whenever the bid changes
   useEffect(() => {
@@ -34,6 +53,75 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     }
     prevBidKeyRef.current = newKey;
   }, [currentBid, animationsEnabled]);
+
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 200;
+    const height = el?.offsetHeight ?? 80;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canDrag) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!canDrag) return;
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [canDrag, clampToViewport]);
+
+  useEffect(() => {
+    if (!canDrag || !position) return;
+    const onResize = () =>
+      setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [canDrag, position, clampToViewport]);
 
   if (!currentBid) {
     return null;
@@ -74,7 +162,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
 
   const desktopCard = (
     <div
-      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-0 max-w-[min(24rem,92vw)] select-none ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
+      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-0 max-w-[min(24rem,80vw)] select-none ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
       style={{
         backgroundColor: 'var(--game-surface)',
         borderColor: 'var(--game-border-strong)',
@@ -92,6 +180,26 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
   if (stacked) {
     return (
       <div className="relative w-full flex justify-center pointer-events-auto">
+        {desktopCard}
+      </div>
+    );
+  }
+
+  if (canDrag) {
+    return (
+      <div
+        ref={panelRef}
+        onPointerDown={onPointerDown}
+        className={`fixed z-[1100] pointer-events-auto touch-none ${
+          dragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        style={
+          position
+            ? { left: position.left, top: position.top, transform: 'none' }
+            : { left: '50%', bottom: '14rem', transform: 'translateX(-50%)' }
+        }
+        title="Drag to move"
+      >
         {desktopCard}
       </div>
     );

@@ -92,9 +92,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   // Chat state
-  const [showChat, setShowChat] = useState(
-    initialShowChat || (!!initialGame?.isMultiplayer && !useMobileLayout)
-  );
+  const [showChat, setShowChat] = useState(initialShowChat);
   const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
   // Mini tutorial state
   const [tutorialDismissed, setTutorialDismissed] = useState(false);
@@ -1675,25 +1673,25 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Desktop Layout */}
       <div className="hidden lg:block">
-        {/* Local player + bid display + bid selector — one draggable dock */}
+        {/* Current bid — separate, independently draggable */}
+        {currentBidFromActivePlayer &&
+          game.state !== "ROUND_ENDED" &&
+          !game.showAllDice &&
+          showBidDisplay && (
+            <BidDisplay
+              currentBid={currentBidFromActivePlayer}
+              currentPlayerId={game.currentPlayerId}
+              players={game.players}
+              roundNumber={game.roundNumber}
+              winner={game.winner || undefined}
+              isMobile={false}
+              draggable
+            />
+          )}
+
+        {/* Local player + bid selector — one draggable dock */}
         {localPlayer && (
           <DesktopPlayerDock
-            bidDisplay={
-              currentBidFromActivePlayer &&
-              game.state !== "ROUND_ENDED" &&
-              !game.showAllDice &&
-              showBidDisplay ? (
-                <BidDisplay
-                  currentBid={currentBidFromActivePlayer}
-                  currentPlayerId={game.currentPlayerId}
-                  players={game.players}
-                  roundNumber={game.roundNumber}
-                  winner={game.winner || undefined}
-                  isMobile={false}
-                  stacked
-                />
-              ) : null
-            }
             playerSlot={
               <LocalPlayer
                 player={localPlayer}

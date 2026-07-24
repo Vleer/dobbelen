@@ -1,64 +1,76 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface DesktopPlayerDockProps {
-  /** Current bid — overlays above without shifting the dock */
-  bidDisplay?: React.ReactNode;
   /** Bid selector controls */
   children?: React.ReactNode;
   /** Local player card */
   playerSlot: React.ReactNode;
 }
 
+const MAX_VIEWPORT_FRACTION = 0.8;
+
 /**
- * Desktop-only: stacks bid selector + local player (current bid floats above),
- * and moves them together when the player or bid panel is dragged.
+ * Desktop-only: stacks bid selector + local player, moves them together when dragged,
+ * and scales the stack to stay within 80% of the viewport.
  */
 const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
-  bidDisplay,
   children,
   playerSlot,
 }) => {
   const dockRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [scale, setScale] = useState(1);
 
-  const getVisualBounds = useCallback(() => {
-    const el = dockRef.current;
-    if (!el) {
-      return { left: 0, top: 0, width: 420, height: 200 };
-    }
-    const rect = el.getBoundingClientRect();
-    const overlay = el.querySelector('[data-bid-display-overlay]') as HTMLElement | null;
-    const overlayRect = overlay?.getBoundingClientRect();
-    const top = overlayRect ? Math.min(rect.top, overlayRect.top) : rect.top;
-    const bottom = rect.bottom;
-    const left = overlayRect ? Math.min(rect.left, overlayRect.left) : rect.left;
-    const right = overlayRect ? Math.max(rect.right, overlayRect.right) : rect.right;
-    return {
-      left,
-      top,
-      width: Math.max(rect.width, right - left),
-      height: Math.max(rect.height, bottom - top),
-    };
+  const updateScale = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    // offsetWidth/Height ignore CSS transforms — natural layout size
+    const width = el.offsetWidth;
+    const height = el.offsetHeight;
+    if (width <= 0 || height <= 0) return;
+    const maxW = window.innerWidth * MAX_VIEWPORT_FRACTION;
+    const maxH = window.innerHeight * MAX_VIEWPORT_FRACTION;
+    const next = Math.min(1, maxW / width, maxH / height);
+    const clamped = Number.isFinite(next) && next > 0 ? next : 1;
+    setScale((prev) => (Math.abs(prev - clamped) < 0.001 ? prev : clamped));
   }, []);
+
+  useLayoutEffect(() => {
+    updateScale();
+  }, [updateScale, children, playerSlot]);
+
+  useEffect(() => {
+    const onResize = () => updateScale();
+    window.addEventListener('resize', onResize);
+    const el = contentRef.current;
+    let ro: ResizeObserver | undefined;
+    if (el && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => updateScale());
+      ro.observe(el);
+    }
+    return () => {
+      window.removeEventListener('resize', onResize);
+      ro?.disconnect();
+    };
+  }, [updateScale]);
 
   const clampToViewport = useCallback(
     (left: number, top: number) => {
-      const bounds = getVisualBounds();
-      // top is dock box top; overlay sits above it — keep overlay on-screen
-      const overlayExtra = Math.max(0, (dockRef.current?.getBoundingClientRect().top ?? 0) - bounds.top);
-      const width = dockRef.current?.offsetWidth ?? bounds.width;
-      const height = (dockRef.current?.offsetHeight ?? bounds.height) + overlayExtra;
+      const el = dockRef.current;
+      const width = el?.getBoundingClientRect().width ?? 420;
+      const height = el?.getBoundingClientRect().height ?? 200;
       const maxLeft = Math.max(8, window.innerWidth - width - 8);
       const maxTop = Math.max(8, window.innerHeight - height - 8);
       return {
         left: Math.min(Math.max(8, left), maxLeft),
-        top: Math.min(Math.max(8 + overlayExtra, top), maxTop + overlayExtra),
+        top: Math.min(Math.max(8, top), maxTop),
       };
     },
-    [getVisualBounds]
+    []
   );
 
   const onDockPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -124,27 +136,27 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
     dragging ? 'cursor-grabbing' : 'cursor-grab'
   }`;
 
+  const dockTransform = position
+    ? `scale(${scale})`
+    : `translateX(-50%) scale(${scale})`;
+
   return (
     <div
       ref={dockRef}
       className="fixed z-[1200] flex flex-col items-center px-2"
-      style={
-        position
-          ? { left: position.left, top: position.top, transform: 'none' }
-          : { left: '50%', bottom: '0.35rem', transform: 'translateX(-50%)' }
-      }
+      style={{
+        ...(position
+          ? { left: position.left, top: position.top }
+          : { left: '50%', bottom: '0.35rem' }),
+        transform: dockTransform,
+        transformOrigin: position ? 'top left' : 'bottom center',
+        maxWidth: `${MAX_VIEWPORT_FRACTION * 100}vw`,
+      }}
     >
-      <div className="relative flex flex-col items-center gap-1 w-full pointer-events-none">
-        {bidDisplay ? (
-          <div
-            data-bid-display-overlay
-            className={`absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2 flex justify-center ${dragHandleClass}`}
-            onPointerDown={onDockPointerDown}
-            title="Drag to move"
-          >
-            {bidDisplay}
-          </div>
-        ) : null}
+      <div
+        ref={contentRef}
+        className="relative flex flex-col items-center gap-1 w-full pointer-events-none"
+      >
         {children ? (
           <div
             className={`${dragHandleClass} w-full flex flex-col items-center`}
