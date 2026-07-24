@@ -12,6 +12,7 @@ import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
+import DraggableGameInfo from './DraggableGameInfo';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
@@ -82,6 +83,10 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [dealerChipDragging, setDealerChipDragging] = useState(false);
+  const dealerDraggingRef = useRef(false);
+  const dealerDragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const dealerChipPosRef = useRef(dealerChipPos);
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
   // Chat state
@@ -229,11 +234,60 @@ const GameTable: React.FC<GameTableProps> = ({
   }, [showChat, lastSeenChatCount, onChatStateChange]);
 
   const activeDealerLikePlayerId = game?.dealerId || null;
+  const dealerReturnRafRef = useRef<number | null>(null);
 
-  const updateDealerChipPosition = useCallback(() => {
-    if (!activeDealerLikePlayerId || !tableRef.current) {
-      setDealerChipPos((prev) => ({ ...prev, visible: false }));
-      return;
+  useEffect(() => {
+    dealerChipPosRef.current = dealerChipPos;
+  }, [dealerChipPos]);
+
+  const cancelDealerReturn = useCallback(() => {
+    if (dealerReturnRafRef.current !== null) {
+      cancelAnimationFrame(dealerReturnRafRef.current);
+      dealerReturnRafRef.current = null;
+    }
+  }, []);
+
+  /** Closest point on a player card (viewport coords), preferring the boundary when inside. */
+  const closestPointOnPlayerCard = useCallback((clientX: number, clientY: number, playerId: string) => {
+    const cards = Array.from(
+      document.querySelectorAll(`[data-player-card="${playerId}"]`)
+    ) as HTMLElement[];
+    const card =
+      cards.find((el) => {
+        const rect = el.getBoundingClientRect();
+        return el.offsetParent !== null && rect.width > 0 && rect.height > 0;
+      }) || null;
+    if (!card) return null;
+
+    const r = card.getBoundingClientRect();
+    const { left, right, top, bottom } = r;
+
+    const outside = clientX < left || clientX > right || clientY < top || clientY > bottom;
+    if (outside) {
+      return {
+        x: Math.min(Math.max(clientX, left), right),
+        y: Math.min(Math.max(clientY, top), bottom),
+      };
+    }
+
+    const dl = clientX - left;
+    const dr = right - clientX;
+    const dt = clientY - top;
+    const db = bottom - clientY;
+    const nearest = Math.min(dl, dr, dt, db);
+    if (nearest === dl) return { x: left, y: clientY };
+    if (nearest === dr) return { x: right, y: clientY };
+    if (nearest === dt) return { x: clientX, y: top };
+    return { x: clientX, y: bottom };
+  }, []);
+
+  const getDealerHomePoint = useCallback((fromPoint?: { x: number; y: number } | null) => {
+    if (!activeDealerLikePlayerId) return null;
+
+    const origin = fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null);
+    if (origin) {
+      const nearest = closestPointOnPlayerCard(origin.x, origin.y, activeDealerLikePlayerId);
+      if (nearest) return nearest;
     }
 
     const anchors = Array.from(
@@ -244,26 +298,141 @@ const GameTable: React.FC<GameTableProps> = ({
         const rect = el.getBoundingClientRect();
         return el.offsetParent !== null && rect.bottom > 0 && rect.right > 0;
       }) || null;
+    if (anchor) {
+      const anchorRect = anchor.getBoundingClientRect();
+      return {
+        x: anchorRect.left + anchorRect.width / 2,
+        y: anchorRect.top + anchorRect.height / 2,
+      };
+    }
 
-    if (!anchor) {
+    const card = document.querySelector(`[data-player-card="${activeDealerLikePlayerId}"]`) as HTMLElement | null;
+    if (card) {
+      const r = card.getBoundingClientRect();
+      return closestPointOnPlayerCard(r.left + r.width / 2, r.top, activeDealerLikePlayerId);
+    }
+
+    return null;
+  }, [activeDealerLikePlayerId, closestPointOnPlayerCard]);
+
+  /** Slowly ease the chip toward the dealer player (no hard snap). */
+  const releaseDealerToPlayer = useCallback((fromPoint?: { x: number; y: number }) => {
+    cancelDealerReturn();
+    if (dealerDraggingRef.current) return;
+
+    const start = fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null);
+    const target = getDealerHomePoint(start);
+    if (!target) {
       setDealerChipPos((prev) => ({ ...prev, visible: false }));
       return;
     }
 
-    const tableRect = tableRef.current.getBoundingClientRect();
-    const anchorRect = anchor.getBoundingClientRect();
-    setDealerChipPos({
-      x: anchorRect.left - tableRect.left + anchorRect.width / 2,
-      y: anchorRect.top - tableRect.top + anchorRect.height / 2,
+    if (!start || !dealerChipPosRef.current.visible) {
+      const next = { x: target.x, y: target.y, visible: true };
+      dealerChipPosRef.current = next;
+      setDealerChipPos(next);
+      return;
+    }
+
+    const durationMs = 1600;
+    const startX = start.x;
+    const startY = start.y;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      if (dealerDraggingRef.current) {
+        dealerReturnRafRef.current = null;
+        return;
+      }
+      const t = Math.min(1, (now - startTime) / durationMs);
+      // Smooth ease-out cubic — slow release into place
+      const eased = 1 - (1 - t) ** 3;
+      const next = {
+        x: startX + (target.x - startX) * eased,
+        y: startY + (target.y - startY) * eased,
+        visible: true,
+      };
+      dealerChipPosRef.current = next;
+      setDealerChipPos(next);
+      if (t < 1) {
+        dealerReturnRafRef.current = requestAnimationFrame(tick);
+      } else {
+        dealerReturnRafRef.current = null;
+      }
+    };
+
+    dealerReturnRafRef.current = requestAnimationFrame(tick);
+  }, [cancelDealerReturn, getDealerHomePoint]);
+
+  const updateDealerChipPosition = useCallback((fromPoint?: { x: number; y: number }, animate = false) => {
+    if (dealerDraggingRef.current) return;
+    if (!activeDealerLikePlayerId) {
+      cancelDealerReturn();
+      setDealerChipPos((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+
+    if (animate && dealerChipPosRef.current.visible) {
+      releaseDealerToPlayer(fromPoint ?? dealerChipPosRef.current);
+      return;
+    }
+
+    cancelDealerReturn();
+    const home = getDealerHomePoint(fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null));
+    if (!home) {
+      setDealerChipPos((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+    const next = { x: home.x, y: home.y, visible: true };
+    dealerChipPosRef.current = next;
+    setDealerChipPos(next);
+  }, [activeDealerLikePlayerId, cancelDealerReturn, getDealerHomePoint, releaseDealerToPlayer]);
+
+  const handleDealerPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelDealerReturn();
+    dealerDragOffsetRef.current = {
+      x: e.clientX - dealerChipPos.x,
+      y: e.clientY - dealerChipPos.y,
+    };
+    dealerDraggingRef.current = true;
+    setDealerChipDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleDealerPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dealerDraggingRef.current || !dealerDragOffsetRef.current) return;
+    const next = {
+      x: e.clientX - dealerDragOffsetRef.current.x,
+      y: e.clientY - dealerDragOffsetRef.current.y,
       visible: true,
+    };
+    dealerChipPosRef.current = next;
+    setDealerChipPos(next);
+  };
+
+  const handleDealerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dealerDraggingRef.current) return;
+    dealerDraggingRef.current = false;
+    dealerDragOffsetRef.current = null;
+    setDealerChipDragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    releaseDealerToPlayer({
+      x: dealerChipPosRef.current.x,
+      y: dealerChipPosRef.current.y,
     });
-  }, [activeDealerLikePlayerId]);
+  };
 
   useEffect(() => {
-    updateDealerChipPosition();
-    const timeout1 = window.setTimeout(updateDealerChipPosition, 60);
-    const timeout2 = window.setTimeout(updateDealerChipPosition, 220);
-    const handleMove = () => updateDealerChipPosition();
+    // Dealer / layout change: ease toward the new player
+    updateDealerChipPosition(undefined, true);
+    const timeout1 = window.setTimeout(() => updateDealerChipPosition(undefined, true), 60);
+    const timeout2 = window.setTimeout(() => updateDealerChipPosition(undefined, true), 220);
+    const handleMove = () => updateDealerChipPosition(undefined, false);
     window.addEventListener('resize', handleMove);
     window.addEventListener('scroll', handleMove, true);
     return () => {
@@ -271,8 +440,9 @@ const GameTable: React.FC<GameTableProps> = ({
       window.clearTimeout(timeout2);
       window.removeEventListener('resize', handleMove);
       window.removeEventListener('scroll', handleMove, true);
+      cancelDealerReturn();
     };
-  }, [updateDealerChipPosition, game?.roundNumber, activeDealerLikePlayerId, game?.players, useMobileLayout]);
+  }, [updateDealerChipPosition, cancelDealerReturn, game?.roundNumber, activeDealerLikePlayerId, game?.players, useMobileLayout]);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -1544,30 +1714,22 @@ const GameTable: React.FC<GameTableProps> = ({
         })}
       </div>
 
-      {/* Center Round & Bid Display - Desktop only (enhanced with more context) */}
+      {/* Center Round & Bid Display - Desktop only (draggable) */}
       <div className="hidden lg:block">
-        <div className="fixed left-1/2 top-[58%] -translate-x-1/2 z-30">
-          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/90 px-6 py-4 text-center shadow-xl backdrop-blur-sm">
-            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a] mb-1">
-              {t("game.round", { roundNumber: game.roundNumber })}
-            </div>
-            {/* Current Turn Indicator */}
-            {game.currentPlayerId && (
-              <div className="text-[10px] uppercase tracking-wider text-[#b9cbbf] mb-2">
-                {t("game.currentTurn")}: {game.players.find(p => p.id === game.currentPlayerId)?.name || t("common.unknownPlayer")}
-              </div>
-            )}
-            <div className="text-base text-[#f7f3e8] font-semibold">
-              {currentBidFromActivePlayer
-                ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
-                : t("game.waitingForFirstBid")}
-            </div>
-            {/* Active Players Count */}
-            <div className="text-[10px] text-[#b9cbbf] mt-2">
-              {t("game.activePlayers")}: {game.players.filter(p => !p.eliminated).length}/{game.players.length}
-            </div>
-          </div>
-        </div>
+        <DraggableGameInfo
+          roundLabel={t("game.round", { roundNumber: game.roundNumber })}
+          currentTurnLabel={
+            game.currentPlayerId
+              ? `${t("game.currentTurn")}: ${game.players.find(p => p.id === game.currentPlayerId)?.name || t("common.unknownPlayer")}`
+              : undefined
+          }
+          bidLabel={
+            currentBidFromActivePlayer
+              ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
+              : t("game.waitingForFirstBid")
+          }
+          activePlayersLabel={`${t("game.activePlayers")}: ${game.players.filter(p => !p.eliminated).length}/${game.players.length}`}
+        />
       </div>
 
       {/* Desktop: bid readout above bidding controls, centered above local player (fixes tablet landscape + transform clash) */}
@@ -1952,18 +2114,25 @@ const GameTable: React.FC<GameTableProps> = ({
         />
       )}
 
-      {/* Shared animated dealer chip */}
+      {/* Shared dealer chip — fixed + highest game z-index; slowly eases back to dealer player */}
       {dealerChipPos.visible && (
         <div
-          className="pointer-events-none absolute z-[70] transition-all duration-[1200ms] ease-in-out"
+          className={`fixed z-[9000] touch-none select-none ${
+            dealerChipDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
           style={{
             left: dealerChipPos.x,
             top: dealerChipPos.y,
             transform: 'translate(-50%, -50%)',
           }}
+          onPointerDown={handleDealerPointerDown}
+          onPointerMove={handleDealerPointerMove}
+          onPointerUp={handleDealerPointerUp}
+          onPointerCancel={handleDealerPointerUp}
+          title="Drag dealer chip"
         >
-          <div className="inline-flex items-center justify-center w-6 h-6 bg-[#173d2b] border-2 border-[#8a6a1d] rounded-full shadow-lg">
-            <span className="text-[#f5d98f] text-xs font-bold">D</span>
+          <div className="inline-flex items-center justify-center w-8 h-8 bg-[#173d2b] border-2 border-[#8a6a1d] rounded-full shadow-xl hover:scale-110 active:scale-95 transition-transform">
+            <span className="text-[#f5d98f] text-sm font-bold pointer-events-none">D</span>
           </div>
         </div>
       )}

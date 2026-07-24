@@ -274,108 +274,106 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       ref={containerRef}
       className={
         stacked
-          ? 'p-3 rounded-2xl shadow-lg border-2 max-w-sm w-full select-none relative z-10 pointer-events-auto mx-auto'
-          : 'p-3 rounded-2xl shadow-lg border-2 w-full max-w-sm select-none relative z-10'
+          ? 'p-3 rounded-2xl shadow-lg border-2 inline-flex flex-col max-w-full select-none relative z-10 pointer-events-auto mx-auto'
+          : 'p-3 rounded-2xl shadow-lg border-2 inline-flex flex-col max-w-full select-none relative z-10'
       }
       style={desktopShellStyle}
     >
-      <div className="w-max max-w-full mx-auto">
-        <div className="space-y-1">
-          {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
-          {displayQuantities.map((quantity) => (
+      <div className="space-y-1">
+        {/* Quantity Rows - Show 2 or 4 rows based on expansion */}
+        {displayQuantities.map((quantity) => (
+          <div
+            key={quantity}
+            className="flex items-center justify-center gap-1"
+          >
+            {faceValues.map((faceValue) => {
+              const bidKey = `${quantity}-${faceValue}`;
+              const isClicked = animationsEnabled && clickedBidKey === bidKey;
+              return (
+                <button
+                  key={bidKey}
+                  onClick={(e) => {
+                    handleBidClick(quantity, faceValue);
+                  }}
+                  disabled={disabled || !isBidValid(quantity, faceValue)}
+                  className={`${getBidButtonClass(quantity, faceValue)} ${isClicked ? 'animate-button-press' : ''}`}
+                  style={{
+                    backgroundColor: disabled
+                      ? 'var(--game-surface-soft)'
+                      : isBidValid(quantity, faceValue)
+                        ? 'var(--game-surface)'
+                        : 'var(--game-surface-soft)',
+                    borderColor: isBidValid(quantity, faceValue) ? 'var(--game-border-strong)' : 'var(--game-border)',
+                    color: disabled || !isBidValid(quantity, faceValue) ? 'var(--game-text-muted)' : 'var(--game-text)',
+                  }}
+                  title={
+                    isBidValid(quantity, faceValue)
+                      ? `${quantity} of ${faceValue}s`
+                      : "Invalid bid"
+                  }
+                >
+                  {quantity}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
+        <div className="flex items-center justify-center gap-1 pt-1">
+          {faceValues.map((faceValue) => (
             <div
-              key={quantity}
-              className="flex items-center justify-center gap-1"
+              key={faceValue}
+              className="w-12 h-12 flex justify-center items-center"
             >
-              {faceValues.map((faceValue) => {
-                const bidKey = `${quantity}-${faceValue}`;
-                const isClicked = animationsEnabled && clickedBidKey === bidKey;
-                return (
-                  <button
-                    key={bidKey}
-                    onClick={(e) => {
-                      handleBidClick(quantity, faceValue);
-                    }}
-                    disabled={disabled || !isBidValid(quantity, faceValue)}
-                    className={`${getBidButtonClass(quantity, faceValue)} ${isClicked ? 'animate-button-press' : ''}`}
-                    style={{
-                      backgroundColor: disabled
-                        ? 'var(--game-surface-soft)'
-                        : isBidValid(quantity, faceValue)
-                          ? 'var(--game-surface)'
-                          : 'var(--game-surface-soft)',
-                      borderColor: isBidValid(quantity, faceValue) ? 'var(--game-border-strong)' : 'var(--game-border)',
-                      color: disabled || !isBidValid(quantity, faceValue) ? 'var(--game-text-muted)' : 'var(--game-text)',
-                    }}
-                    title={
-                      isBidValid(quantity, faceValue)
-                        ? `${quantity} of ${faceValue}s`
-                        : "Invalid bid"
-                    }
-                  >
-                    {quantity}
-                  </button>
-                );
-              })}
+              <DiceHandSVG diceValues={[faceValue]} size="lg" />
             </div>
           ))}
-
-          {/* Face Value Headers with Dice - FOOTER - Perfect grid alignment */}
-          <div className="flex items-center justify-center gap-1 pt-1">
-            {faceValues.map((faceValue) => (
-              <div
-                key={faceValue}
-                className="w-12 h-12 flex justify-center items-center"
-              >
-                <DiceHandSVG diceValues={[faceValue]} size="lg" />
-              </div>
-            ))}
-          </div>
         </div>
+      </div>
 
-        {/* Action Buttons — same width as dice row above */}
-        <div className="mt-2 flex gap-2 w-full">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (animationsEnabled) {
-                setDoubtClicked(true);
-                setTimeout(() => setDoubtClicked(false), 480);
-              }
-              onDoubt?.();
-            }}
-            disabled={disabled || noBidToChallenge}
-            className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
-            style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
-          >
-            {t("game.doubt")}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (animationsEnabled) {
-                setSpotOnClicked(true);
-                setTimeout(() => setSpotOnClicked(false), 320);
-              }
-              onSpotOn?.();
-            }}
-            disabled={disabled || noBidToChallenge}
-            className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
-            style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
-          >
-            {t("game.spotOn")}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleExpanded();
-            }}
-            className="w-12 h-11 shrink-0 rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
-            style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
-          >
-            {isExpanded ? "−" : "+"}
-          </button>
-        </div>
+      {/* Action Buttons — stretch to match dice/bid grid width */}
+      <div className="mt-2 flex gap-2 w-full self-stretch">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (animationsEnabled) {
+              setDoubtClicked(true);
+              setTimeout(() => setDoubtClicked(false), 480);
+            }
+            onDoubt?.();
+          }}
+          disabled={disabled || noBidToChallenge}
+          className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
+          style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
+        >
+          {t("game.doubt")}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (animationsEnabled) {
+              setSpotOnClicked(true);
+              setTimeout(() => setSpotOnClicked(false), 320);
+            }
+            onSpotOn?.();
+          }}
+          disabled={disabled || noBidToChallenge}
+          className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
+          style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
+        >
+          {t("game.spotOn")}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleExpanded();
+          }}
+          className="w-12 h-11 shrink-0 rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
+          style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
+        >
+          {isExpanded ? "−" : "+"}
+        </button>
       </div>
     </div>
   );
