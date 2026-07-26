@@ -19,7 +19,8 @@ import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import SettingsPanel from './SettingsPanel';
 import StatisticsDisplay from './StatisticsDisplay';
-import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import HistoryPanel from './HistoryPanel';
+import { recordRevealStats, buildRevealEventId } from '../utils/gameStats';
 import ChatPanel from './ChatPanel';
 import ChatMessageToasts from './ChatMessageToasts';
 import MiniTutorial from './MiniTutorial';
@@ -767,7 +768,7 @@ const GameTable: React.FC<GameTableProps> = ({
         if (game) {
           aiService.clearRoundTracking(game.id);
         }
-      }, 6000); // 6 second delay
+      }, 8000); // 8 second delay
       return () => clearTimeout(timer);
     } else {
       setShowBidDisplay(true);
@@ -925,59 +926,19 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game?.roundNumber, previousRoundNumber, game]);
 
-  // Track all actions (including AI) when they occur
+  // Track doubt / spot-on reveals into per-game stats (correct spot-ons included)
   useEffect(() => {
-    if (!game || !game.lastActionPlayerId || !game.lastEliminatedPlayerId) return;
-    
-    // Only track DOUBT and SPOT_ON actions (not RAISE)
+    if (!game) return;
     if (game.lastActionType !== 'DOUBT' && game.lastActionType !== 'SPOT_ON') return;
+    if (game.lastActualCount === undefined) return;
 
-    // Create a unique identifier for this action WITHOUT round number
-    // This prevents re-tracking the same action when transitioning to a new round
-    const actionId = `${game.id}-${game.lastActionPlayerId}-${game.lastActionType}-E${game.lastEliminatedPlayerId}`;
-    
-    console.log('🔍 Action tracking check:', {
-      actionId,
-      lastTracked: lastTrackedAction,
-      willTrack: lastTrackedAction !== actionId,
-      gameState: game.state,
-      showAllDice: game.showAllDice,
-      canContinue: game.canContinue,
-      roundNumber: game.roundNumber
-    });
-    
-    // Skip if we've already tracked this exact action
-    if (lastTrackedAction === actionId) {
-      console.log('⏭️ Skipping - already tracked this action');
-      return;
+    const eventId = buildRevealEventId(game);
+    if (!eventId || lastTrackedAction === eventId) return;
+
+    const recorded = recordRevealStats(game);
+    if (recorded) {
+      setLastTrackedAction(eventId);
     }
-
-    const player = game.players.find(p => p.id === game.lastActionPlayerId);
-    if (!player) return;
-
-    // Determine if action was correct
-    const wasCorrect = game.lastEliminatedPlayerId !== game.lastActionPlayerId;
-
-    console.log('📊 TRACKING ACTION:', {
-      actionId,
-      player: player.name,
-      type: game.lastActionType,
-      wasCorrect,
-      roundNumber: game.roundNumber,
-      timestamp: new Date().toISOString()
-    });
-
-    // Track the action
-    trackPlayerAction(
-      game.id,
-      game.lastActionPlayerId,
-      player.name,
-      game.lastActionType as 'DOUBT' | 'SPOT_ON',
-      wasCorrect
-    );
-
-    // Mark this action as tracked
-    setLastTrackedAction(actionId);
   }, [game, lastTrackedAction]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {

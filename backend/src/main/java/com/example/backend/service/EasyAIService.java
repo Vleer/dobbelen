@@ -102,9 +102,9 @@ public class EasyAIService {
             return false; // Don't act immediately
         }
         
-        // Check if 6 seconds have passed
+        // Check if 8 seconds have passed
         long timeSinceEnd = System.currentTimeMillis() - endTime;
-        return timeSinceEnd >= 6000;
+        return timeSinceEnd >= 8000;
     }
     
     /**

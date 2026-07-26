@@ -1184,19 +1184,19 @@ public class GameService {
             game.passDealerToNextPlayer();
             System.out.println("Dealer button passed to next player: " + (game.getDealer() != null ? game.getDealer().getName() : "unknown"));
             System.out.println("Round won by: " + roundWinner.getName() + " with "
-                    + roundWinner.getWinTokens() + " tokens. Starting new round in 6s.");
+                    + roundWinner.getWinTokens() + " tokens. Starting new round in 8s.");
             new java.util.Timer().schedule(new java.util.TimerTask() {
                 @Override
                 public void run() {
                     startNewRound(gameId);
                 }
-            }, 6000);
+            }, 8000);
         }
     }
 
     private void scheduleEnableContinue(String gameId) {
-        // Enable continue button after 5 seconds
-        System.out.println("⏰ SCHEDULE: Scheduling enableContinue for game " + gameId + " in 5 seconds at "
+        // Enable continue button after 7 seconds
+        System.out.println("⏰ SCHEDULE: Scheduling enableContinue for game " + gameId + " in 7 seconds at "
                 + System.currentTimeMillis());
         new java.util.Timer().schedule(new java.util.TimerTask() {
             @Override
@@ -1211,10 +1211,10 @@ public class GameService {
                     System.out.println("⏰ TIMER: Set canContinue=true and broadcasted for game " + gameId);
                 }
             }
-        }, 5000); // 5 seconds
+        }, 7000); // 7 seconds
 
-        // Auto-continue after 15 seconds
-        System.out.println("⏰ SCHEDULE: Scheduling auto-continue for game " + gameId + " in 15 seconds at "
+        // Auto-continue after 8 seconds
+        System.out.println("⏰ SCHEDULE: Scheduling auto-continue for game " + gameId + " in 8 seconds at "
                 + System.currentTimeMillis());
         new java.util.Timer().schedule(new java.util.TimerTask() {
             @Override
@@ -1228,7 +1228,7 @@ public class GameService {
                     continueGame(gameId);
                 }
             }
-        }, 6000); // 15 seconds
+        }, 8000); // 8 seconds
     }
 
     public void continueGame(String gameId) {
