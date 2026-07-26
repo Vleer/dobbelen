@@ -18,7 +18,6 @@ import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import SettingsPanel from './SettingsPanel';
-import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
 import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
 import ChatPanel from './ChatPanel';
@@ -1483,90 +1482,12 @@ const GameTable: React.FC<GameTableProps> = ({
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
             <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
-              <div className={`rounded-2xl shadow-2xl border-2 ${snugMobileLayout ? "p-1.5" : "p-2 md:p-3"}`} style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
-                {/* Compact Header - Action and Who */}
-                <div className={snugMobileLayout ? "text-center mb-1" : "text-center mb-1 md:mb-2"}>
-                  <div className={`rounded-lg border border-[#365844] bg-[#143322] ${snugMobileLayout ? "px-2 py-1" : "px-2.5 py-1.5"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
-                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Action</div>
-                    <div className="text-sm md:text-base font-bold text-[#f5d98f]">
-                    {game.lastActionType &&
-                      game.lastActionPlayerId &&
-                      (game.lastActionType === "DOUBT"
-                        ? t("game.action.doubt", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          })
-                        : game.lastActionType === "SPOT_ON"
-                        ? t("game.action.spotOn", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          })
-                        : t("game.action.raise", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          }))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Result - Correct/Incorrect with Clear Visual Indicator */}
-                {game.lastActualCount !== undefined &&
-                  game.lastBidQuantity !== undefined &&
-                  game.lastBidFaceValue !== undefined && (
-                    <div className={`text-center rounded-lg bg-[#163726] border-2 border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"}`}>
-                      <div
-                        className="text-sm md:text-lg font-bold text-[#f5d98f]"
-                      >
-                        {game.lastActualCount >= game.lastBidQuantity
-                          ? t("game.result.thereWere", {
-                              actualCount: game.lastActualCount,
-                              faceValue: game.lastBidFaceValue,
-                            })
-                          : t("game.result.thereWereOnly", {
-                              actualCount: game.lastActualCount,
-                              faceValue: game.lastBidFaceValue,
-                            })}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Winner - Prominent */}
-                {game.winner && (
-                  <div className={`text-center rounded-lg border-2 bg-[#1b412c] border-[#d9b45a] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-pulse-green" : ""}`}>
-                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Round winner</div>
-                    <div className="text-base md:text-xl font-bold text-[#f5d98f]">
-                      {t("game.result.winsRound", {
-                        playerName:
-                          game.players.find((p) => p.id === game.winner)
-                            ?.name || "Unknown Player",
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Eliminated Player - Very Prominent */}
-                {game.lastEliminatedPlayerId && (
-                  <div className={`text-center rounded-lg border-2 bg-[#22382b] border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
-                    <div className="text-sm md:text-lg font-bold text-[#f5d98f]">
-                      {t("game.result.isEliminated", {
-                        playerName:
-                          game.players.find(
-                            (p) => p.id === game.lastEliminatedPlayerId
-                          )?.name || "Unknown Player",
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Compact Dice Analysis Chart */}
-                <DiceAnalysisChart game={game} />
-              </div>
+              <GameResultDisplay
+                game={game}
+                currentPlayerId={localPlayerId}
+                variant="inline"
+                compact={snugMobileLayout}
+              />
             </div>
           )}
 

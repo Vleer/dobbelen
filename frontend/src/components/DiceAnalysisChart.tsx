@@ -88,7 +88,13 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
   const columnHeight = Math.max(maxDiceCount * 30, 80); // 30px per die (28px + 2px gap), min 80px
 
   return (
-    <div className="mt-2 p-2 bg-green-950 border-2 border-green-700 rounded-xl">
+    <div
+      className="mt-1 p-2 rounded-xl border"
+      style={{
+        backgroundColor: 'var(--game-surface-strong)',
+        borderColor: 'var(--game-border)',
+      }}
+    >
       {/* Bar chart with dice stacked vertically - Compact version */}
       <div className="grid grid-cols-6 gap-1.5">
         {[1, 2, 3, 4, 5, 6].map((faceValue) => {
@@ -96,7 +102,7 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
           const allDiceOfValue = activePlayers
             .map((player) => ({
               player,
-              dice: diceByPlayer[player.id][faceValue] || [],
+              dice: diceByPlayer[player.id]?.[faceValue] || [],
             }))
             .filter(({ dice }) => dice.length > 0);
 
@@ -107,16 +113,23 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
 
           return (
             <div key={faceValue} className="flex flex-col items-center">
-              <div className="text-xs text-green-300 mb-1 font-bold">
+              <div
+                className="text-xs mb-1 font-bold"
+                style={{ color: 'var(--game-text-muted)' }}
+              >
                 {faceValue}
               </div>
               <div
-                className="flex flex-col justify-end w-8 bg-green-900 rounded border border-green-700 p-0.5"
-                style={{ height: `${columnHeight}px` }}
+                className="flex flex-col justify-end w-8 rounded border p-0.5"
+                style={{
+                  height: `${columnHeight}px`,
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border)',
+                }}
               >
                 {/* Stack dice vertically */}
                 <div className="flex flex-col-reverse gap-0.5">
-                  {allDiceOfValue.map(({ player, dice }, playerIndex) =>
+                  {allDiceOfValue.map(({ player, dice }) =>
                     dice.map((_, diceIndex) => {
                       // Use the player's assigned color from backend
                       const playerColor = getPlayerColorFromString(
@@ -141,7 +154,10 @@ const DiceAnalysisChart: React.FC<DiceAnalysisChartProps> = ({
                   )}
                 </div>
               </div>
-              <div className="text-xs text-green-200 mt-0.5 font-bold">
+              <div
+                className="text-xs mt-0.5 font-bold"
+                style={{ color: 'var(--game-text)' }}
+              >
                 {totalCount}
               </div>
             </div>

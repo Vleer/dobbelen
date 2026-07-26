@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Game } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -57,6 +57,27 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const showChat = externalShowChat !== undefined ? externalShowChat : internalShowChat;
   const setShowChat = onToggleChat || setInternalShowChat;
 
+  const [nameFieldGlow, setNameFieldGlow] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const nameGlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const promptForName = useCallback(() => {
+    setNameFieldGlow(false);
+    // Restart animation if already glowing
+    requestAnimationFrame(() => {
+      setNameFieldGlow(true);
+      nameInputRef.current?.focus();
+    });
+    if (nameGlowTimeoutRef.current) clearTimeout(nameGlowTimeoutRef.current);
+    nameGlowTimeoutRef.current = setTimeout(() => setNameFieldGlow(false), 900);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (nameGlowTimeoutRef.current) clearTimeout(nameGlowTimeoutRef.current);
+    };
+  }, []);
+
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
     if (gameIdToClear) {
@@ -89,7 +110,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       // Allow passing an override player name to avoid race conditions
       const nameToUse = options?.playerNameOverride ?? playerName;
 
-      if (!nameToUse?.trim() || hasJoined) {
+      if (!nameToUse?.trim()) {
+        promptForName();
+        return;
+      }
+
+      if (hasJoined) {
         return;
       }
 
@@ -140,7 +166,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         setIsJoining(false);
       }
     },
-    [playerName, hasJoined, t]
+    [playerName, hasJoined, t, promptForName]
   );
 
   const LOBBY_STORAGE_KEY = (id: string) => `lobby_${id}`;
@@ -314,7 +340,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
 
   const createGame = async () => {
     if (!playerName.trim()) {
-      setError(t("lobby.pleaseEnterUsername"));
+      promptForName();
       return;
     }
 
@@ -357,10 +383,13 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   };
 
   const joinGame = async () => {
-    if (!gameId.trim() || !playerName.trim()) {
-      setError(
-        t("lobby.pleaseEnterGameId") + " " + t("lobby.pleaseEnterUsername")
-      );
+    if (!playerName.trim()) {
+      promptForName();
+      return;
+    }
+
+    if (!gameId.trim()) {
+      setError(t("lobby.pleaseEnterGameId"));
       return;
     }
 
@@ -498,12 +527,21 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
               </label>
               <div className="flex space-x-2">
                 <input
+                  ref={nameInputRef}
                   type="text"
                   value={playerName}
-                  onChange={(e) => setPlayerName(sanitizeUsername(e.target.value))}
+                  onChange={(e) => {
+                    setPlayerName(sanitizeUsername(e.target.value));
+                    if (nameFieldGlow) setNameFieldGlow(false);
+                  }}
                   onFocus={(e) => e.target.select()}
                   className="flex-1 min-w-0 p-2 md:p-3 border rounded-lg focus:ring-2 text-base md:text-lg"
-                  style={{ backgroundColor: 'var(--panel-bg-soft)', borderColor: 'var(--panel-border)', color: 'var(--text-main)' }}
+                  style={{
+                    backgroundColor: 'var(--panel-bg-soft)',
+                    borderColor: 'var(--panel-border)',
+                    color: 'var(--text-main)',
+                    animation: nameFieldGlow ? 'name-field-glow 0.9s ease-out' : undefined,
+                  }}
                   placeholder={t("lobby.enterUsername")}
                   maxLength={MAX_USERNAME_LENGTH}
                   autoFocus
@@ -512,6 +550,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   onClick={() => {
                     audioService.playRaise();
                     setPlayerName(getRandomDutchName());
+                    if (nameFieldGlow) setNameFieldGlow(false);
                   }}
                   className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 p-0 rounded-lg font-medium flex items-center justify-center"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', border: '1px solid var(--panel-border)' }}
@@ -556,7 +595,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   audioService.playRaise();
                   createGame();
                 }}
-                disabled={isCreating || !playerName.trim()}
+                disabled={isCreating}
                 className="w-full py-3 md:py-4 px-4 md:px-6 rounded-2xl disabled:opacity-50 text-lg md:text-xl font-bold"
                 style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
               >
@@ -583,7 +622,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     if (
                       e.key === "Enter" &&
                       gameId.trim() &&
-                      playerName.trim() &&
                       !isJoining
                     ) {
                       joinGame();
@@ -599,7 +637,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     audioService.playRaise();
                     joinGame();
                   }}
-                  disabled={isJoining || !gameId.trim() || !playerName.trim()}
+                  disabled={isJoining || !gameId.trim()}
                   className="flex-shrink-0 px-3 md:px-6 py-2 md:py-3 rounded-2xl disabled:opacity-50 font-bold text-sm md:text-base whitespace-nowrap"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                 >
