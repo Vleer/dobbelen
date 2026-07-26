@@ -376,15 +376,14 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
             )}
           </div>
 
-          {/* Previous Bid Display - Only show when relevant to current game state */}
+          {/* Previous bid — small dice */}
           {previousBid &&
             previousBid.playerId === player.id &&
             !player.eliminated && (
-              <div className="text-center text-xs font-bold mb-1 break-words" style={{ color: 'var(--game-accent-text)' }}>
-                {t("game.previousBid", {
-                  quantity: previousBid.quantity,
-                  faceValue: previousBid.faceValue,
-                })}
+              <div className="flex items-center justify-center gap-0.5 flex-wrap mb-1">
+                {Array.from({ length: previousBid.quantity }).map((_, index) => (
+                  <DiceSVG key={index} value={previousBid.faceValue} size="xs" />
+                ))}
               </div>
             )}
 

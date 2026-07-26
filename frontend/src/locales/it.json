@@ -43,6 +43,7 @@
   "game.sixes": "Sei",
   "game.makeYourBid": "Fai la tua offerta",
   "game.yourTurn": "Il tuo turno",
+  "game.playersTurn": "Turno di {{name}}",
   "game.waitingForTurn": "In attesa del tuo turno...",
   "game.waitingForNextRound": "In attesa del prossimo round...",
   "game.waitingForFirstBid": "In attesa della prima offerta",

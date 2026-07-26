@@ -9,32 +9,32 @@ export interface LanguageConfig {
 
 export const LANGUAGES: LanguageConfig[] = [
   {
-    code: 'en',
-    nativeName: 'English'
-  },
-  {
-    code: 'nl',
-    nativeName: 'Nederlands'
-  },
-  {
-    code: 'fr',
-    nativeName: 'Français'
+    code: 'cs',
+    nativeName: 'Čeština'
   },
   {
     code: 'de',
     nativeName: 'Deutsch'
   },
   {
-    code: 'it',
-    nativeName: 'Italiano'
+    code: 'en',
+    nativeName: 'English'
   },
   {
     code: 'es',
     nativeName: 'Español'
   },
   {
-    code: 'cs',
-    nativeName: 'Čeština'
+    code: 'fr',
+    nativeName: 'Français'
+  },
+  {
+    code: 'it',
+    nativeName: 'Italiano'
+  },
+  {
+    code: 'nl',
+    nativeName: 'Nederlands'
   }
 ];
 

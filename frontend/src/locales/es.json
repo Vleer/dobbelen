@@ -49,6 +49,7 @@
   "game.sixes": "Seises",
   "game.makeYourBid": "Haz tu puja",
   "game.yourTurn": "Tu turno",
+  "game.playersTurn": "Turno de {{name}}",
   "game.waitingForTurn": "Esperando tu turno...",
   "game.waitingForNextRound": "Esperando la siguiente ronda...",
   "game.waitingForFirstBid": "Esperando la primera puja",

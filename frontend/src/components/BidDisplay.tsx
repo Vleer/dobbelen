@@ -16,6 +16,8 @@ interface BidDisplayProps {
   stacked?: boolean;
   /** Desktop: independently draggable (default when not stacked/mobile) */
   draggable?: boolean;
+  /** Desktop-only turn/waiting status shown inside the bid card */
+  statusLabel?: string;
 }
 
 const BidDisplay: React.FC<BidDisplayProps> = ({
@@ -28,6 +30,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
   isMobile = false,
   stacked = false,
   draggable = false,
+  statusLabel,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -40,6 +43,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
   const [dragging, setDragging] = useState(false);
 
   const canDrag = draggable && !isMobile && !stacked;
+  const showStatus = !isMobile && !!statusLabel;
 
   // Animate whenever the bid changes
   useEffect(() => {
@@ -123,33 +127,47 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
     return () => window.removeEventListener('resize', onResize);
   }, [canDrag, position, clampToViewport]);
 
-  if (!currentBid) {
+  if (!currentBid && !showStatus) {
     return null;
   }
 
   // Get the player name who made the bid
-  const bidderName = playerName || (players && currentPlayerId ? 
-    players.find(p => p.id === currentBid.playerId)?.name : 
-    t('common.unknownPlayer'));
+  const bidderName = currentBid
+    ? (playerName || (players && currentPlayerId ?
+        players.find(p => p.id === currentBid.playerId)?.name :
+        t('common.unknownPlayer')))
+    : null;
 
   // Create an array of dice values for visualization
-  const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
+  const diceValues = currentBid
+    ? Array(currentBid.quantity).fill(currentBid.faceValue)
+    : [];
 
-  const mobileCard = (
+  const statusBlock = showStatus ? (
+    <div
+      className={`pointer-events-none text-sm font-semibold text-center ${currentBid ? 'mt-2' : ''}`}
+      style={{ color: 'var(--game-text-muted)' }}
+    >
+      {statusLabel}
+    </div>
+  ) : null;
+
+  const mobileCard = currentBid ? (
     <div
       className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
       style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
     >
       <div className="flex items-center justify-center gap-2">
-        <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}</span>
+        <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}:</span>
         <div className="flex items-center flex-shrink-0">
           <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   if (isMobile) {
+    if (!mobileCard) return null;
     if (stacked) {
       return (
         <div className="w-full max-w-md mx-auto flex justify-center px-2">
@@ -168,12 +186,15 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
         borderColor: 'var(--game-border-strong)',
       }}
     >
-      <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2">
-        <div className="text-xl font-bold text-center" style={{ color: 'var(--game-text)' }}>{bidderName}</div>
-        <div className="flex items-center justify-center space-x-2">
-          <DiceHandSVG diceValues={diceValues} size="lg" />
+      {currentBid && (
+        <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2">
+          <div className="text-xl font-bold text-center" style={{ color: 'var(--game-text)' }}>{bidderName}:</div>
+          <div className="flex items-center justify-center space-x-2">
+            <DiceHandSVG diceValues={diceValues} size="lg" />
+          </div>
         </div>
-      </div>
+      )}
+      {statusBlock}
     </div>
   );
 
@@ -196,7 +217,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
         style={
           position
             ? { left: position.left, top: position.top, transform: 'none' }
-            : { left: '50%', bottom: '14rem', transform: 'translateX(-50%)' }
+            : { left: '50%', bottom: '20rem', transform: 'translateX(-50%)' }
         }
         title="Drag to move"
       >

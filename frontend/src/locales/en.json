@@ -54,6 +54,7 @@
 
   "game.makeYourBid": "Make Your Bid",
   "game.yourTurn": "Your Turn",
+  "game.playersTurn": "{{name}}'s turn",
   "game.waitingForTurn": "Waiting for your turn...",
   "game.waitingForNextRound": "Waiting for next round...",
   "game.waitingForFirstBid": "Waiting for first bid",

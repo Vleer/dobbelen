@@ -49,6 +49,7 @@
   "game.sixes": "Šestky",
   "game.makeYourBid": "Vaše sázka",
   "game.yourTurn": "Jste na řadě",
+  "game.playersTurn": "Na řadě je {{name}}",
   "game.waitingForTurn": "Čekáte na tah...",
   "game.waitingForNextRound": "Čekáte na další kolo...",
   "game.waitingForFirstBid": "Čeká se na první příhoz",

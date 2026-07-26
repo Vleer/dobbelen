@@ -159,7 +159,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
       >
         {children ? (
           <div
-            className={`${dragHandleClass} w-full flex flex-col items-center`}
+            className={`${dragHandleClass} w-full flex flex-col items-center gap-1`}
             onPointerDown={onDockPointerDown}
             title="Drag to move"
           >

@@ -13,7 +13,6 @@ import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
 import DesktopPlayerDock from './DesktopPlayerDock';
-import DraggableGameInfo from './DraggableGameInfo';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
@@ -535,6 +534,28 @@ const GameTable: React.FC<GameTableProps> = ({
       if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
     };
   }, []);
+
+  // After game ends: auto-open history (last hand) if the player hasn't opened it yet
+  const historyOpenedForGameEndRef = useRef(false);
+  useEffect(() => {
+    if (!game?.gameWinner) {
+      historyOpenedForGameEndRef.current = false;
+      return;
+    }
+    if (isHistoryOpen) {
+      historyOpenedForGameEndRef.current = true;
+    }
+  }, [game?.gameWinner, isHistoryOpen]);
+
+  useEffect(() => {
+    if (!game?.gameWinner) return;
+    const timer = setTimeout(() => {
+      if (!historyOpenedForGameEndRef.current) {
+        setIsHistoryOpen(true);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [game?.gameWinner]);
 
   // Play sounds based on game state changes
   useEffect(() => {
@@ -1115,219 +1136,24 @@ const GameTable: React.FC<GameTableProps> = ({
     );
   }
 
-  // Check for game completion
-  if (game.gameWinner) {
-    const winner = game.players.find((p) => p.id === game.gameWinner);
-    const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
-    const playersContinued = game.playersContinued ?? [];
-    const currentPlayerHasContinued = playersContinued.includes(localPlayerId);
-
-    // Show "waiting for others to continue" screen after the local player clicked continue
-    if (currentPlayerHasContinued) {
-      const humanPlayers = game.players.filter(
-        (p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI ')
-      );
-      return (
-        <div
-          className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center"
-          style={{ backgroundColor: '#0b2a1a' }}
-        >
-          <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
-            style={{ backgroundImage: "url(resources/bg.webp)" }}
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-60" />
-          <div
-            className="relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4"
-            style={{
-              backgroundColor: '#0f2a1b',
-              borderColor: '#8a6a1d',
-            }}
-          >
-            <div className="text-5xl mb-4">⏳</div>
-            <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
-            <div className="space-y-3">
-              {humanPlayers.map((p) => {
-                const hasContinued = playersContinued.includes(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
-                      hasContinued ? 'bg-[#1f3f2b] text-[#f5d98f]' : 'bg-[#163124] text-[#c6d4cb]'
-                    }`}
-                  >
-                    <span className="text-xl">{hasContinued ? '✅' : '⏳'}</span>
-                    <span className="font-semibold">{p.name}</span>
-                    {!hasContinued && (
-                      <span className="ml-auto text-xs opacity-70">{t('game.waitingForPlayerLabel')}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      );
+  const gameWinnerPlayer = game.gameWinner
+    ? game.players.find((p) => p.id === game.gameWinner)
+    : undefined;
+  const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
+  const playersContinued = game.playersContinued ?? [];
+  const currentPlayerHasContinued = playersContinued.includes(localPlayerId);
+  const handleGameEndContinue = async () => {
+    if (!game.id || !localPlayerId) {
+      onBack ? onBack() : window.location.reload();
+      return;
     }
-
-    const handleContinue = async () => {
-      if (!game.id || !localPlayerId) {
-        // Fallback for non-multiplayer or missing state
-        onBack ? onBack() : window.location.reload();
-        return;
-      }
-      try {
-        await gameApi.playerContinue(game.id, localPlayerId);
-        // Game state will be updated via WebSocket/polling
-      } catch (e) {
-        console.error('Failed to record continue:', e);
-        // Fallback: just go back to lobby
-        onBack ? onBack() : window.location.reload();
-      }
-    };
-
-    if (!isCurrentPlayerGameWinner) {
-      // ── LOSER SCREEN ──────────────────────────────────────────────
-      return (
-        <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--felt-bg)' }}>
-          <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-20"
-            style={{ backgroundImage: "url(resources/bg.webp)" }}
-          />
-          <div
-            className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
-            style={{
-              backgroundColor: 'var(--game-surface)',
-              borderColor: 'var(--game-border)',
-            }}
-          >
-            {!isDesktop && <div className="text-4xl mb-3">😔</div>}
-
-            <h1
-              className="text-2xl md:text-3xl font-bold mb-3"
-              style={{ color: 'var(--game-accent-text)' }}
-            >
-              {t('game.result.opponentHasWonGame', {
-                playerName: winner?.name || t('common.unknownPlayer'),
-              })}
-            </h1>
-
-            <div
-              className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
-              style={{
-                color: 'var(--game-accent-text)',
-                backgroundColor: 'var(--game-surface-soft)',
-                borderColor: 'var(--game-border-strong)',
-              }}
-            >
-              {t('game.result.youLoseGame')}
-            </div>
-
-            <button
-              onClick={handleContinue}
-              className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
-              style={{
-                backgroundColor: 'var(--game-surface-soft)',
-                borderColor: 'var(--game-border-strong)',
-                color: 'var(--game-accent-text)',
-              }}
-            >
-              {t('game.continue')}
-            </button>
-          </div>
-        </div>
-      );
+    try {
+      await gameApi.playerContinue(game.id, localPlayerId);
+    } catch (e) {
+      console.error('Failed to record continue:', e);
+      onBack ? onBack() : window.location.reload();
     }
-
-    // ── WINNER SCREEN (Dobbelkoning) ───────────────────────────────
-    const confettiItems = ['👑', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎆', '🏆', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎇', '👑', '🎊', '✨', '🎉', '🌟', '🎈'];
-    const confettiPositions = [4, 10, 17, 25, 33, 42, 50, 58, 66, 74, 81, 88, 7, 19, 30, 44, 56, 68, 79, 91, 13, 37, 62, 86];
-    const confettiDelays = [0, 0.3, 0.15, 0.6, 0.45, 0.9, 0.2, 0.75, 1.0, 0.5, 0.35, 0.8, 0.1, 0.65, 0.25, 0.55, 0.4, 0.7, 0.05, 0.85, 0.95, 0.4, 0.7, 0.3];
-    const confettiSizes = [28, 22, 18, 24, 20, 26, 22, 28, 18, 24, 20, 22, 28, 24, 18, 26, 20, 22, 28, 18, 24, 20, 26, 22];
-
-    return (
-      <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: 'var(--felt-bg)' }}>
-        <div
-          className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-20"
-          style={{ backgroundImage: "url(resources/bg.webp)" }}
-        />
-
-        {/* Confetti only on mobile/tablet */}
-        {animationsEnabled && !isDesktop && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-            {confettiItems.map((emoji, i) => (
-              <span
-                key={i}
-                className="absolute animate-float"
-                style={{
-                  left: `${confettiPositions[i]}%`,
-                  top: `${4 + (i % 6) * 14}%`,
-                  animationDelay: `${confettiDelays[i]}s`,
-                  animationDuration: `${2.0 + (i % 4) * 0.35}s`,
-                  fontSize: `${confettiSizes[i]}px`,
-                  opacity: 0.9,
-                }}
-              >
-                {emoji}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div
-          className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
-          style={{
-            backgroundColor: 'var(--game-surface)',
-            borderColor: 'var(--game-border)',
-          }}
-        >
-          <div
-            className={`mb-3 ${animationsEnabled && !isDesktop ? 'animate-float' : ''}`}
-            style={{ fontSize: isDesktop ? '2.5rem' : '5.5rem', lineHeight: 1 }}
-          >
-            👑
-          </div>
-
-          <h1
-            className="text-3xl font-bold mb-2"
-            style={{ color: 'var(--game-accent-text)' }}
-          >
-            {t('game.dobbelkoning')}
-          </h1>
-
-          <h2
-            className="text-xl font-semibold mb-4"
-            style={{ color: 'var(--game-text)' }}
-          >
-            {winner?.name || t('common.unknownPlayer')}
-          </h2>
-
-          <div
-            className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
-            style={{
-              color: 'var(--game-accent-text)',
-              backgroundColor: 'var(--game-surface-soft)',
-              borderColor: 'var(--game-border-strong)',
-            }}
-          >
-            {t('game.result.youWinGame')}
-          </div>
-
-          <button
-            onClick={handleContinue}
-            className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
-            style={{
-              backgroundColor: 'var(--game-surface-soft)',
-              borderColor: 'var(--game-border-strong)',
-              color: 'var(--game-accent-text)',
-            }}
-          >
-            {t('game.continue')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  };
 
   const localPlayer = getLocalPlayer();
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
@@ -1336,7 +1162,7 @@ const GameTable: React.FC<GameTableProps> = ({
       ? game.currentBid
       : null;
   const shouldShowPreviousBid = !!currentBidFromActivePlayer;
-  const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED");
+  const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED" || !!game.gameWinner);
   const snugMobileLayout = useMobileLayout && opponentsInTurnOrder.length >= 3;
 
   return (
@@ -1389,22 +1215,6 @@ const GameTable: React.FC<GameTableProps> = ({
             </div>
           </div>
 
-          {/* Mobile center status panel */}
-          <div className={snugMobileLayout ? "px-2 py-1" : "px-3 py-2"}>
-            <div className={`rounded-2xl border shadow-lg text-center ${snugMobileLayout ? "p-2" : "p-2.5"}`} style={{ borderColor: 'var(--game-border)', backgroundColor: 'var(--game-surface)' }}>
-              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--game-accent-text)' }}>
-                {t("game.round", { roundNumber: game.roundNumber })}
-              </div>
-              {currentBidFromActivePlayer ? (
-                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text)' }}>
-                  {t("game.currentBid")}: {currentBidFromActivePlayer.quantity}x{currentBidFromActivePlayer.faceValue}
-                </div>
-              ) : (
-                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text-muted)' }}>{t("game.waitingForFirstBid")}</div>
-              )}
-            </div>
-          </div>
-
           {/* Mobile Bid Display - Below opponents (when no results showing) */}
           {/* When the info panel is open, render as a fixed element below the panel so it isn't covered */}
           {currentBidFromActivePlayer &&
@@ -1452,18 +1262,6 @@ const GameTable: React.FC<GameTableProps> = ({
             </div>
           )}
 
-          {/* Waiting Message - In scrollable area, below results */}
-          {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
-            <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
-              <div className={`bg-[#0f2a1b] rounded-2xl md:rounded-3xl shadow-lg border-2 border-[#365844] max-w-sm w-full mx-auto ${snugMobileLayout ? "p-1.5" : "p-2 md:p-4"}`}>
-                <div className="text-center text-white text-sm md:text-lg font-bold">
-                  {localPlayer.eliminated
-                    ? t("game.waitingForNextRound")
-                    : t("game.waitingForTurn")}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Tablet landscape: bid readout centered above bidding controls, both above local player */}
@@ -1555,11 +1353,11 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Desktop Layout */}
       <div className="hidden lg:block">
-        {/* Current bid — separate, independently draggable */}
-        {currentBidFromActivePlayer &&
+        {/* Current bid — independent, centered above the dock */}
+        {showBidDisplay &&
           game.state !== "ROUND_ENDED" &&
           !game.showAllDice &&
-          showBidDisplay && (
+          !game.gameWinner && (
             <BidDisplay
               currentBid={currentBidFromActivePlayer}
               currentPlayerId={game.currentPlayerId}
@@ -1568,11 +1366,25 @@ const GameTable: React.FC<GameTableProps> = ({
               winner={game.winner || undefined}
               isMobile={false}
               draggable
+              statusLabel={
+                localPlayer?.eliminated
+                  ? t("game.waitingForNextRound")
+                  : isMyTurn()
+                    ? t("game.yourTurn")
+                    : (() => {
+                        const turnPlayer = game.players.find(
+                          (p) => p.id === game.currentPlayerId
+                        );
+                        return turnPlayer
+                          ? t("game.playersTurn", { name: turnPlayer.name })
+                          : t("game.waitingForTurn");
+                      })()
+              }
             />
           )}
 
-        {/* Local player + bid selector — one draggable dock */}
-        {localPlayer && (
+        {/* Local player + bid selector — one centered dock */}
+        {localPlayer && !game.gameWinner && (
           <DesktopPlayerDock
             playerSlot={
               <LocalPlayer
@@ -1658,24 +1470,6 @@ const GameTable: React.FC<GameTableProps> = ({
             />
           );
         })}
-      </div>
-
-      {/* Center Round & Bid Display - Desktop only (draggable) */}
-      <div className="hidden lg:block">
-        <DraggableGameInfo
-          roundLabel={t("game.round", { roundNumber: game.roundNumber })}
-          currentTurnLabel={
-            game.currentPlayerId
-              ? `${t("game.currentTurn")}: ${game.players.find(p => p.id === game.currentPlayerId)?.name || t("common.unknownPlayer")}`
-              : undefined
-          }
-          bidLabel={
-            currentBidFromActivePlayer
-              ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
-              : t("game.waitingForFirstBid")
-          }
-          activePlayersLabel={`${t("game.activePlayers")}: ${game.players.filter(p => !p.eliminated).length}/${game.players.length}`}
-        />
       </div>
 
       {/* Game Result Display - Desktop only */}
@@ -1853,7 +1647,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* History + chat panels - desktop */}
         {(!useMobileLayout && (isHistoryOpen || (isMultiplayerGame && showChat))) && (
-          <div className="mt-1 md:mt-2 hidden lg:flex absolute top-20 right-4 z-40 items-start justify-end gap-3">
+          <div className="mt-1 md:mt-2 hidden lg:flex absolute top-36 right-4 z-40 items-start justify-end gap-3">
             {isMultiplayerGame && showChat && (
               <ChatPanel
                 isOpen={showChat}
@@ -1936,6 +1730,146 @@ const GameTable: React.FC<GameTableProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Game end overlay — keeps top bar + history visible */}
+      {game.gameWinner && (
+        <div className="absolute inset-0 z-[35] flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 bg-black/50" />
+          {currentPlayerHasContinued ? (
+            <div
+              className="relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 pointer-events-auto"
+              style={{
+                backgroundColor: '#0f2a1b',
+                borderColor: '#8a6a1d',
+              }}
+            >
+              <div className="text-5xl mb-4">⏳</div>
+              <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
+              <div className="space-y-3">
+                {game.players
+                  .filter((p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI '))
+                  .map((p) => {
+                    const hasContinued = playersContinued.includes(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
+                          hasContinued ? 'bg-[#1f3f2b] text-[#f5d98f]' : 'bg-[#163124] text-[#c6d4cb]'
+                        }`}
+                      >
+                        <span className="text-xl">{hasContinued ? '✅' : '⏳'}</span>
+                        <span className="font-semibold">{p.name}</span>
+                        {!hasContinued && (
+                          <span className="ml-auto text-xs opacity-70">{t('game.waitingForPlayerLabel')}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : isCurrentPlayerGameWinner ? (
+            <div
+              className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 pointer-events-auto ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
+              style={{
+                backgroundColor: 'var(--game-surface)',
+                borderColor: 'var(--game-border)',
+              }}
+            >
+              {animationsEnabled && !isDesktop && (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+                  {['👑', '🎊', '✨', '🎉', '🌟', '🎈'].map((emoji, i) => (
+                    <span
+                      key={i}
+                      className="absolute animate-float"
+                      style={{
+                        left: `${10 + i * 14}%`,
+                        top: `${8 + (i % 3) * 20}%`,
+                        animationDelay: `${i * 0.2}s`,
+                        fontSize: '22px',
+                        opacity: 0.85,
+                      }}
+                    >
+                      {emoji}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div
+                className={`mb-3 ${animationsEnabled && !isDesktop ? 'animate-float' : ''}`}
+                style={{ fontSize: isDesktop ? '2.5rem' : '5.5rem', lineHeight: 1 }}
+              >
+                👑
+              </div>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--game-accent-text)' }}>
+                {t('game.dobbelkoning')}
+              </h1>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--game-text)' }}>
+                {gameWinnerPlayer?.name || t('common.unknownPlayer')}
+              </h2>
+              <div
+                className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+                style={{
+                  color: 'var(--game-accent-text)',
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                }}
+              >
+                {t('game.result.youWinGame')}
+              </div>
+              <button
+                onClick={handleGameEndContinue}
+                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                style={{
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                  color: 'var(--game-accent-text)',
+                }}
+              >
+                {t('game.continue')}
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 pointer-events-auto ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
+              style={{
+                backgroundColor: 'var(--game-surface)',
+                borderColor: 'var(--game-border)',
+              }}
+            >
+              {!isDesktop && <div className="text-4xl mb-3">😔</div>}
+              <h1
+                className="text-2xl md:text-3xl font-bold mb-3"
+                style={{ color: 'var(--game-accent-text)' }}
+              >
+                {t('game.result.opponentHasWonGame', {
+                  playerName: gameWinnerPlayer?.name || t('common.unknownPlayer'),
+                })}
+              </h1>
+              <div
+                className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+                style={{
+                  color: 'var(--game-accent-text)',
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                }}
+              >
+                {t('game.result.youLoseGame')}
+              </div>
+              <button
+                onClick={handleGameEndContinue}
+                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                style={{
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                  color: 'var(--game-accent-text)',
+                }}
+              >
+                {t('game.continue')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

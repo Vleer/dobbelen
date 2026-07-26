@@ -199,15 +199,14 @@ const LocalPlayer: React.FC<LocalPlayerProps> = ({ player, isMyTurn, isDealer, o
               {player.name}
             </span>
               </div>
-            {/* Current Bid Display - Show the bid placed by this player */}
+            {/* Previous bid — small dice */}
             {previousBid &&
               previousBid.playerId === player.id &&
               !player.eliminated && (
-                <div className="text-xs font-bold" style={{ color: 'var(--game-accent-text)' }}>
-                  {t('game.previousBid', {
-                    quantity: previousBid.quantity,
-                    faceValue: previousBid.faceValue,
-                  })}
+                <div className="flex items-center gap-0.5 flex-wrap">
+                  {Array.from({ length: previousBid.quantity }).map((_, index) => (
+                    <DiceSVG key={index} value={previousBid.faceValue} size="xs" />
+                  ))}
                 </div>
               )}
             </div>

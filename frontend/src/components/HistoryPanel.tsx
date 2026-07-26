@@ -51,6 +51,13 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
     }
   }, [isOpen, openedFromGameStart, onClearGameStartOpen]);
 
+  // At game end, show the hand that was just played as Last Hand
+  useEffect(() => {
+    if (game.gameWinner && isOpen) {
+      setActiveTab('lastHand');
+    }
+  }, [game.gameWinner, isOpen]);
+
   const refreshStats = useCallback(() => {
     const stored = loadGameStats(game.id);
     const merged: Record<string, PlayerGameStats> = {};
@@ -86,8 +93,16 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
       window.removeEventListener(GAME_STATS_UPDATED_EVENT, onStatsUpdated);
   }, [game.id, refreshStats]);
 
-  // Get the last hand data from previousRoundPlayers
-  const lastHandPlayers = game.previousRoundPlayers || [];
+  // Last hand: prefer previousRoundPlayers; at game/round end fall back to current players' dice
+  const lastHandPlayers =
+    game.previousRoundPlayers && game.previousRoundPlayers.length > 0
+      ? game.previousRoundPlayers
+      : game.gameWinner ||
+          game.state === 'GAME_ENDED' ||
+          game.state === 'ROUND_ENDED' ||
+          game.showAllDice
+        ? game.players.filter((p) => p.dice && p.dice.length > 0)
+        : [];
   const hasLastHandData = lastHandPlayers.length > 0;
 
   const resolvePlayer = (playerId?: string | null) => {
