@@ -1,4 +1,6 @@
-# Test stack (same images as develop). Use: docker compose -f docker-compose.test.yml up --build
+# Hot-reload local stack: Mongo + backend images, Vite frontend (no nginx rebuild).
+# Usage: ./run.sh --dev
+#    or: docker compose -f docker-compose.dev.yml up --build
 
 services:
   mongodb:
@@ -29,6 +31,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_ADDRESS=0.0.0.0
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
+      - APP_ALLOWED_ORIGINS=https://898944.xyz,http://localhost,http://localhost:3000,https://localhost,http://127.0.0.1,capacitor://localhost,http://192.168.0.150
     networks:
       - dobbelen-network
     depends_on:
@@ -42,12 +45,19 @@ services:
       start_period: 25s
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: dobbelen-frontend
+    image: node:18.20-alpine
+    container_name: frontend
+    working_dir: /app
     ports:
-      - "3000:80"
+      - "3000:3000"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - frontend_dev_node_modules:/app/node_modules
+    command: >
+      sh -c "npm ci --legacy-peer-deps --no-audit --no-fund &&
+             npm start -- --host 0.0.0.0 --port 3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -60,3 +70,4 @@ networks:
 
 volumes:
   mongodb-data:
+  frontend_dev_node_modules:

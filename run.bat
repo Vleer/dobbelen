@@ -1,37 +1,39 @@
 @echo off
 REM Dobbelen Game - Docker Run Script for Windows
+REM Prefer: run.sh on WSL/Git Bash. This mirrors the default (non-dev) path.
 
-echo 🎲 Starting Dobbelen Game with Docker Compose...
+set DOCKER_BUILDKIT=1
+set COMPOSE_DOCKER_CLI_BUILD=1
 
-REM Check if Docker is running
+echo Starting Dobbelen with Docker Compose...
+
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Docker is not running. Please start Docker first.
-    pause
-    exit /b 1
+  echo Docker is not running. Start Docker first.
+  pause
+  exit /b 1
 )
 
-REM Check if docker-compose is available
-docker-compose --version >nul 2>&1
+docker compose version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ docker-compose is not installed. Please install docker-compose first.
-    pause
-    exit /b 1
+  echo docker compose plugin is required.
+  pause
+  exit /b 1
 )
 
-REM Build and start services
-echo 🔨 Building and starting services...
-docker-compose up --build
+if not exist .docker-cache mkdir .docker-cache
 
-REM Keep window open
-echo ✅ Services are running!
-echo 🌐 Frontend: http://localhost:3000
-echo 🔧 Backend API: http://localhost:8080
-echo 📊 Backend Health: http://localhost:8080/actuator/health
-echo.
-echo Press any key to stop all services
-pause >nul
+echo Building in parallel...
+docker compose -f docker-compose.yml build --parallel
+if %errorlevel% neq 0 (
+  echo Build failed.
+  pause
+  exit /b 1
+)
 
-REM Stop services
-echo 🛑 Stopping containers...
-docker-compose down
+echo Starting services...
+docker compose -f docker-compose.yml up
+
+echo Stopping containers...
+docker compose -f docker-compose.yml down
+pause

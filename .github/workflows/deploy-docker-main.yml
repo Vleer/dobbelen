@@ -20,6 +20,8 @@ jobs:
       - dobbelen-deploy
     env:
       DEPLOY_PATH: /home/vleer/dobbelen
+      DOCKER_BUILDKIT: "1"
+      COMPOSE_DOCKER_CLI_BUILD: "1"
 
     steps:
       - name: Sync repository
@@ -39,13 +41,24 @@ jobs:
           [ -f docker-compose.prod.yml ] || { echo "docker-compose.prod.yml not found in $DEPLOY_PATH"; exit 1; }
           [ -f .env ] || { echo ".env not found in $DEPLOY_PATH (required for prod compose vars)"; exit 1; }
 
+      - name: Pre-pull base images
+        run: |
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          if [ -x ./scripts/docker-prepull.sh ]; then
+            ./scripts/docker-prepull.sh || true
+          fi
+
       - name: Deploy stack
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
+          mkdir -p .docker-cache
           docker compose --env-file .env -f docker-compose.prod.yml config >/dev/null
-          docker compose --env-file .env -f docker-compose.prod.yml pull || true
-          docker compose --env-file .env -f docker-compose.prod.yml up --build -d --remove-orphans
+          # Parallel BuildKit rebuild; pull only for non-built images (mongo, cloudflared)
+          docker compose --env-file .env -f docker-compose.prod.yml pull mongodb cloudflared || true
+          docker compose --env-file .env -f docker-compose.prod.yml build --parallel
+          docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
           docker compose --env-file .env -f docker-compose.prod.yml ps
           docker image prune -f
 
@@ -53,4 +66,4 @@ jobs:
         run: |
           echo "### Docker Deploy Complete :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Repository synced to latest **main** and production compose stack restarted." >> $GITHUB_STEP_SUMMARY
+          echo "Repository synced to latest **main** and production compose stack rebuilt with BuildKit." >> $GITHUB_STEP_SUMMARY

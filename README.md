@@ -18,7 +18,7 @@ Backend: Java, Spring Boot, WebSockets (STOMP). Frontend: React, TypeScript, Vit
 
 ## Run it
 
-**Docker (simplest):** from the repo root, `docker-compose up --build`, then open http://localhost:3000. More detail: [DOCKER_README.md](DOCKER_README.md).
+**Docker (simplest):** from the repo root, `./run.sh` (or `./run.sh --dev` for Vite hot reload), then open http://localhost:3000. More detail: [DOCKER_README.md](DOCKER_README.md).
 
 **Local:** start the backend (`cd backend && ./gradlew bootRun`, port 8080), then the frontend (`cd frontend && npm install && npm start`, port 3000).
 
