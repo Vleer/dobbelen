@@ -25,6 +25,8 @@ import ChatMessageToasts from './ChatMessageToasts';
 import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
 import ChatIcon from './ChatIcon';
+import { saveGameSnapshot } from '../utils/gameSnapshot';
+import { isTransientHttpError, userFacingApiError } from '../utils/httpError';
 
 interface GameTableProps {
   game?: Game | null;
@@ -61,7 +63,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => audioService.getMuted());
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [openedForGameStart, setOpenedForGameStart] = useState(false);
@@ -802,11 +804,16 @@ const GameTable: React.FC<GameTableProps> = ({
   }, [game]);
 
   // In multiplayer the broadcast response hides all dice. Fetch own dice so the local
-  // player can always see their own hand.
+  // player can always see their own hand. Only refetch when round / hand size / reveal changes
+  // (not on every turn change — that wasted traffic).
+  const localDiceCount = game?.players.find((p) => p.id === localPlayerId)?.diceCount;
+  const localDiceLength = game?.players.find((p) => p.id === localPlayerId)?.dice.length ?? 0;
   useEffect(() => {
     if (!game || !localPlayerId || !isMultiplayerGame) return;
-    if (game.showAllDice) return; // All dice already revealed
+    if (game.showAllDice) return;
     if (game.state !== 'IN_PROGRESS') return;
+    if (localDiceLength > 0 && localDiceLength === localDiceCount) return;
+
     let cancelled = false;
     gameApi.getMyDice(game.id, localPlayerId).then((myDice) => {
       if (cancelled) return;
@@ -822,7 +829,14 @@ const GameTable: React.FC<GameTableProps> = ({
     }).catch(() => { /* ignore – dice will be fetched on next update */ });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game?.id, game?.state, game?.showAllDice, game?.currentPlayerId, localPlayerId, isMultiplayerGame]);
+  }, [game?.id, game?.state, game?.showAllDice, game?.roundNumber, localPlayerId, isMultiplayerGame, localDiceCount, localDiceLength]);
+
+  // Persist last known game for snappy refresh restore (session-scoped)
+  useEffect(() => {
+    if (!game || !localPlayerId) return;
+    if (game.state !== 'IN_PROGRESS' && game.state !== 'ROUND_ENDED') return;
+    saveGameSnapshot(game, localPlayerId);
+  }, [game, localPlayerId]);
 
   // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
   useEffect(() => {
@@ -835,92 +849,61 @@ const GameTable: React.FC<GameTableProps> = ({
     return () => clearInterval(interval);
   }, [gameId, localPlayerId, isMultiplayerGame, game?.state]);
 
-  // Polling fallback for all games (in case WebSocket fails)
+  // Polling fallback — aggressive only when WebSocket is down; otherwise a slow safety net
   useEffect(() => {
-    const currentGame = gameRef.current;
-    console.log("Polling useEffect triggered:", {
-      gameId,
-      localPlayerId,
-    });
-    if (currentGame && gameId && localPlayerId) {
-      console.log("Starting polling for game:", gameId);
-      const pollInterval = setInterval(async () => {
-        try {
-          console.log("Polling game updates for game:", gameId);
-          const updatedGame = await gameApi.getMultiplayerGame(gameId, localPlayerId);
-          const previousGame = gameRef.current;
+    if (!gameId || !localPlayerId) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-          if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
+    const pollOnce = async () => {
+      try {
+        const updatedGame = await gameApi.getMultiplayerGame(gameId, localPlayerId);
+        if (cancelled) return;
+
+        if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
+          onBack?.();
+          return;
+        }
+
+        setGame((prev) => {
+          const next = withStableMultiplayerFlag(updatedGame);
+          if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
+            const prevLocal = prev.players.find(p => p.id === localPlayerId);
+            const nextLocal = next.players.find(p => p.id === localPlayerId);
+            if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
+              return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
+            }
+          }
+          return next;
+        });
+      } catch (err: unknown) {
+        console.error("Error polling game updates:", err);
+        if (err && typeof err === 'object' && 'response' in err) {
+          const axErr = err as { response?: { status?: number } };
+          if (axErr.response?.status === 404) {
             onBack?.();
-            return;
-          }
-
-          console.log(
-            "Polled game state:",
-            updatedGame.state,
-            "currentPlayerId:",
-            updatedGame.currentPlayerId,
-            "myPlayerId:",
-            localPlayerId
-          );
-
-          // Check if showAllDice state changed
-          if (previousGame && previousGame.showAllDice !== updatedGame.showAllDice) {
-            console.log(
-              "🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:",
-              previousGame.showAllDice,
-              "New:",
-              updatedGame.showAllDice,
-              "at",
-              new Date().toISOString()
-            );
-          }
-
-          // Check if the current player has changed
-          if (previousGame && previousGame.currentPlayerId !== updatedGame.currentPlayerId) {
-            console.log(
-              "🎯 TURN CHANGE DETECTED! Old:",
-              previousGame.currentPlayerId,
-              "New:",
-              updatedGame.currentPlayerId
-            );
-          }
-
-          setGame((prev) => {
-            const next = withStableMultiplayerFlag(updatedGame);
-            // In multiplayer with hidden dice, preserve already-fetched local player dice
-            // so the 1-second polling cycle doesn't wipe them out between getMyDice refreshes.
-            if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
-              const prevLocal = prev.players.find(p => p.id === localPlayerId);
-              const nextLocal = next.players.find(p => p.id === localPlayerId);
-              if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
-                return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
-              }
-            }
-            return next;
-          });
-        } catch (err: unknown) {
-          console.error("Error polling game updates:", err);
-          // Game was removed (e.g. cancelled after last player left) -> return to lobby
-          if (err && typeof err === 'object' && 'response' in err) {
-            const axErr = err as { response?: { status?: number } };
-            if (axErr.response?.status === 404) {
-              onBack?.();
-            }
           }
         }
-      }, 1000); // Poll every 1 second for faster updates
+      }
+    };
 
-      return () => {
-        console.log("Clearing polling interval for game:", gameId);
-        clearInterval(pollInterval);
-      };
-    } else {
-      console.log("Polling not started - conditions not met:", {
-        hasGame: !!currentGame,
-        hasLocalPlayerId: !!localPlayerId,
-      });
-    }
+    const schedule = () => {
+      const delay = webSocketService.isConnected() ? 15_000 : 2_000;
+      timeoutId = setTimeout(async () => {
+        await pollOnce();
+        if (!cancelled) schedule();
+      }, delay);
+    };
+
+    // Immediate sync on mount / reconnect, then back off when WS is healthy
+    pollOnce().then(() => {
+      if (!cancelled) schedule();
+    });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId, localPlayerId, withStableMultiplayerFlag]);
 
@@ -1080,14 +1063,19 @@ const GameTable: React.FC<GameTableProps> = ({
 
       // The game state will be updated via WebSocket subscription
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || err.message || `Failed to ${action}`;
-      setError(errorMessage);
-      console.error(`Error with ${action}:`, err);
-
-      // If there's an error, try to refresh the game state
-      if (game) {
-        refreshGame();
+      // Transient blips: refresh quietly; don't flash a 503 banner if the action may have landed.
+      if (isTransientHttpError(err)) {
+        console.warn(`Transient error with ${action}, refreshing state:`, err);
+        if (game) {
+          refreshGame();
+        }
+      } else {
+        const errorMessage = userFacingApiError(err, `Failed to ${action}`);
+        setError(errorMessage);
+        console.error(`Error with ${action}:`, err);
+        if (game) {
+          refreshGame();
+        }
       }
     } finally {
       setIsLoading(false);
@@ -1477,11 +1465,12 @@ const GameTable: React.FC<GameTableProps> = ({
         <GameResultDisplay game={game} currentPlayerId={localPlayerId} />
       </div>
 
-      {/* Error Display - Only show critical errors, not WebSocket warnings */}
+      {/* Error Display - Only show critical errors, not WebSocket / transient noise */}
       {error &&
         !error.toLowerCase().includes("stomp") &&
         !error.toLowerCase().includes("websocket") &&
-        !error.toLowerCase().includes("connection") && (
+        !error.toLowerCase().includes("connection") &&
+        !/^request failed with status code (502|503|504)/i.test(error) && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 border px-4 py-2 rounded-xl z-50" style={{ backgroundColor: 'var(--game-surface)', color: 'var(--game-text)', borderColor: 'var(--game-border-strong)' }}>
             {error}
           </div>

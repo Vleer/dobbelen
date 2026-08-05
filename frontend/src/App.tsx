@@ -15,6 +15,8 @@ import { getSessionLikeStorage } from "./config/storage";
 import { audioService } from "./services/audioService";
 import { getPlayerColorFromString } from "./utils/playerColors";
 import useWindowSize from "./utils/useWindowSize";
+import { clearGameSnapshot, loadGameSnapshot } from "./utils/gameSnapshot";
+import { PrefKeys, getBoolPref } from "./config/prefs";
 
 const GAME_SESSION_KEY = "game_session";
 
@@ -28,7 +30,7 @@ function App() {
   const [restored, setRestored] = useState(false);
   const [lobbyKey, setLobbyKey] = useState(0);
   const [showLobbySettings, setShowLobbySettings] = useState(false);
-  const [isLobbyMuted, setIsLobbyMuted] = useState(false);
+  const [isLobbyMuted, setIsLobbyMuted] = useState(() => audioService.getMuted());
   const lobbySettingsAnchorRef = useRef<HTMLDivElement>(null);
   const [lobbyMenuNarrow, setLobbyMenuNarrow] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
@@ -55,30 +57,51 @@ function App() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
+  // On load: restore in-progress game — paint cached snapshot immediately, then revalidate
   useEffect(() => {
     if (restored) return;
     setRestored(true);
     const storage = getSessionLikeStorage();
     const raw = storage.getItem(GAME_SESSION_KEY);
-    if (!raw) return;
+    if (!raw) {
+      clearGameSnapshot();
+      return;
+    }
     try {
       const { gameId, playerId: savedPlayerId, username: savedUsername } = JSON.parse(raw);
       if (!gameId || !savedPlayerId || !savedUsername) return;
-      gameApi.getMultiplayerGame(gameId)
+
+      const snapshot = loadGameSnapshot();
+      if (snapshot && snapshot.game.id === gameId && snapshot.playerId === savedPlayerId) {
+        setGame(snapshot.game);
+        setPlayerId(savedPlayerId);
+        setUsername(savedUsername);
+        setAppState("game");
+      }
+
+      gameApi.getMultiplayerGame(gameId, savedPlayerId)
         .then((g) => {
-          if (g.state === "IN_PROGRESS") {
+          if (g.state === "IN_PROGRESS" || g.state === "ROUND_ENDED") {
             setGame(g);
             setPlayerId(savedPlayerId);
             setUsername(savedUsername);
             setAppState("game");
           } else {
             storage.removeItem(GAME_SESSION_KEY);
+            clearGameSnapshot();
+            setAppState("lobby");
+            setGame(null);
           }
         })
-        .catch(() => storage.removeItem(GAME_SESSION_KEY));
+        .catch(() => {
+          storage.removeItem(GAME_SESSION_KEY);
+          clearGameSnapshot();
+          setAppState("lobby");
+          setGame(null);
+        });
     } catch {
       getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
+      clearGameSnapshot();
     }
   }, [restored]);
 
@@ -140,6 +163,7 @@ function App() {
     }
 
     storage.removeItem(GAME_SESSION_KEY);
+    clearGameSnapshot();
     setAppState('lobby');
     setGame(null);
     setUsername('');
@@ -307,7 +331,7 @@ function App() {
                 initialShowChat={initialGameChatOpen}
                 initialLastSeenIncomingCount={initialGameLastSeenChatCount}
                 onChatStateChange={handleGameChatStateChange}
-                minitutorial={localStorage.getItem('minitutorial_enabled') === 'true'}
+                minitutorial={getBoolPref(PrefKeys.minitutorialEnabled, false)}
               />
             ) : null}
           </div>

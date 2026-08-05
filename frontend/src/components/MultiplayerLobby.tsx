@@ -4,8 +4,12 @@ import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
 import { aiService } from '../services/aiService';
 import { audioService } from '../services/audioService';
+import { webSocketService } from '../services/websocketService';
 import { sanitizeUsername, MAX_USERNAME_LENGTH } from '../utils/username';
 import { getSessionLikeStorage } from '../config/storage';
+import { PrefKeys, getBoolPref, getStringPref, setBoolPref, setStringPref } from '../config/prefs';
+import { getStaleCached } from '../utils/cache';
+import { isTransientHttpError, userFacingApiError, withTransientRetry } from '../utils/httpError';
 import useWindowSize from '../utils/useWindowSize';
 
 interface MultiplayerLobbyProps {
@@ -36,7 +40,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const { t } = useLanguage();
   const storage = getSessionLikeStorage();
   const [gameId, setGameId] = useState("");
-  const [playerName, setPlayerName] = useState("");
+  const [playerName, setPlayerName] = useState(() => getStringPref(PrefKeys.lastUsername, ""));
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState("");
@@ -45,12 +49,19 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const [hasJoined, setHasJoined] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isPrivateGame, setIsPrivateGame] = useState(false);
-  const [minitutorialEnabled, setMinitutorialEnabled] = useState(() => localStorage.getItem('minitutorial_enabled') === 'true');
-  const [lobbyGames, setLobbyGames] = useState<Game[]>([]);
-  const [lobbyExpanded, setLobbyExpanded] = useState(false);
+  const [minitutorialEnabled, setMinitutorialEnabled] = useState(() => getBoolPref(PrefKeys.minitutorialEnabled, false));
+  const [lobbyGames, setLobbyGames] = useState<Game[]>(() => getStaleCached<Game[]>("multiplayer_lobby_list") ?? []);
+  const [lobbyExpanded, setLobbyExpanded] = useState(() => {
+    try {
+      return sessionStorage.getItem(PrefKeys.lobbyExpanded) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [internalShowChat, setInternalShowChat] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const { isMobile, isTablet } = useWindowSize();
   
   // Use external chat state if provided, otherwise use internal
@@ -60,6 +71,32 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const [nameFieldGlow, setNameFieldGlow] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const nameGlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gameRef = useRef<Game | null>(null);
+  const playerNameRef = useRef(playerName);
+  const myPlayerIdRef = useRef(myPlayerId);
+
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
+  useEffect(() => {
+    playerNameRef.current = playerName;
+  }, [playerName]);
+  useEffect(() => {
+    myPlayerIdRef.current = myPlayerId;
+  }, [myPlayerId]);
+
+  // Remember username across visits
+  useEffect(() => {
+    if (playerName.trim()) setStringPref(PrefKeys.lastUsername, playerName.trim());
+  }, [playerName]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(PrefKeys.lobbyExpanded, String(lobbyExpanded));
+    } catch {
+      /* ignore */
+    }
+  }, [lobbyExpanded]);
 
   const promptForName = useCallback(() => {
     setNameFieldGlow(false);
@@ -254,82 +291,119 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     };
   }, [isHost, game, gameId, myPlayerId]);
 
-  // Fetch lobby list when on main screen (no game joined)
+  // Fetch lobby list when on main screen (no game joined) — SWR + slower poll when cache is warm
   useEffect(() => {
     if (game || !isInitialized) return;
+    let cancelled = false;
+
     const loadLobby = async () => {
       try {
-        const list = await gameApi.listMultiplayerGames();
-        setLobbyGames(list);
+        const list = await gameApi.listMultiplayerGames((fresh) => {
+          if (!cancelled) setLobbyGames(fresh);
+        });
+        if (!cancelled) setLobbyGames(list);
       } catch {
-        setLobbyGames([]);
+        if (!cancelled) setLobbyGames((prev) => prev);
       }
     };
+
     loadLobby();
-    const interval = setInterval(loadLobby, 5000);
-    return () => clearInterval(interval);
+    // 10s when we already painted something; still responsive enough for public lobbies
+    const interval = setInterval(loadLobby, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [game, isInitialized]);
 
-  // Poll for game updates when in a game - only fetch, don't join
+  const applyLobbyGameUpdate = useCallback(
+    (updatedGame: Game) => {
+      updatedGame.players.forEach((player) => {
+        if (player.name.startsWith("ez AI ") || player.name.startsWith("🧠 AI ")) {
+          aiService.registerAIPlayer(player.id, player.name);
+        }
+      });
+
+      const currentPlayerId = myPlayerIdRef.current;
+      const currentPlayerName = playerNameRef.current;
+      const stillInGame = currentPlayerId
+        ? updatedGame.players.some((p) => p.id === currentPlayerId)
+        : updatedGame.players.some((p) => p.name === currentPlayerName);
+      if (!stillInGame) {
+        resetToMainLobby(updatedGame.id);
+        return;
+      }
+
+      const prev = gameRef.current;
+      if (
+        updatedGame.state === "IN_PROGRESS" &&
+        prev &&
+        (prev.state === "WAITING_FOR_PLAYERS" || prev.state === "COUNTDOWN")
+      ) {
+        const player = currentPlayerId
+          ? updatedGame.players.find((p) => p.id === currentPlayerId)
+          : updatedGame.players.find((p) => p.name === currentPlayerName);
+        if (player) {
+          onGameStart(updatedGame, player.id, player.name);
+        }
+      }
+
+      setGame(updatedGame);
+    },
+    [onGameStart, resetToMainLobby]
+  );
+
+  // Prefer WebSocket for waiting-room updates; REST poll is a backup only
   useEffect(() => {
-    if (!game || !gameId || !isInitialized) return;
+    if (!gameId || !hasJoined || !isInitialized) return;
 
-    const pollInterval = setInterval(async () => {
+    webSocketService.connect(gameId, {
+      onGameUpdate: applyLobbyGameUpdate,
+      onGameCancelled: () => resetToMainLobby(gameId),
+    });
+
+    return () => {
+      webSocketService.disconnect();
+    };
+  }, [gameId, hasJoined, isInitialized, applyLobbyGameUpdate, resetToMainLobby]);
+
+  // Poll for game updates when in a room — slow when WS connected, faster as fallback
+  useEffect(() => {
+    if (!gameId || !hasJoined || !isInitialized) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const pollOnce = async () => {
       try {
-        console.log("Polling game updates for gameId:", gameId);
         const updatedGame = await gameApi.getMultiplayerGame(gameId);
-        console.log(
-          "Polled game state:",
-          updatedGame.state,
-          "players:",
-          updatedGame.players.length
-        );
-
-        // Register AI players when game is updated
-        updatedGame.players.forEach((player) => {
-          if (
-            player.name.startsWith("ez AI ") ||
-            player.name.startsWith("🧠 AI ")
-          ) {
-            aiService.registerAIPlayer(player.id, player.name);
-            console.log("Registered AI player:", player.name, player.id);
-          }
-        });
-
-        // Kicked or no longer in game: return to main lobby (by id if we have it, else by name)
-        const stillInGame = myPlayerId
-          ? updatedGame.players.some((p) => p.id === myPlayerId)
-          : updatedGame.players.some((p) => p.name === playerName);
-        if (!stillInGame) {
-          resetToMainLobby(gameId);
-          return;
-        }
-
-        // Check if game has started (from waiting or from countdown)
-        if (
-          updatedGame.state === "IN_PROGRESS" &&
-          (game.state === "WAITING_FOR_PLAYERS" || game.state === "COUNTDOWN")
-        ) {
-          console.log("Game started! Transitioning to game table...");
-          const player = myPlayerId
-            ? updatedGame.players.find((p) => p.id === myPlayerId)
-            : updatedGame.players.find((p) => p.name === playerName);
-          if (player) {
-            onGameStart(updatedGame, player.id, player.name);
-          }
-        }
-
-        setGame(updatedGame);
+        if (!cancelled) applyLobbyGameUpdate(updatedGame);
       } catch (err: any) {
         console.error("Error polling game updates:", err);
         if (err.response?.status === 404) {
           resetToMainLobby(gameId);
+          return;
         }
       }
-    }, 1000); // Poll every 1 second so new joiners and kick are reflected quickly
+    };
 
-    return () => clearInterval(pollInterval);
-  }, [game, gameId, isInitialized, playerName, myPlayerId, onGameStart, resetToMainLobby]);
+    const schedule = () => {
+      const delay = webSocketService.isConnected() ? 12_000 : 2_000;
+      timeoutId = setTimeout(async () => {
+        await pollOnce();
+        if (!cancelled) schedule();
+      }, delay);
+    };
+
+    // Immediate fetch so reconnect/refresh isn't waiting on WS
+    pollOnce().then(() => {
+      if (!cancelled) schedule();
+    });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [gameId, hasJoined, isInitialized, applyLobbyGameUpdate, resetToMainLobby]);
 
   // Notify parent of game state changes
   useEffect(() => {
@@ -583,7 +657,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     checked={minitutorialEnabled}
                     onChange={(e) => {
                       setMinitutorialEnabled(e.target.checked);
-                      localStorage.setItem('minitutorial_enabled', e.target.checked ? 'true' : 'false');
+                      setBoolPref(PrefKeys.minitutorialEnabled, e.target.checked);
                     }}
                     className="w-3 h-3 rounded border-gray-300 text-green-600 focus:ring-green-500"
                   />
@@ -881,25 +955,57 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                 <button
                   onClick={async () => {
                     audioService.playRaise();
+                    if (isStarting) return;
+                    setIsStarting(true);
+                    setError("");
                     try {
                       console.log("Starting multiplayer game (3s countdown)...");
-                      const startedGame = await gameApi.startMultiplayerGame(gameId, myPlayerId ?? '');
-                      setGame(startedGame);
-                      setError("");
-                    } catch (err: any) {
-                      console.error("Error starting game:", err);
-                      setError(
-                        err.response?.data?.message ||
-                          err.message ||
-                          t("errors.failedToStart")
-                      );
+                      try {
+                        const startedGame = await gameApi.startMultiplayerGame(gameId, myPlayerId ?? '');
+                        setGame(startedGame);
+                        return;
+                      } catch (err: unknown) {
+                        // Start often succeeds server-side even if the response is a transient 503.
+                        // Reconcile before showing anything to the user.
+                        try {
+                          const current = await withTransientRetry(
+                            () => gameApi.getMultiplayerGame(gameId),
+                            { retries: 3, baseDelayMs: 250 }
+                          );
+                          if (
+                            current.state === "COUNTDOWN" ||
+                            current.state === "IN_PROGRESS" ||
+                            current.state === "ROUND_ENDED"
+                          ) {
+                            setGame(current);
+                            return;
+                          }
+                          if (
+                            current.state === "WAITING_FOR_PLAYERS" &&
+                            isTransientHttpError(err)
+                          ) {
+                            const startedGame = await gameApi.startMultiplayerGame(
+                              gameId,
+                              myPlayerId ?? ""
+                            );
+                            setGame(startedGame);
+                            return;
+                          }
+                        } catch {
+                          /* fall through to user-facing error */
+                        }
+                        console.error("Error starting game:", err);
+                        setError(userFacingApiError(err, t("errors.failedToStart")));
+                      }
+                    } finally {
+                      setIsStarting(false);
                     }
                   }}
                   className="w-full py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold text-lg md:text-xl disabled:opacity-50"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
-                  disabled={game.players.length < 2}
+                  disabled={game.players.length < 2 || isStarting}
                 >
-                  {t("lobby.startGame")}
+                  {isStarting ? (t("lobby.starting") || "Starting...") : t("lobby.startGame")}
                 </button>
                 {game.players.length < 2 && (
                   <p className="mt-1 text-xs text-center" style={{ color: 'var(--accent-gold)' }}>

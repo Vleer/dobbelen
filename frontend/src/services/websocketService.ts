@@ -168,6 +168,11 @@ export class WebSocketService {
       this.stompClient = null;
     }
   }
+
+  /** True when STOMP is actively connected (safe to skip aggressive REST polling). */
+  isConnected(): boolean {
+    return Boolean(this.stompClient?.connected);
+  }
 }
 
 export const webSocketService = new WebSocketService();
