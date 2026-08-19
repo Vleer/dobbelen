@@ -44,6 +44,16 @@ html.scale-x-large { font-size: 21px; }
   90%  { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
+@keyframes turn-glow {
+  0%, 100% { 
+    box-shadow: 0 0 24px 8px rgba(242, 201, 109, 0.5);
+    border-color: var(--game-highlight);
+  }
+  50% { 
+    box-shadow: 0 0 48px 16px rgba(242, 201, 109, 0.9);
+    border-color: var(--game-highlight);
+  }
+}
 @keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 18px 4px rgba(74, 222, 128, 0.35); }
   50%       { box-shadow: 0 0 44px 14px rgba(74, 222, 128, 0.85); }
@@ -73,6 +83,12 @@ html.scale-x-large { font-size: 21px; }
   65%  { transform: scale(0.88) rotate(-6deg); }
   82%  { transform: scale(1.12) rotate(3deg); }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes name-field-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 180, 90, 0); border-color: var(--panel-border); }
+  25%  { box-shadow: 0 0 14px 3px rgba(217, 180, 90, 0.55); border-color: var(--accent-gold); }
+  55%  { box-shadow: 0 0 22px 6px rgba(217, 180, 90, 0.75); border-color: var(--accent-gold); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 180, 90, 0); border-color: var(--panel-border); }
 }
 
 /* ── Color-scheme themes ─────────────────────────────────────────── */
@@ -111,9 +127,13 @@ html.scale-x-large { font-size: 21px; }
   --game-text: #f7f3e8;
   --game-text-muted: #b9cbbf;
   --game-accent-text: #f5d98f;
+  --menu-leave-bg: #3d1218;
+  --menu-leave-hover-bg: #5a1a22;
+  --menu-leave-border: #7a2a32;
+  --menu-leave-text: #f5dcdc;
 }
 
-/* Default theme now uses previous "white" (light green) palette */
+/* Light theme (lighter felt; internal class name theme-default) */
 html.theme-default {
   --felt-bg: #2b5a3d;
   --felt-bg-soft: #356b48;
@@ -148,9 +168,13 @@ html.theme-default {
   --game-text: #f7f3e8;
   --game-text-muted: #e5eee8;
   --game-accent-text: #f7f3e8;
+  --menu-leave-bg: #4a1218;
+  --menu-leave-hover-bg: #5e1a22;
+  --menu-leave-border: #8a3a44;
+  --menu-leave-text: #fff0f0;
 }
 
-/* Dark theme now uses previous default palette */
+/* Dark theme (app default) */
 html.theme-dark {
   --felt-bg: #0b2a1a;
   --felt-bg-soft: #0f2a1b;
@@ -185,6 +209,10 @@ html.theme-dark {
   --game-text: #f7f3e8;
   --game-text-muted: #b9cbbf;
   --game-accent-text: #f5d98f;
+  --menu-leave-bg: #3d1218;
+  --menu-leave-hover-bg: #5a1a22;
+  --menu-leave-border: #7a2a32;
+  --menu-leave-text: #f5dcdc;
 }
 
 /* White theme is monochrome (mostly white, no color accents) */
@@ -222,6 +250,10 @@ html.theme-white {
   --game-text: #111111;
   --game-text-muted: #5a5a5a;
   --game-accent-text: #000000;
+  --menu-leave-bg: #6b1818;
+  --menu-leave-hover-bg: #7f1f1f;
+  --menu-leave-border: #450a0a;
+  --menu-leave-text: #fef2f2;
 }
 
 .menu-shell {
@@ -233,7 +265,8 @@ html.theme-white {
   width: min(100%, 48rem);
   max-width: calc(100vw - 0.5rem);
   padding: 0.25rem 0.35rem;
-  overflow: hidden;
+  /* Must stay visible so language dropdown + settings panel are not clipped */
+  overflow: visible;
 }
 
 .menu-header-row {
@@ -291,4 +324,59 @@ html.theme-white {
 .menu-dropdown-item-active {
   background-color: var(--menu-dropdown-active-bg);
   color: var(--menu-dropdown-active-text);
+}
+
+/* Leave game (settings) — dark red, theme-aware */
+.settings-leave-game-btn {
+  background-color: var(--menu-leave-bg);
+  border-color: var(--menu-leave-border);
+  color: var(--menu-leave-text);
+}
+.settings-leave-game-btn:hover {
+  background-color: var(--menu-leave-hover-bg);
+}
+
+/* Chat-specific styles */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(138, 106, 29, 0.5);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 106, 29, 0.7);
+}
+
+/* Smooth slide up animation for chat messages and panel */
+@keyframes slide-up {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Bounce animation for typing dots */
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s ease-in-out infinite;
 }

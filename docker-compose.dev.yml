@@ -1,0 +1,73 @@
+# Hot-reload local stack: Mongo + backend images, Vite frontend (no nginx rebuild).
+# Usage: ./run.sh --dev
+#    or: docker compose -f docker-compose.dev.yml up --build
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: dobbelen-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=dobbelen
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - dobbelen-network
+    healthcheck:
+      test: ["CMD", "mongosh", "localhost:27017/dobbelen", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dobbelen-backend
+    ports:
+      - "0.0.0.0:8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_ADDRESS=0.0.0.0
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/dobbelen
+      - APP_ALLOWED_ORIGINS=https://898944.xyz,http://localhost,http://localhost:3000,https://localhost,http://127.0.0.1,capacitor://localhost,http://192.168.0.150
+    networks:
+      - dobbelen-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  frontend:
+    image: node:18.20-alpine
+    container_name: frontend
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - frontend_dev_node_modules:/app/node_modules
+    command: >
+      sh -c "npm ci --legacy-peer-deps --no-audit --no-fund &&
+             npm start -- --host 0.0.0.0 --port 3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - dobbelen-network
+
+networks:
+  dobbelen-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  frontend_dev_node_modules:

@@ -49,6 +49,13 @@ public class Game {
         }
     }
 
+    // Pass dealer button to the next player in sequence
+    public void passDealerToNextPlayer() {
+        if (!players.isEmpty()) {
+            dealerIndex = (dealerIndex + 1) % players.size();
+        }
+    }
+
     // Add win token to round winner and check for game winner
     public boolean addRoundWinner(String winnerId) {
         Player winnerPlayer = players.stream()
@@ -57,8 +64,6 @@ public class Game {
             .orElse(null);
         if (winnerPlayer != null) {
             winnerPlayer.addWinToken();
-            // Pass dealer button to the winner regardless of whether game is ending
-            passDealerToWinner(winnerId);
             if (winnerPlayer.getWinTokens() >= 7) {
                 gameWinner = winnerId;
                 state = GameState.GAME_ENDED;
@@ -88,6 +93,7 @@ public class Game {
     private Integer lastActualCount; // Store actual count from last doubt/spot-on
     private Integer lastBidQuantity; // Store bid quantity from last doubt/spot-on
     private Integer lastBidFaceValue; // Store bid face value from last doubt/spot-on
+    private String lastBidPlayerId; // Store bidder from last doubt/spot-on
     private String lastEliminatedPlayerId; // Store eliminated player from last action
     // Track the last action performer and type to display in UI
     private String lastActionPlayerId;
@@ -101,6 +107,13 @@ public class Game {
     private Long countdownEndTime;
     /** Players who have clicked "continue" after the game ended (to trigger a rematch) */
     private List<String> playersContinued;
+    /**
+     * Last time the host was actively present on the public lobby browser (epoch ms).
+     * Used to hide idle lobbies from the public list while the game still exists (direct link still works).
+     */
+    private Long lastHostLobbyPresenceAt;
+    /** Chat messages sent by players in this game/lobby */
+    private List<ChatMessage> chatMessages;
 
     public Game() {
         this.id = generateShortGameId();
@@ -112,7 +125,7 @@ public class Game {
         this.dealerIndex = 0;
         this.isMultiplayer = false;
         this.isPrivate = false;
-        this.maxPlayers = 6;
+        this.maxPlayers = 4;
         this.isWaitingForPlayers = true;
         this.showAllDice = false;
         this.canContinue = false;
@@ -120,12 +133,15 @@ public class Game {
         this.lastActualCount = null;
         this.lastBidQuantity = null;
         this.lastBidFaceValue = null;
+        this.lastBidPlayerId = null;
         this.lastEliminatedPlayerId = null;
         this.lastActionPlayerId = null;
         this.lastActionType = null;
         this.twoPlayerRoundStartIndex = null;
         this.currentHandBidHistory = new ArrayList<>();
         this.playersContinued = new ArrayList<>();
+        this.lastHostLobbyPresenceAt = null;
+        this.chatMessages = new ArrayList<>();
     }
 
     /** Reset this game back to WAITING_FOR_PLAYERS so all players can start a new game. */
@@ -153,11 +169,13 @@ public class Game {
         lastActualCount = null;
         lastBidQuantity = null;
         lastBidFaceValue = null;
+        lastBidPlayerId = null;
         lastEliminatedPlayerId = null;
         lastActionPlayerId = null;
         lastActionType = null;
         dealerIndex = 0;
         currentPlayerIndex = 0;
+        lastHostLobbyPresenceAt = System.currentTimeMillis();
     }
 
     private String generateShortGameId() {
@@ -344,6 +362,14 @@ public class Game {
         this.lastBidFaceValue = lastBidFaceValue;
     }
 
+    public String getLastBidPlayerId() {
+        return lastBidPlayerId;
+    }
+
+    public void setLastBidPlayerId(String lastBidPlayerId) {
+        this.lastBidPlayerId = lastBidPlayerId;
+    }
+
     public String getLastEliminatedPlayerId() {
         return lastEliminatedPlayerId;
     }
@@ -406,6 +432,25 @@ public class Game {
 
     public void setPlayersContinued(List<String> playersContinued) {
         this.playersContinued = playersContinued;
+    }
+
+    public Long getLastHostLobbyPresenceAt() {
+        return lastHostLobbyPresenceAt;
+    }
+
+    public void setLastHostLobbyPresenceAt(Long lastHostLobbyPresenceAt) {
+        this.lastHostLobbyPresenceAt = lastHostLobbyPresenceAt;
+    }
+
+    public List<ChatMessage> getChatMessages() {
+        if (chatMessages == null) {
+            chatMessages = new ArrayList<>();
+        }
+        return chatMessages;
+    }
+
+    public void setChatMessages(List<ChatMessage> chatMessages) {
+        this.chatMessages = chatMessages;
     }
 
     public void addBidToCurrentHand(Bid bid) {

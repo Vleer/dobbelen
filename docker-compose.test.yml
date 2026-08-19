@@ -1,4 +1,4 @@
-# Test: for now identical to develop (no separate test suite yet). Use: docker compose -f docker-compose.test.yml up --build
+# Test stack (same images as develop). Use: docker compose -f docker-compose.test.yml up --build
 
 services:
   mongodb:
@@ -36,10 +36,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 25s
 
   frontend:
     build:
@@ -53,8 +53,6 @@ services:
         condition: service_healthy
     networks:
       - dobbelen-network
-    environment:
-      - REACT_APP_BACKEND_URL=http://localhost:8080
 
 networks:
   dobbelen-network:

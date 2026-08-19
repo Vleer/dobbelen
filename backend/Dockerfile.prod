@@ -1,20 +1,19 @@
+# syntax=docker/dockerfile:1.7
 # Production backend build (used by docker-compose.prod.yml).
-# Use Gradle image for build stage so the wrapper does not need to download the distribution (avoids forceFetch failures in restricted network).
-FROM gradle:8.10-jdk21 AS builder
 
+FROM gradle:8.10-jdk21 AS builder
 WORKDIR /app
 
-COPY build.gradle .
-COPY settings.gradle .
+COPY build.gradle settings.gradle ./
 
-# Download dependencies only; cached unless build.gradle/settings.gradle change
-RUN gradle dependencies --no-daemon -x test || true
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    gradle dependencies --no-daemon -x test || true
 
 COPY src src
 
-RUN gradle build -x test --no-daemon
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    gradle build -x test --no-daemon
 
-# Runtime stage
 FROM eclipse-temurin:21-jre
 
 RUN apt-get update && \
@@ -23,12 +22,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /app
-
 COPY --from=builder /app/build/libs/backend-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=25s --retries=3 \
+  CMD curl -f -s http://localhost:8080/actuator/health || exit 1
 
-CMD ["java", "-jar", "app.jar"]
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

@@ -7,11 +7,17 @@ import DiceAnalysisChart from "./DiceAnalysisChart";
 interface GameResultDisplayProps {
   game: Game;
   currentPlayerId?: string;
+  /** overlay = draggable desktop popup; inline = static mobile card */
+  variant?: 'overlay' | 'inline';
+  compact?: boolean;
 }
+
+const DICE_PIPS = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
   game,
-  currentPlayerId,
+  variant = 'overlay',
+  compact = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -21,6 +27,7 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (variant !== 'overlay') return;
     if (
       e.target === containerRef.current ||
       (containerRef.current && containerRef.current.contains(e.target as Node))
@@ -65,206 +72,183 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
     return null;
   }
 
-  // Derive outcome information
-  const roundWinner = game.players.find((p) => p.id === game.winner);
   const eliminatedPlayer = game.players.find(
     (p) => p.id === game.lastEliminatedPlayerId
   );
-  const isCurrentPlayerWinner = !!currentPlayerId && game.winner === currentPlayerId;
-  const isCurrentPlayerEliminated =
-    !!currentPlayerId && game.lastEliminatedPlayerId === currentPlayerId;
+  const actor = game.players.find((p) => p.id === game.lastActionPlayerId);
+  const bidder = game.players.find((p) => p.id === game.lastBidPlayerId);
 
-  // Determine bid correctness
-  const bidWasCorrect =
-    game.lastActualCount !== undefined &&
-    game.lastBidQuantity !== undefined &&
-    game.lastActualCount >= game.lastBidQuantity;
+  const claimedQty = game.lastBidQuantity;
+  const actualQty = game.lastActualCount;
+  const faceValue = game.lastBidFaceValue;
+  const hasCounts =
+    claimedQty !== undefined &&
+    actualQty !== undefined &&
+    faceValue !== undefined;
 
-  // Theme colours based on personal outcome
-  let borderColor = '#78350f';
-  let bgColor = '#3d1f0d';
-  let glowAnimation = '';
-  if (isCurrentPlayerWinner) {
-    borderColor = '#22c55e';
-    bgColor = '#052e16';
-    glowAnimation = 'pulse-green';
-  } else if (isCurrentPlayerEliminated) {
-    borderColor = '#ef4444';
-    bgColor = '#2d0a0a';
-    glowAnimation = 'pulse-red';
+  const isSpotOn = game.lastActionType === 'SPOT_ON';
+  const isDoubt = game.lastActionType === 'DOUBT';
+
+  let verdictFailed = false;
+  let verdictKey = 'game.result.bidFailed';
+  if (hasCounts) {
+    if (isSpotOn) {
+      verdictFailed = actualQty !== claimedQty;
+      verdictKey = verdictFailed
+        ? 'game.result.spotOnFailed'
+        : 'game.result.spotOnSuccess';
+    } else {
+      // DOUBT (and fallback): bid fails when actual < claimed
+      verdictFailed = actualQty < claimedQty;
+      verdictKey = verdictFailed
+        ? 'game.result.bidFailed'
+        : 'game.result.bidHeld';
+    }
   }
 
-  const getActionIcon = () => {
-    switch (game.lastActionType) {
-      case 'DOUBT':   return '🤔';
-      case 'SPOT_ON': return '🎯';
-      default:         return '🎲';
+  const challengeLine = (() => {
+    const actorName = actor?.name || t('common.unknownPlayer');
+    const bidderName = bidder?.name || t('common.unknownPlayer');
+    if (isSpotOn) {
+      return t('game.result.calledSpotOn', {
+        caller: actorName,
+        bidder: bidderName,
+      });
     }
-  };
-
-  const getActionMessage = () => {
-    if (!game.lastActionType || !game.lastActionPlayerId) return '';
-    const actor =
-      game.players.find((p) => p.id === game.lastActionPlayerId)?.name ||
-      t('common.unknownPlayer');
-    switch (game.lastActionType) {
-      case 'DOUBT':   return t('game.action.doubt',  { playerName: actor });
-      case 'SPOT_ON': return t('game.action.spotOn', { playerName: actor });
-      case 'RAISE':   return t('game.action.raise',  { playerName: actor });
-      default:         return '';
-    }
-  };
-
-  const getResultMessage = () => {
-    if (
-      game.lastActualCount !== undefined &&
-      game.lastBidQuantity !== undefined &&
-      game.lastBidFaceValue !== undefined
-    ) {
-      const faceValue = game.lastBidFaceValue;
-      if (game.lastActualCount >= game.lastBidQuantity) {
-        return t('game.result.thereWere', {
-          actualCount: game.lastActualCount,
-          faceValue,
-        });
-      } else {
-        return t('game.result.thereWereOnly', {
-          actualCount: game.lastActualCount,
-          faceValue,
-        });
-      }
+    if (isDoubt || actor) {
+      return t('game.result.challenged', {
+        challenger: actorName,
+        bidder: bidderName,
+      });
     }
     return '';
-  };
+  })();
 
-  // Detect mobile mode
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const facePip = faceValue ? DICE_PIPS[faceValue] ?? String(faceValue) : '';
 
-  // Animation helper: staggered fade-in via inline style
-  const stagger = (delayMs: number): React.CSSProperties =>
-    animationsEnabled
-      ? { animation: `fade-in 0.45s ease-out ${delayMs}ms forwards`, opacity: 0 }
-      : {};
-
-  return (
+  const panel = (
     <div
-      className="absolute z-50"
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      className={`rounded-2xl border shadow-xl select-none overflow-hidden ${
+        animationsEnabled ? 'animate-fade-in' : ''
+      } ${
+        variant === 'overlay'
+          ? 'min-w-80 max-w-lg'
+          : compact
+            ? 'w-full'
+            : 'w-full max-w-lg mx-auto'
+      }`}
       style={{
-        left: position.x || '50%',
-        top: position.y || '50%',
-        transform: position.x ? 'none' : 'translate(-50%, -50%)',
-        cursor: isDragging ? 'grabbing' : 'grab',
+        backgroundColor: 'var(--game-surface)',
+        borderColor: 'var(--game-border-strong)',
+        cursor: variant === 'overlay' ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
     >
+      {/* Verdict banner — largest text */}
       <div
-        ref={containerRef}
-        onMouseDown={handleMouseDown}
-        className="border-4 rounded-3xl p-6 shadow-2xl text-center min-w-80 max-w-lg select-none"
-        style={{
-          backgroundColor: bgColor,
-          borderColor,
-          ...(animationsEnabled
+        className={`text-center font-black uppercase tracking-wide ${
+          compact ? 'text-base px-3 py-2' : 'text-xl md:text-2xl px-4 py-3'
+        }`}
+        style={
+          verdictFailed
             ? {
-                animation: glowAnimation
-                  ? `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, ${glowAnimation} 1.6s ease-in-out 0.5s infinite`
-                  : 'bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                backgroundColor: 'rgba(160, 45, 55, 0.92)',
+                color: '#fff5f5',
+                borderBottom: '1px solid rgba(255, 180, 180, 0.35)',
               }
-            : {}),
-        }}
+            : {
+                backgroundColor: 'rgba(34, 110, 70, 0.95)',
+                color: 'var(--game-accent-text)',
+                borderBottom: '1px solid var(--game-border-strong)',
+              }
+        }
       >
-        {/* ── Action header ──────────────────────────────────────────── */}
-        <div
-          className="text-2xl font-bold text-amber-200 mb-3 flex items-center justify-center gap-2"
-          style={stagger(0)}
-        >
-          <span className="text-3xl">{getActionIcon()}</span>
-          <span>{getActionMessage()}</span>
-        </div>
+        {verdictFailed ? '❌ ' : '✓ '}
+        {t(verdictKey)}
+      </div>
 
-        {/* ── Dice count result ──────────────────────────────────────── */}
-        {getResultMessage() && (
-          <div
-            className="text-lg font-semibold text-amber-100 mb-2"
-            style={stagger(80)}
+      <div className={compact ? 'px-3 py-2.5 space-y-2.5' : 'px-5 py-4 space-y-3.5'}>
+        {/* Challenge narrative */}
+        {challengeLine && (
+          <p
+            className={`text-center font-medium ${compact ? 'text-sm' : 'text-base'}`}
+            style={{ color: 'var(--game-text)' }}
           >
-            {getResultMessage()}
+            {challengeLine}
+          </p>
+        )}
+
+        {/* Claimed → Actual */}
+        {hasCounts && (
+          <div
+            className="rounded-xl border px-3 py-3"
+            style={{
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border)',
+            }}
+          >
+            <div className="flex items-center justify-center gap-3 md:gap-5">
+              <div className="flex-1 text-center min-w-0">
+                <div
+                  className="text-[10px] md:text-xs uppercase tracking-wider font-semibold mb-1.5"
+                  style={{ color: 'var(--game-text-muted)' }}
+                >
+                  {t('game.result.claimed')}
+                </div>
+                <div
+                  className={`font-bold tabular-nums ${compact ? 'text-xl' : 'text-2xl md:text-3xl'}`}
+                  style={{ color: 'var(--game-text)' }}
+                >
+                  {claimedQty} × <span className="inline-block translate-y-px">{facePip}</span>
+                </div>
+              </div>
+
+              <div
+                className={`flex-shrink-0 font-bold ${compact ? 'text-lg' : 'text-xl md:text-2xl'}`}
+                style={{ color: 'var(--game-accent-text)' }}
+                aria-hidden
+              >
+                →
+              </div>
+
+              <div className="flex-1 text-center min-w-0">
+                <div
+                  className="text-[10px] md:text-xs uppercase tracking-wider font-semibold mb-1.5"
+                  style={{ color: 'var(--game-text-muted)' }}
+                >
+                  {t('game.result.actual')}
+                </div>
+                <div
+                  className={`font-bold tabular-nums ${compact ? 'text-xl' : 'text-2xl md:text-3xl'}`}
+                  style={{
+                    color: verdictFailed
+                      ? '#f0a0a0'
+                      : 'var(--game-accent-text)',
+                  }}
+                >
+                  {actualQty} × <span className="inline-block translate-y-px">{facePip}</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* ── Bid correctness badge ─────────────────────────────────── */}
-        {game.lastActualCount !== undefined && (
+        {/* Elimination consequence */}
+        {eliminatedPlayer && (
           <div
-            className={`inline-block px-4 py-1 rounded-full text-sm font-bold mb-4 ${
-              bidWasCorrect
-                ? 'bg-green-800 text-green-300 border border-green-500'
-                : 'bg-red-900 text-red-300 border border-red-600'
+            className={`flex items-center justify-center gap-2 rounded-xl border font-semibold ${
+              compact ? 'text-sm px-3 py-2' : 'text-base px-4 py-2.5'
             }`}
-            style={stagger(160)}
+            style={{
+              backgroundColor: 'var(--game-surface-soft)',
+              borderColor: 'var(--game-border)',
+              color: 'var(--game-text)',
+            }}
           >
-            {bidWasCorrect
-              ? t('game.result.bidWasCorrect')
-              : t('game.result.bidWasWrong')}
-          </div>
-        )}
-
-        {/* ── Round winner banner ────────────────────────────────────── */}
-        {roundWinner && (
-          <div
-            className="flex items-center justify-center gap-2 mb-3"
-            style={stagger(260)}
-          >
-            <span
-              className="inline-block"
-              style={{
-                fontSize: '2rem',
-                ...(animationsEnabled
-                  ? {
-                      // trophy-pop: 280ms delay + 650ms duration = 930ms; float starts at 950ms
-                      animation:
-                        'trophy-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 280ms both, float 2.4s ease-in-out 950ms infinite',
-                    }
-                  : {}),
-              }}
-            >
-              🏆
+            <span className={compact ? 'text-base' : 'text-lg'} aria-hidden>
+              💔
             </span>
-            <span className="text-2xl font-extrabold text-amber-400">
-              {t('game.result.winsRound', { playerName: roundWinner.name })}
-            </span>
-          </div>
-        )}
-
-        {/* ── Personal outcome highlight ────────────────────────────── */}
-        {(isCurrentPlayerWinner || isCurrentPlayerEliminated) && (
-          <div
-            className={`rounded-2xl px-5 py-3 mb-3 text-xl font-extrabold tracking-wide ${
-              isCurrentPlayerWinner
-                ? 'bg-green-800 text-green-300 border-2 border-green-500'
-                : 'bg-red-900 text-red-300 border-2 border-red-600'
-            }`}
-            style={animationsEnabled ? {
-              // bounce-in starts at 340 ms; flash starts after bounce completes (~840 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 340ms both, flash 0.8s ease-in-out 860ms infinite`,
-              opacity: 0,
-            } : {}}
-          >
-            {isCurrentPlayerWinner
-              ? t('game.result.youWinRound')
-              : t('game.result.youLoseRound')}
-          </div>
-        )}
-
-        {/* ── Eliminated player ─────────────────────────────────────── */}
-        {!isMobile && eliminatedPlayer && (
-          <div
-            className="text-lg font-bold text-red-400 mb-3 flex items-center justify-center gap-1"
-            style={animationsEnabled ? {
-              // bounce-in starts at 420 ms; flash starts after bounce completes (~920 ms)
-              animation: `bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 420ms both, flash 0.8s ease-in-out 940ms infinite`,
-              opacity: 0,
-            } : {}}
-          >
-            <span>💀</span>
             <span>
               {t('game.result.isEliminated', {
                 playerName: eliminatedPlayer.name,
@@ -273,16 +257,27 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
           </div>
         )}
 
-        {/* ── Dice analysis chart ───────────────────────────────────── */}
-        {!isMobile && (
-          <div style={stagger(500)}>
-            <DiceAnalysisChart game={game} />
-          </div>
-        )}
+        <DiceAnalysisChart game={game} />
       </div>
+    </div>
+  );
+
+  if (variant === 'inline') {
+    return panel;
+  }
+
+  return (
+    <div
+      className="absolute z-50"
+      style={{
+        left: position.x || '50%',
+        top: position.y || '50%',
+        transform: position.x ? 'none' : 'translate(-50%, -50%)',
+      }}
+    >
+      {panel}
     </div>
   );
 };
 
 export default GameResultDisplay;
-

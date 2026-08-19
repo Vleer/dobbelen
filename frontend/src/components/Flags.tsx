@@ -56,6 +56,22 @@ const Flag: React.FC<FlagProps> = ({ code, className }) => {
             <rect y="400" width="900" height="200" fill="#FFCC00" />
           </svg>
         );
+    case 'es':
+      return (
+        <svg {...commonProps}>
+          <rect width="900" height="150" fill="#AA151B" />
+          <rect y="150" width="900" height="300" fill="#F1BF00" />
+          <rect y="450" width="900" height="150" fill="#AA151B" />
+        </svg>
+      );
+    case 'cs':
+      return (
+        <svg {...commonProps}>
+          <rect width="900" height="300" fill="#FFFFFF" />
+          <rect y="300" width="900" height="300" fill="#D7141A" />
+          <polygon points="0,0 0,600 450,300" fill="#11457E" />
+        </svg>
+      );
     default:
       return null;
   }

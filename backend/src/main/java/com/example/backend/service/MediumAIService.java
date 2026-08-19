@@ -99,7 +99,7 @@ public class MediumAIService {
         }
         
         long timeSinceEnd = System.currentTimeMillis() - endTime;
-        return timeSinceEnd >= 6000;
+        return timeSinceEnd >= 8000;
     }
     
     /**

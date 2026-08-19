@@ -7,7 +7,11 @@ interface SettingsPanelProps {
   onClose: () => void;
   onLeaveGame?: () => void;
   leaveGameLabel?: string;
+  onEndGame?: () => void;
+  endGameLabel?: string;
   mobileCentered?: boolean;
+  /** Clicks inside this element (e.g. the settings gear wrapper) do not count as "outside" the panel */
+  anchorRef?: React.RefObject<HTMLElement | null>;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -15,29 +19,45 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onClose,
   onLeaveGame,
   leaveGameLabel,
+  onEndGame,
+  endGameLabel,
   mobileCentered = false,
+  anchorRef,
 }) => {
   const { colorScheme, setColorScheme, fontSize, setFontSize, animationsEnabled, setAnimationsEnabled } = useSettings();
   const { t } = useLanguage();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  // Close on outside click (gear button lives outside the panel DOM — exclude via anchorRef)
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
+      const t = e.target as Node;
+      if (anchorRef?.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      onClose();
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, onClose, anchorRef]);
+
+  // ESC closes settings
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const colorOptions: { value: ColorScheme; label: string }[] = [
-    { value: 'default', label: t('settings.colorDefault') },
     { value: 'dark', label: t('settings.colorDark') },
+    { value: 'default', label: t('settings.colorLight') },
     { value: 'white', label: t('settings.colorWhite') },
   ];
 
@@ -150,14 +170,28 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {onLeaveGame && (
         <button
+          type="button"
           onClick={() => {
             onClose();
             onLeaveGame();
           }}
-          className="w-full mt-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors menu-pill border"
-          style={{ borderColor: 'var(--menu-dropdown-border)' }}
+          className="settings-leave-game-btn w-full mt-4 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
         >
           {leaveGameLabel || t('game.leaveGame')}
+        </button>
+      )}
+
+      {onEndGame && (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            onEndGame();
+          }}
+          className="w-full mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
+          style={{ borderColor: '#ef4444', color: '#ef4444', backgroundColor: 'transparent' }}
+        >
+          {endGameLabel || t('game.endGame')}
         </button>
       )}
     </div>

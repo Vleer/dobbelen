@@ -280,11 +280,19 @@ export const StatisticsProvider: React.FC<StatisticsProviderProps> = ({ children
   };
 
   const trackGameEnd = (winner: Player, game: Game) => {
-    setStatistics(prev => ({
-      ...prev,
-      totalGames: prev.totalGames + 1,
-      totalWins: prev.totalWins + 1 // Assuming tracking for the current player
-    }));
+    setStatistics(prev => {
+      // Get the local player ID from localStorage or context
+      // Note: Statistics are per-device, not per-player
+      // We should only increment wins if the winner matches the device's player
+      const localPlayerId = localStorage.getItem('playerId');
+      const isLocalPlayerWinner = winner.id === localPlayerId;
+      
+      return {
+        ...prev,
+        totalGames: prev.totalGames + 1,
+        totalWins: prev.totalWins + (isLocalPlayerWinner ? 1 : 0)
+      };
+    });
   };
 
   const resetStatistics = () => {

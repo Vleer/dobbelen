@@ -9,6 +9,8 @@ export interface WindowSize {
   isMobile: boolean;
   isTablet: boolean;
   isDesktop: boolean;
+  /** True when viewport width > height (tablet landscape, phone landscape) */
+  isLandscape: boolean;
 }
 
 const getWindowSize = (): WindowSize => {
@@ -20,6 +22,7 @@ const getWindowSize = (): WindowSize => {
     isMobile: width < MOBILE_BREAKPOINT,
     isTablet: width >= MOBILE_BREAKPOINT && width < TABLET_BREAKPOINT,
     isDesktop: width >= TABLET_BREAKPOINT,
+    isLandscape: width > height,
   };
 };
 

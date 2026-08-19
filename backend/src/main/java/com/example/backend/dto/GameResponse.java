@@ -2,6 +2,7 @@ package com.example.backend.dto;
 
 import com.example.backend.model.Game;
 import com.example.backend.model.Player;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,15 +19,19 @@ public class GameResponse {
     private String winner;
     private String gameWinner;
     private String dealerId;
+    @JsonProperty("isMultiplayer")
     private boolean isMultiplayer;
+    @JsonProperty("isPrivate")
     private boolean isPrivate;
     private int maxPlayers;
+    @JsonProperty("isWaitingForPlayers")
     private boolean isWaitingForPlayers;
     private boolean showAllDice;
     private List<PlayerInfo> previousRoundPlayers;
     private Integer lastActualCount;
     private Integer lastBidQuantity;
     private Integer lastBidFaceValue;
+    private String lastBidPlayerId;
     private String lastEliminatedPlayerId;
     private boolean canContinue;
     private String lastActionPlayerId;
@@ -34,13 +39,39 @@ public class GameResponse {
     private List<BidInfo> currentHandBidHistory;
     private Long countdownEndTime;
     private List<String> playersContinued;
+    private List<ChatMessageInfo> chatMessages;
 
     public GameResponse() {}
 
+    /**
+     * Build a response that is safe to broadcast to ALL players.
+     * In multiplayer games the dice values of each player are hidden (set to an
+     * empty list) unless the round-reveal flag {@code showAllDice} is active.
+     * Use {@link #GameResponse(Game, String)} to build a personalised response
+     * that includes the requesting player's own dice.
+     */
     public GameResponse(Game game) {
+        this(game, null);
+    }
+
+    /**
+     * Build a personalised response.  When {@code viewerPlayerId} is supplied
+     * and the game is multiplayer the response includes full dice values only
+     * for the player whose id matches {@code viewerPlayerId}; all other players'
+     * dice are hidden.  Pass {@code null} to produce a broadcast-safe response
+     * (all dice hidden in multiplayer unless {@code showAllDice} is set).
+     */
+    public GameResponse(Game game, String viewerPlayerId) {
+        boolean hideDice = game.isMultiplayer() && !game.isShowAllDice();
         this.id = game.getId();
         this.players = game.getPlayers().stream()
-                .map(PlayerInfo::new)
+                .map(p -> {
+                    PlayerInfo info = new PlayerInfo(p);
+                    if (hideDice && !p.getId().equals(viewerPlayerId)) {
+                        info.setDice(new ArrayList<>());
+                    }
+                    return info;
+                })
                 .toList();
         this.state = game.getState().name();
         this.currentPlayerId = game.getCurrentPlayer() != null ? game.getCurrentPlayer().getId() : null;
@@ -62,6 +93,7 @@ public class GameResponse {
         this.lastActualCount = game.getLastActualCount();
         this.lastBidQuantity = game.getLastBidQuantity();
         this.lastBidFaceValue = game.getLastBidFaceValue();
+        this.lastBidPlayerId = game.getLastBidPlayerId();
         this.lastEliminatedPlayerId = game.getLastEliminatedPlayerId();
         this.canContinue = game.isCanContinue();
     this.lastActionPlayerId = game.getLastActionPlayerId();
@@ -72,6 +104,9 @@ public class GameResponse {
         this.countdownEndTime = game.getCountdownEndTime();
         this.playersContinued = game.getPlayersContinued() != null
             ? new ArrayList<>(game.getPlayersContinued())
+            : new ArrayList<>();
+        this.chatMessages = game.getChatMessages() != null
+            ? game.getChatMessages().stream().map(ChatMessageInfo::new).toList()
             : new ArrayList<>();
     }
 
@@ -196,6 +231,14 @@ public class GameResponse {
         this.lastBidFaceValue = lastBidFaceValue;
     }
 
+    public String getLastBidPlayerId() {
+        return lastBidPlayerId;
+    }
+
+    public void setLastBidPlayerId(String lastBidPlayerId) {
+        this.lastBidPlayerId = lastBidPlayerId;
+    }
+
     public String getLastEliminatedPlayerId() {
         return lastEliminatedPlayerId;
     }
@@ -250,6 +293,41 @@ public class GameResponse {
 
     public void setPlayersContinued(List<String> playersContinued) {
         this.playersContinued = playersContinued;
+    }
+
+    public List<ChatMessageInfo> getChatMessages() {
+        return chatMessages;
+    }
+
+    public void setChatMessages(List<ChatMessageInfo> chatMessages) {
+        this.chatMessages = chatMessages;
+    }
+
+    public static class ChatMessageInfo {
+        private String id;
+        private String playerId;
+        private String playerName;
+        private String text;
+        private long timestamp;
+
+        public ChatMessageInfo(com.example.backend.model.ChatMessage msg) {
+            this.id = msg.getId();
+            this.playerId = msg.getPlayerId();
+            this.playerName = msg.getPlayerName();
+            this.text = msg.getText();
+            this.timestamp = msg.getTimestamp();
+        }
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getPlayerId() { return playerId; }
+        public void setPlayerId(String playerId) { this.playerId = playerId; }
+        public String getPlayerName() { return playerName; }
+        public void setPlayerName(String playerName) { this.playerName = playerName; }
+        public String getText() { return text; }
+        public void setText(String text) { this.text = text; }
+        public long getTimestamp() { return timestamp; }
+        public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
     }
 
     public static class PlayerInfo {

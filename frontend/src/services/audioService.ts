@@ -4,10 +4,11 @@ import doubtUrl from '../resources/doubt.wav';
 import spotOnUrl from '../resources/spot_on.wav';
 import raiseUrl from '../resources/raise.wav';
 import winUrl from '../resources/win.wav';
+import { PrefKeys, getBoolPref, setBoolPref } from '../config/prefs';
 
 class AudioService {
   private sounds: { [key: string]: HTMLAudioElement } = {};
-  private isMuted: boolean = false;
+  private isMuted: boolean = getBoolPref(PrefKeys.soundMuted, false);
   private initialized: boolean = false;
 
   private initializeSounds() {
@@ -46,7 +47,11 @@ class AudioService {
 
   setMuted(muted: boolean) {
     this.isMuted = muted;
-    console.log('Audio muted:', muted);
+    setBoolPref(PrefKeys.soundMuted, muted);
+  }
+
+  getMuted(): boolean {
+    return this.isMuted;
   }
 
   private play(soundKey: string) {

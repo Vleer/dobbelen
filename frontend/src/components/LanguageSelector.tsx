@@ -71,7 +71,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }}
           />
           
-          {/* Dropdown */}
+          {/* Dropdown (visible now that menu-header-shell is not overflow:hidden) */}
           <div className={`absolute right-0 top-full mt-2 ${compact ? 'w-44' : 'w-48'} rounded-xl shadow-2xl z-20 menu-dropdown`}>
             <div className="py-1.5">
               {availableLanguages.map((language) => (

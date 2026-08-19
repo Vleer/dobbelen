@@ -7,48 +7,69 @@ import { audioService } from '../services/audioService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useStatistics } from '../contexts/StatisticsContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { getPlayerColorFromString } from '../utils/playerColors';
 import LocalPlayer from './LocalPlayer';
 import OpponentPlayer from './OpponentPlayer';
 import BidDisplay from './BidDisplay';
 import BidSelector from './BidSelector';
+import DesktopPlayerDock from './DesktopPlayerDock';
 import GameResultDisplay from './GameResultDisplay';
 import GameSetup from './GameSetup';
 import LanguageSelector from './LanguageSelector';
 import SettingsPanel from './SettingsPanel';
-import DiceAnalysisChart from './DiceAnalysisChart';
 import StatisticsDisplay from './StatisticsDisplay';
-import HistoryPanel, { trackPlayerAction } from './HistoryPanel';
+import HistoryPanel from './HistoryPanel';
+import { recordRevealStats, buildRevealEventId } from '../utils/gameStats';
+import ChatPanel from './ChatPanel';
+import ChatMessageToasts from './ChatMessageToasts';
+import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
+import ChatIcon from './ChatIcon';
+import { saveGameSnapshot } from '../utils/gameSnapshot';
+import { isTransientHttpError, userFacingApiError } from '../utils/httpError';
 
 interface GameTableProps {
   game?: Game | null;
   username?: string;
   playerId?: string;
-  onBack?: () => void;
+  onBack?: (options?: { preserveLobby?: boolean; game?: Game | null }) => void;
+  initialShowChat?: boolean;
+  initialLastSeenIncomingCount?: number;
+  onChatStateChange?: (isOpen: boolean, lastSeenIncomingCount: number) => void;
+  minitutorial?: boolean;
 }
 
 const GameTable: React.FC<GameTableProps> = ({ 
   game: initialGame, 
   username: initialUsername, 
   playerId: initialPlayerId, 
-  onBack
+  onBack,
+  initialShowChat = false,
+  initialLastSeenIncomingCount = 0,
+  onChatStateChange,
+  minitutorial = false,
 }) => {
   const { t } = useLanguage();
-  const { trackBid } = useStatistics();
+  const { trackBid, trackDoubt, trackRoundEnd, trackDiceRoll, trackGameEnd } = useStatistics();
   const { animationsEnabled } = useSettings();
-  const { isMobile, isTablet } = useWindowSize();
+  const { isMobile, isTablet, isLandscape, isDesktop } = useWindowSize();
   const useMobileLayout = isMobile || isTablet;
+  /** Tablet width + landscape: lg:hidden layout — stack bid readout above controls above local player */
+  const tabletLandscapeStack = isTablet && isLandscape;
+  /** Tablet portrait: center bidding UI in the row */
+  const portraitTablet = isTablet && !isLandscape;
   const [game, setGame] = useState<Game | null>(initialGame || null);
   const [localPlayerId, setLocalPlayerId] = useState<string>(initialPlayerId || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [bettingDisabled, setBettingDisabled] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => audioService.getMuted());
   const [showBidDisplay, setShowBidDisplay] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [openedForGameStart, setOpenedForGameStart] = useState(false);
   const [showRulesTooltip, setShowRulesTooltip] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   const [playerLeftNotification, setPlayerLeftNotification] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -65,13 +86,49 @@ const GameTable: React.FC<GameTableProps> = ({
   const [previousBidKey, setPreviousBidKey] = useState<string>('');
   const [historyPanelBottom, setHistoryPanelBottom] = useState<number>(0);
   const [dealerChipPos, setDealerChipPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [dealerChipDragging, setDealerChipDragging] = useState(false);
+  const dealerDraggingRef = useRef(false);
+  const dealerDragOffsetRef = useRef<{ x: number; y: number } | null>(null);
+  const dealerChipPosRef = useRef(dealerChipPos);
+  const [showMatchpoint, setShowMatchpoint] = useState(false);
+  const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
+  // Chat state
+  const [showChat, setShowChat] = useState(initialShowChat);
+  const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
+  // Mini tutorial state
+  const [tutorialDismissed, setTutorialDismissed] = useState(false);
   const historyPanelRef = useRef<HTMLDivElement>(null);
+  const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
+  const withStableMultiplayerFlag = useCallback(
+    (incomingGame: Game, previousGame: Game | null = gameRef.current): Game => ({
+      ...incomingGame,
+      isMultiplayer:
+        typeof incomingGame.isMultiplayer === "boolean"
+          ? incomingGame.isMultiplayer
+          : typeof previousGame?.isMultiplayer === "boolean"
+            ? previousGame.isMultiplayer
+            : typeof initialGame?.isMultiplayer === "boolean"
+              ? initialGame.isMultiplayer
+              : false,
+    }),
+    [initialGame?.isMultiplayer]
+  );
+  const isMultiplayerGame =
+    typeof game?.isMultiplayer === "boolean"
+      ? game.isMultiplayer
+      : typeof initialGame?.isMultiplayer === "boolean"
+        ? initialGame.isMultiplayer
+        : false;
   const rulesTooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevGameStateRef = useRef<string>('');
   const onBackRef = useRef(onBack);
   const gameId = game?.id;
+  const countIncomingMessages = useCallback((messages: Game["chatMessages"] | undefined) => {
+    if (!messages || !localPlayerId) return 0;
+    return messages.filter((message) => message.playerId !== localPlayerId).length;
+  }, [localPlayerId]);
 
   useEffect(() => {
     gameRef.current = game;
@@ -88,7 +145,7 @@ const GameTable: React.FC<GameTableProps> = ({
     const curr = game?.state ?? '';
     prevGameStateRef.current = curr;
     if (prev === 'GAME_ENDED' && curr === 'WAITING_FOR_PLAYERS') {
-      onBackRef.current?.();
+      onBackRef.current?.({ preserveLobby: true, game });
     }
   }, [game?.state]);
 
@@ -130,15 +187,163 @@ const GameTable: React.FC<GameTableProps> = ({
       setShowSettings(false);
       setIsHistoryOpen(false);
       setShowRulesTooltip(false);
+      setShowChat(false);
     }
   }, [isLanguageOpen]);
 
-  const activeDealerLikePlayerId = game?.dealerId || null;
+  useEffect(() => {
+    if (showSettings) {
+      setIsHistoryOpen(false);
+      setShowChat(false);
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [showSettings, isLanguageOpen]);
 
-  const updateDealerChipPosition = useCallback(() => {
-    if (!activeDealerLikePlayerId || !tableRef.current) {
-      setDealerChipPos((prev) => ({ ...prev, visible: false }));
-      return;
+  useEffect(() => {
+    if (isHistoryOpen) {
+      setShowSettings(false);
+      if (useMobileLayout) {
+        setShowChat(false);
+      }
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [isHistoryOpen, isLanguageOpen, useMobileLayout]);
+
+  useEffect(() => {
+    if (showChat) {
+      setShowSettings(false);
+      if (useMobileLayout) {
+        setIsHistoryOpen(false);
+      }
+      if (isLanguageOpen) {
+        setLanguageCloseSignal((s) => s + 1);
+      }
+    }
+  }, [showChat, isLanguageOpen, useMobileLayout]);
+
+  useEffect(() => {
+    if (!showChat) return;
+    setLastSeenChatCount(countIncomingMessages(game?.chatMessages));
+  }, [showChat, game?.chatMessages, countIncomingMessages]);
+
+  useEffect(() => {
+    onChatStateChange?.(showChat, lastSeenChatCount);
+  }, [showChat, lastSeenChatCount, onChatStateChange]);
+
+  // ESC closes overlays in priority order (confirm → settings → chat → history)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showLeaveConfirm) {
+        setShowLeaveConfirm(false);
+        return;
+      }
+      if (showEndGameConfirm) {
+        setShowEndGameConfirm(false);
+        return;
+      }
+      if (showSettings) {
+        setShowSettings(false);
+        return;
+      }
+      if (showChat) {
+        setShowChat(false);
+        return;
+      }
+      if (isHistoryOpen) {
+        setIsHistoryOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showLeaveConfirm, showEndGameConfirm, showSettings, showChat, isHistoryOpen]);
+
+  // Desktop: Enter opens chat (when not typing elsewhere / chat already open)
+  useEffect(() => {
+    if (useMobileLayout || !isMultiplayerGame) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return;
+      if (showChat || showSettings || showLeaveConfirm || showEndGameConfirm || showStatistics) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('input, textarea, select, [contenteditable="true"], button')) return;
+      e.preventDefault();
+      audioService.playRaise();
+      setShowChat(true);
+      setLastSeenChatCount(countIncomingMessages(game?.chatMessages));
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [
+    useMobileLayout,
+    isMultiplayerGame,
+    showChat,
+    showSettings,
+    showLeaveConfirm,
+    showEndGameConfirm,
+    showStatistics,
+    game?.chatMessages,
+    countIncomingMessages,
+  ]);
+
+  const activeDealerLikePlayerId = game?.dealerId || null;
+  const dealerReturnRafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    dealerChipPosRef.current = dealerChipPos;
+  }, [dealerChipPos]);
+
+  const cancelDealerReturn = useCallback(() => {
+    if (dealerReturnRafRef.current !== null) {
+      cancelAnimationFrame(dealerReturnRafRef.current);
+      dealerReturnRafRef.current = null;
+    }
+  }, []);
+
+  /** Closest point on a player card (viewport coords), preferring the boundary when inside. */
+  const closestPointOnPlayerCard = useCallback((clientX: number, clientY: number, playerId: string) => {
+    const cards = Array.from(
+      document.querySelectorAll(`[data-player-card="${playerId}"]`)
+    ) as HTMLElement[];
+    const card =
+      cards.find((el) => {
+        const rect = el.getBoundingClientRect();
+        return el.offsetParent !== null && rect.width > 0 && rect.height > 0;
+      }) || null;
+    if (!card) return null;
+
+    const r = card.getBoundingClientRect();
+    const { left, right, top, bottom } = r;
+
+    const outside = clientX < left || clientX > right || clientY < top || clientY > bottom;
+    if (outside) {
+      return {
+        x: Math.min(Math.max(clientX, left), right),
+        y: Math.min(Math.max(clientY, top), bottom),
+      };
+    }
+
+    const dl = clientX - left;
+    const dr = right - clientX;
+    const dt = clientY - top;
+    const db = bottom - clientY;
+    const nearest = Math.min(dl, dr, dt, db);
+    if (nearest === dl) return { x: left, y: clientY };
+    if (nearest === dr) return { x: right, y: clientY };
+    if (nearest === dt) return { x: clientX, y: top };
+    return { x: clientX, y: bottom };
+  }, []);
+
+  const getDealerHomePoint = useCallback((fromPoint?: { x: number; y: number } | null) => {
+    if (!activeDealerLikePlayerId) return null;
+
+    const origin = fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null);
+    if (origin) {
+      const nearest = closestPointOnPlayerCard(origin.x, origin.y, activeDealerLikePlayerId);
+      if (nearest) return nearest;
     }
 
     const anchors = Array.from(
@@ -149,26 +354,141 @@ const GameTable: React.FC<GameTableProps> = ({
         const rect = el.getBoundingClientRect();
         return el.offsetParent !== null && rect.bottom > 0 && rect.right > 0;
       }) || null;
+    if (anchor) {
+      const anchorRect = anchor.getBoundingClientRect();
+      return {
+        x: anchorRect.left + anchorRect.width / 2,
+        y: anchorRect.top + anchorRect.height / 2,
+      };
+    }
 
-    if (!anchor) {
+    const card = document.querySelector(`[data-player-card="${activeDealerLikePlayerId}"]`) as HTMLElement | null;
+    if (card) {
+      const r = card.getBoundingClientRect();
+      return closestPointOnPlayerCard(r.left + r.width / 2, r.top, activeDealerLikePlayerId);
+    }
+
+    return null;
+  }, [activeDealerLikePlayerId, closestPointOnPlayerCard]);
+
+  /** Slowly ease the chip toward the dealer player (no hard snap). */
+  const releaseDealerToPlayer = useCallback((fromPoint?: { x: number; y: number }) => {
+    cancelDealerReturn();
+    if (dealerDraggingRef.current) return;
+
+    const start = fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null);
+    const target = getDealerHomePoint(start);
+    if (!target) {
       setDealerChipPos((prev) => ({ ...prev, visible: false }));
       return;
     }
 
-    const tableRect = tableRef.current.getBoundingClientRect();
-    const anchorRect = anchor.getBoundingClientRect();
-    setDealerChipPos({
-      x: anchorRect.left - tableRect.left + anchorRect.width / 2,
-      y: anchorRect.top - tableRect.top + anchorRect.height / 2,
+    if (!start || !dealerChipPosRef.current.visible) {
+      const next = { x: target.x, y: target.y, visible: true };
+      dealerChipPosRef.current = next;
+      setDealerChipPos(next);
+      return;
+    }
+
+    const durationMs = 1600;
+    const startX = start.x;
+    const startY = start.y;
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      if (dealerDraggingRef.current) {
+        dealerReturnRafRef.current = null;
+        return;
+      }
+      const t = Math.min(1, (now - startTime) / durationMs);
+      // Smooth ease-out cubic — slow release into place
+      const eased = 1 - (1 - t) ** 3;
+      const next = {
+        x: startX + (target.x - startX) * eased,
+        y: startY + (target.y - startY) * eased,
+        visible: true,
+      };
+      dealerChipPosRef.current = next;
+      setDealerChipPos(next);
+      if (t < 1) {
+        dealerReturnRafRef.current = requestAnimationFrame(tick);
+      } else {
+        dealerReturnRafRef.current = null;
+      }
+    };
+
+    dealerReturnRafRef.current = requestAnimationFrame(tick);
+  }, [cancelDealerReturn, getDealerHomePoint]);
+
+  const updateDealerChipPosition = useCallback((fromPoint?: { x: number; y: number }, animate = false) => {
+    if (dealerDraggingRef.current) return;
+    if (!activeDealerLikePlayerId) {
+      cancelDealerReturn();
+      setDealerChipPos((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+
+    if (animate && dealerChipPosRef.current.visible) {
+      releaseDealerToPlayer(fromPoint ?? dealerChipPosRef.current);
+      return;
+    }
+
+    cancelDealerReturn();
+    const home = getDealerHomePoint(fromPoint ?? (dealerChipPosRef.current.visible ? dealerChipPosRef.current : null));
+    if (!home) {
+      setDealerChipPos((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+    const next = { x: home.x, y: home.y, visible: true };
+    dealerChipPosRef.current = next;
+    setDealerChipPos(next);
+  }, [activeDealerLikePlayerId, cancelDealerReturn, getDealerHomePoint, releaseDealerToPlayer]);
+
+  const handleDealerPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancelDealerReturn();
+    dealerDragOffsetRef.current = {
+      x: e.clientX - dealerChipPos.x,
+      y: e.clientY - dealerChipPos.y,
+    };
+    dealerDraggingRef.current = true;
+    setDealerChipDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleDealerPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dealerDraggingRef.current || !dealerDragOffsetRef.current) return;
+    const next = {
+      x: e.clientX - dealerDragOffsetRef.current.x,
+      y: e.clientY - dealerDragOffsetRef.current.y,
       visible: true,
+    };
+    dealerChipPosRef.current = next;
+    setDealerChipPos(next);
+  };
+
+  const handleDealerPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dealerDraggingRef.current) return;
+    dealerDraggingRef.current = false;
+    dealerDragOffsetRef.current = null;
+    setDealerChipDragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    releaseDealerToPlayer({
+      x: dealerChipPosRef.current.x,
+      y: dealerChipPosRef.current.y,
     });
-  }, [activeDealerLikePlayerId]);
+  };
 
   useEffect(() => {
-    updateDealerChipPosition();
-    const timeout1 = window.setTimeout(updateDealerChipPosition, 60);
-    const timeout2 = window.setTimeout(updateDealerChipPosition, 220);
-    const handleMove = () => updateDealerChipPosition();
+    // Dealer / layout change: ease toward the new player
+    updateDealerChipPosition(undefined, true);
+    const timeout1 = window.setTimeout(() => updateDealerChipPosition(undefined, true), 60);
+    const timeout2 = window.setTimeout(() => updateDealerChipPosition(undefined, true), 220);
+    const handleMove = () => updateDealerChipPosition(undefined, false);
     window.addEventListener('resize', handleMove);
     window.addEventListener('scroll', handleMove, true);
     return () => {
@@ -176,8 +496,9 @@ const GameTable: React.FC<GameTableProps> = ({
       window.clearTimeout(timeout2);
       window.removeEventListener('resize', handleMove);
       window.removeEventListener('scroll', handleMove, true);
+      cancelDealerReturn();
     };
-  }, [updateDealerChipPosition, game?.roundNumber, activeDealerLikePlayerId, game?.players, useMobileLayout]);
+  }, [updateDealerChipPosition, cancelDealerReturn, game?.roundNumber, activeDealerLikePlayerId, game?.players, useMobileLayout]);
 
   // Update audio service when mute state changes
   useEffect(() => {
@@ -198,10 +519,16 @@ const GameTable: React.FC<GameTableProps> = ({
       setShowRulesTooltip(true);
       if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
       rulesTooltipTimerRef.current = setTimeout(() => setShowRulesTooltip(false), 3000);
+      
+      // Auto-open history panel on desktop when game starts
+      if (!useMobileLayout) {
+        setIsHistoryOpen(true);
+        setOpenedForGameStart(true);
+      }
     }
     
     setPreviousGameState(game.state);
-  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game]);
+  }, [game?.state, game?.roundNumber, previousGameState, hasPlayedGameStart, game, useMobileLayout]);
 
   // Clean up rules tooltip timer on unmount
   useEffect(() => {
@@ -209,6 +536,28 @@ const GameTable: React.FC<GameTableProps> = ({
       if (rulesTooltipTimerRef.current) clearTimeout(rulesTooltipTimerRef.current);
     };
   }, []);
+
+  // After game ends: auto-open history (last hand) if the player hasn't opened it yet
+  const historyOpenedForGameEndRef = useRef(false);
+  useEffect(() => {
+    if (!game?.gameWinner) {
+      historyOpenedForGameEndRef.current = false;
+      return;
+    }
+    if (isHistoryOpen) {
+      historyOpenedForGameEndRef.current = true;
+    }
+  }, [game?.gameWinner, isHistoryOpen]);
+
+  useEffect(() => {
+    if (!game?.gameWinner) return;
+    const timer = setTimeout(() => {
+      if (!historyOpenedForGameEndRef.current) {
+        setIsHistoryOpen(true);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [game?.gameWinner]);
 
   // Play sounds based on game state changes
   useEffect(() => {
@@ -223,6 +572,13 @@ const GameTable: React.FC<GameTableProps> = ({
       setPreviousRoundWinner('');
       // Reset bid tracking so raise sound can play for first bid of new round
       setPreviousBidKey('');
+      
+      // Track dice rolls for all players at start of new round
+      game.players.forEach(player => {
+        if (player.dice && player.dice.length > 0) {
+          trackDiceRoll(player, player.dice, game);
+        }
+      });
     }
 
     // Play doubt/spot-on sound when action happens (using unique key with player ID and action type)
@@ -251,12 +607,35 @@ const GameTable: React.FC<GameTableProps> = ({
               game.lastActionPlayerId !== localPlayerId
             );
             audioService.playDoubt();
+            
+            // Track doubt statistics
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const doubter = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (doubter) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Success means the doubter was correct (actual count < bid quantity)
+                const success = actualCount < game.lastBidQuantity;
+                trackDoubt(doubter, targetBid, actualCount, success, game);
+              }
+            }
           } else if (game.lastActionType === "SPOT_ON") {
             console.log(
               "Playing spot-on sound for player:",
               game.lastActionPlayerId
             );
             audioService.playSpotOn();
+            
+            // Track spot-on as a perfect doubt (always successful if action occurred)
+            if (game.lastActionPlayerId && game.previousBid && game.lastActualCount !== undefined && game.lastBidQuantity !== undefined) {
+              const caller = game.players.find(p => p.id === game.lastActionPlayerId);
+              if (caller) {
+                const targetBid = game.previousBid;
+                const actualCount = game.lastActualCount;
+                // Spot-on is always successful if it resulted in an action
+                trackDoubt(caller, targetBid, actualCount, true, game);
+              }
+            }
           }
         } else {
           console.log(
@@ -296,6 +675,22 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for round winner:', game.winner);
       audioService.playWin();
       setPreviousRoundWinner(game.winner);
+      
+      // Track round end statistics
+      const winnerPlayer = game.players.find(p => p.id === game.winner);
+      if (winnerPlayer) {
+        // Check if this was the last round (game winner is set)
+        const wasLastRound = !!game.gameWinner;
+        trackRoundEnd(winnerPlayer, game, wasLastRound);
+      }
+      
+      // Check for matchpoint (6 tokens = 1 away from winning)
+      if (winnerPlayer && winnerPlayer.winTokens === 6 && matchpointPlayerId !== game.winner) {
+        console.log('Matchpoint reached for player:', winnerPlayer.name);
+        setShowMatchpoint(true);
+        setMatchpointPlayerId(game.winner);
+        setTimeout(() => setShowMatchpoint(false), 3000);
+      }
     }
 
     // Also play win sound when there's a game winner (final victory)
@@ -303,6 +698,12 @@ const GameTable: React.FC<GameTableProps> = ({
       console.log('Playing win sound for game winner:', game.gameWinner);
       audioService.playWin();
       setPreviousGameWinner(game.gameWinner);
+      
+      // Track game end statistics
+      const gameWinnerPlayer = game.players.find(p => p.id === game.gameWinner);
+      if (gameWinnerPlayer) {
+        trackGameEnd(gameWinnerPlayer, game);
+      }
     }
   }, [game, previousRoundNumber, previousActionKey, previousRoundWinner, previousGameWinner, previousBidKey, localPlayerId]);
 
@@ -337,7 +738,19 @@ const GameTable: React.FC<GameTableProps> = ({
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
-            setGame(updatedGame);
+            setGame((prev) => {
+              const next = withStableMultiplayerFlag(updatedGame);
+              // In multiplayer with hidden dice, preserve already-fetched local player dice
+              // so broadcasts don't wipe them out between getMyDice refreshes.
+              if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
+                const prevLocal = prev.players.find(p => p.id === localPlayerId);
+                const nextLocal = next.players.find(p => p.id === localPlayerId);
+                if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
+                  return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
+                }
+              }
+              return next;
+            });
           },
           onPlayerLeft: (playerName) => {
             setPlayerLeftNotification(playerName);
@@ -364,7 +777,7 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId]);
+  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
 
   // Handle bid display and betting delay when round ends or showAllDice changes
   useEffect(() => {
@@ -378,7 +791,7 @@ const GameTable: React.FC<GameTableProps> = ({
         if (game) {
           aiService.clearRoundTracking(game.id);
         }
-      }, 6000); // 6 second delay
+      }, 8000); // 8 second delay
       return () => clearTimeout(timer);
     } else {
       setShowBidDisplay(true);
@@ -390,93 +803,109 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game]);
 
+  // In multiplayer the broadcast response hides all dice. Fetch own dice so the local
+  // player can always see their own hand. Only refetch when round / hand size / reveal changes
+  // (not on every turn change — that wasted traffic).
+  const localDiceCount = game?.players.find((p) => p.id === localPlayerId)?.diceCount;
+  const localDiceLength = game?.players.find((p) => p.id === localPlayerId)?.dice.length ?? 0;
+  useEffect(() => {
+    if (!game || !localPlayerId || !isMultiplayerGame) return;
+    if (game.showAllDice) return;
+    if (game.state !== 'IN_PROGRESS') return;
+    if (localDiceLength > 0 && localDiceLength === localDiceCount) return;
+
+    let cancelled = false;
+    gameApi.getMyDice(game.id, localPlayerId).then((myDice) => {
+      if (cancelled) return;
+      setGame((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          players: prev.players.map((p) =>
+            p.id === localPlayerId ? { ...p, dice: myDice } : p
+          ),
+        };
+      });
+    }).catch(() => { /* ignore – dice will be fetched on next update */ });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.id, game?.state, game?.showAllDice, game?.roundNumber, localPlayerId, isMultiplayerGame, localDiceCount, localDiceLength]);
+
+  // Persist last known game for snappy refresh restore (session-scoped)
+  useEffect(() => {
+    if (!game || !localPlayerId) return;
+    if (game.state !== 'IN_PROGRESS' && game.state !== 'ROUND_ENDED') return;
+    saveGameSnapshot(game, localPlayerId);
+  }, [game, localPlayerId]);
+
   // Heartbeat so current player gets reconnect window; if tab closed, after 60s they're treated as left
   useEffect(() => {
-    if (!gameId || !localPlayerId || !game?.isMultiplayer) return;
+    if (!gameId || !localPlayerId || !isMultiplayerGame) return;
     if (game.state !== 'IN_PROGRESS' && game.state !== 'ROUND_ENDED') return;
     gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
     const interval = setInterval(() => {
       gameApi.heartbeat(gameId, localPlayerId).catch(() => {});
     }, 15_000);
     return () => clearInterval(interval);
-  }, [gameId, localPlayerId, game?.isMultiplayer, game?.state]);
+  }, [gameId, localPlayerId, isMultiplayerGame, game?.state]);
 
-  // Polling fallback for all games (in case WebSocket fails)
+  // Polling fallback — aggressive only when WebSocket is down; otherwise a slow safety net
   useEffect(() => {
-    const currentGame = gameRef.current;
-    console.log("Polling useEffect triggered:", {
-      gameId,
-      localPlayerId,
-    });
-    if (currentGame && gameId && localPlayerId) {
-      console.log("Starting polling for game:", gameId);
-      const pollInterval = setInterval(async () => {
-        try {
-          console.log("Polling game updates for game:", gameId);
-          const updatedGame = await gameApi.getMultiplayerGame(gameId);
-          const previousGame = gameRef.current;
+    if (!gameId || !localPlayerId) return;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-          if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
-            onBack?.();
-            return;
-          }
+    const pollOnce = async () => {
+      try {
+        const updatedGame = await gameApi.getMultiplayerGame(gameId, localPlayerId);
+        if (cancelled) return;
 
-          console.log(
-            "Polled game state:",
-            updatedGame.state,
-            "currentPlayerId:",
-            updatedGame.currentPlayerId,
-            "myPlayerId:",
-            localPlayerId
-          );
+        if (localPlayerId && !updatedGame.players.some((p) => p.id === localPlayerId)) {
+          onBack?.();
+          return;
+        }
 
-          // Check if showAllDice state changed
-          if (previousGame && previousGame.showAllDice !== updatedGame.showAllDice) {
-            console.log(
-              "🟠 SHOW_ALL_DICE CHANGE DETECTED! Old:",
-              previousGame.showAllDice,
-              "New:",
-              updatedGame.showAllDice,
-              "at",
-              new Date().toISOString()
-            );
-          }
-
-          // Check if the current player has changed
-          if (previousGame && previousGame.currentPlayerId !== updatedGame.currentPlayerId) {
-            console.log(
-              "🎯 TURN CHANGE DETECTED! Old:",
-              previousGame.currentPlayerId,
-              "New:",
-              updatedGame.currentPlayerId
-            );
-          }
-
-          setGame(updatedGame);
-        } catch (err: unknown) {
-          console.error("Error polling game updates:", err);
-          // Game was removed (e.g. cancelled after last player left) -> return to lobby
-          if (err && typeof err === 'object' && 'response' in err) {
-            const axErr = err as { response?: { status?: number } };
-            if (axErr.response?.status === 404) {
-              onBack?.();
+        setGame((prev) => {
+          const next = withStableMultiplayerFlag(updatedGame);
+          if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
+            const prevLocal = prev.players.find(p => p.id === localPlayerId);
+            const nextLocal = next.players.find(p => p.id === localPlayerId);
+            if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
+              return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
             }
           }
+          return next;
+        });
+      } catch (err: unknown) {
+        console.error("Error polling game updates:", err);
+        if (err && typeof err === 'object' && 'response' in err) {
+          const axErr = err as { response?: { status?: number } };
+          if (axErr.response?.status === 404) {
+            onBack?.();
+          }
         }
-      }, 1000); // Poll every 1 second for faster updates
+      }
+    };
 
-      return () => {
-        console.log("Clearing polling interval for game:", gameId);
-        clearInterval(pollInterval);
-      };
-    } else {
-      console.log("Polling not started - conditions not met:", {
-        hasGame: !!currentGame,
-        hasLocalPlayerId: !!localPlayerId,
-      });
-    }
+    const schedule = () => {
+      const delay = webSocketService.isConnected() ? 15_000 : 2_000;
+      timeoutId = setTimeout(async () => {
+        await pollOnce();
+        if (!cancelled) schedule();
+      }, delay);
+    };
+
+    // Immediate sync on mount / reconnect, then back off when WS is healthy
+    pollOnce().then(() => {
+      if (!cancelled) schedule();
+    });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId]);
+  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
@@ -501,59 +930,19 @@ const GameTable: React.FC<GameTableProps> = ({
     }
   }, [game?.roundNumber, previousRoundNumber, game]);
 
-  // Track all actions (including AI) when they occur
+  // Track doubt / spot-on reveals into per-game stats (correct spot-ons included)
   useEffect(() => {
-    if (!game || !game.lastActionPlayerId || !game.lastEliminatedPlayerId) return;
-    
-    // Only track DOUBT and SPOT_ON actions (not RAISE)
+    if (!game) return;
     if (game.lastActionType !== 'DOUBT' && game.lastActionType !== 'SPOT_ON') return;
+    if (game.lastActualCount === undefined) return;
 
-    // Create a unique identifier for this action WITHOUT round number
-    // This prevents re-tracking the same action when transitioning to a new round
-    const actionId = `${game.id}-${game.lastActionPlayerId}-${game.lastActionType}-E${game.lastEliminatedPlayerId}`;
-    
-    console.log('🔍 Action tracking check:', {
-      actionId,
-      lastTracked: lastTrackedAction,
-      willTrack: lastTrackedAction !== actionId,
-      gameState: game.state,
-      showAllDice: game.showAllDice,
-      canContinue: game.canContinue,
-      roundNumber: game.roundNumber
-    });
-    
-    // Skip if we've already tracked this exact action
-    if (lastTrackedAction === actionId) {
-      console.log('⏭️ Skipping - already tracked this action');
-      return;
+    const eventId = buildRevealEventId(game);
+    if (!eventId || lastTrackedAction === eventId) return;
+
+    const recorded = recordRevealStats(game);
+    if (recorded) {
+      setLastTrackedAction(eventId);
     }
-
-    const player = game.players.find(p => p.id === game.lastActionPlayerId);
-    if (!player) return;
-
-    // Determine if action was correct
-    const wasCorrect = game.lastEliminatedPlayerId !== game.lastActionPlayerId;
-
-    console.log('📊 TRACKING ACTION:', {
-      actionId,
-      player: player.name,
-      type: game.lastActionType,
-      wasCorrect,
-      roundNumber: game.roundNumber,
-      timestamp: new Date().toISOString()
-    });
-
-    // Track the action
-    trackPlayerAction(
-      game.id,
-      game.lastActionPlayerId,
-      player.name,
-      game.lastActionType as 'DOUBT' | 'SPOT_ON',
-      wasCorrect
-    );
-
-    // Mark this action as tracked
-    setLastTrackedAction(actionId);
   }, [game, lastTrackedAction]);
 
   const createGame = async (playerNames: string[], userUsername: string) => {
@@ -562,7 +951,7 @@ const GameTable: React.FC<GameTableProps> = ({
     try {
       const request: CreateGameRequest = { playerNames };
       const gameResponse = await gameApi.createGame(request);
-      setGame(gameResponse);
+      setGame(withStableMultiplayerFlag(gameResponse));
 
       // Find the human player (first player in AI mode, or by username)
       const humanPlayer =
@@ -588,12 +977,12 @@ const GameTable: React.FC<GameTableProps> = ({
     if (!game) return;
 
     try {
-      const gameResponse = await gameApi.getGame(game.id);
-      setGame(gameResponse);
+      const gameResponse = await gameApi.getGame(game.id, localPlayerId);
+      setGame(withStableMultiplayerFlag(gameResponse));
     } catch (err) {
       console.error("Error refreshing game:", err);
     }
-  }, [game]);
+  }, [game, localPlayerId]);
 
   const handleAction = async (action: string, data?: any) => {
     if (!game || !localPlayerId) return;
@@ -615,13 +1004,11 @@ const GameTable: React.FC<GameTableProps> = ({
           };
           trackBid(bid, game);
         } else if (action === 'doubt' && game.currentBid) {
-          // We'll track the doubt result when we get the game update with the result
-          // Store the doubt info temporarily for when the result comes back
-          (window as any).pendingDoubtTrack = {
-            doubter: localPlayer,
-            targetBid: game.currentBid,
-            game: game
-          };
+          // Doubt tracking happens when the result comes back from the server
+          console.log('Doubt action initiated, will track when result is received');
+        } else if (action === 'spoton' && game.currentBid) {
+          // Spot-on tracking happens when the result comes back from the server
+          console.log('Spot-on action initiated, will track when result is received');
         }
       }
 
@@ -644,17 +1031,17 @@ const GameTable: React.FC<GameTableProps> = ({
             faceValue: data.faceValue,
           });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         } else if (action === 'doubt') {
           const response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         } else if (action === 'spotOn') {
           const response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
           if (response?.game) {
-            setGame(response.game);
+            setGame(withStableMultiplayerFlag(response.game));
           }
         }
       }
@@ -676,14 +1063,19 @@ const GameTable: React.FC<GameTableProps> = ({
 
       // The game state will be updated via WebSocket subscription
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message || err.message || `Failed to ${action}`;
-      setError(errorMessage);
-      console.error(`Error with ${action}:`, err);
-
-      // If there's an error, try to refresh the game state
-      if (game) {
-        refreshGame();
+      // Transient blips: refresh quietly; don't flash a 503 banner if the action may have landed.
+      if (isTransientHttpError(err)) {
+        console.warn(`Transient error with ${action}, refreshing state:`, err);
+        if (game) {
+          refreshGame();
+        }
+      } else {
+        const errorMessage = userFacingApiError(err, `Failed to ${action}`);
+        setError(errorMessage);
+        console.error(`Error with ${action}:`, err);
+        if (game) {
+          refreshGame();
+        }
       }
     } finally {
       setIsLoading(false);
@@ -732,255 +1124,24 @@ const GameTable: React.FC<GameTableProps> = ({
     );
   }
 
-  // Check for game completion
-  if (game.gameWinner) {
-    const winner = game.players.find((p) => p.id === game.gameWinner);
-    const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
-    const playersContinued = game.playersContinued ?? [];
-    const currentPlayerHasContinued = playersContinued.includes(localPlayerId);
-
-    // Show "waiting for others to continue" screen after the local player clicked continue
-    if (currentPlayerHasContinued) {
-      const humanPlayers = game.players.filter(
-        (p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI ')
-      );
-      return (
-        <div
-          className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center"
-          style={{ backgroundColor: '#0b2a1a' }}
-        >
-          <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
-            style={{ backgroundImage: "url(resources/bg.webp)" }}
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-60" />
-          <div
-            className="relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4"
-            style={{
-              backgroundColor: '#0f2a1b',
-              borderColor: '#8a6a1d',
-            }}
-          >
-            <div className="text-5xl mb-4">⏳</div>
-            <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
-            <div className="space-y-3">
-              {humanPlayers.map((p) => {
-                const hasContinued = playersContinued.includes(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
-                      hasContinued ? 'bg-[#1f3f2b] text-[#f5d98f]' : 'bg-[#163124] text-[#c6d4cb]'
-                    }`}
-                  >
-                    <span className="text-xl">{hasContinued ? '✅' : '⏳'}</span>
-                    <span className="font-semibold">{p.name}</span>
-                    {!hasContinued && (
-                      <span className="ml-auto text-xs opacity-70">{t('game.waitingForPlayerLabel')}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      );
+  const gameWinnerPlayer = game.gameWinner
+    ? game.players.find((p) => p.id === game.gameWinner)
+    : undefined;
+  const isCurrentPlayerGameWinner = game.gameWinner === localPlayerId;
+  const playersContinued = game.playersContinued ?? [];
+  const currentPlayerHasContinued = playersContinued.includes(localPlayerId);
+  const handleGameEndContinue = async () => {
+    if (!game.id || !localPlayerId) {
+      onBack ? onBack() : window.location.reload();
+      return;
     }
-
-    const handleContinue = async () => {
-      if (!game.id || !localPlayerId) {
-        // Fallback for non-multiplayer or missing state
-        onBack ? onBack() : window.location.reload();
-        return;
-      }
-      try {
-        await gameApi.playerContinue(game.id, localPlayerId);
-        // Game state will be updated via WebSocket/polling
-      } catch (e) {
-        console.error('Failed to record continue:', e);
-        // Fallback: just go back to lobby
-        onBack ? onBack() : window.location.reload();
-      }
-    };
-
-    if (!isCurrentPlayerGameWinner) {
-      // ── LOSER SCREEN ──────────────────────────────────────────────
-      return (
-        <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0b2a1a' }}>
-          {/* Background */}
-          <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-10"
-            style={{ backgroundImage: "url(resources/bg.webp)" }}
-          />
-          {/* Dark vignette overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-70" />
-
-          {/* Loser card */}
-          <div
-            className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
-            style={{
-              backgroundColor: '#0f2a1b',
-              borderColor: '#8a6a1d',
-              ...(animationsEnabled
-                ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-red 1.6s ease-in-out 0.6s infinite' }
-                : {}),
-            }}
-          >
-            {/* Skull emoji */}
-            <div
-              className={`text-7xl mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
-              style={animationsEnabled ? { animationDelay: '0.3s' } : {}}
-            >
-              💀
-            </div>
-
-            {/* Dobbelkoning title — shows who won */}
-            <h1
-              className="text-4xl font-extrabold mb-2"
-              style={{
-                color: '#e7be5c',
-                ...(animationsEnabled
-                  ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
-                  : {}),
-              }}
-            >
-              {t('game.dobbelkoning')}
-            </h1>
-
-            {/* Winner name */}
-            <h2
-              className="text-2xl font-bold text-white mb-4"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
-            >
-              {winner?.name || t('common.unknownPlayer')}
-            </h2>
-
-            {/* You lost message */}
-            <div
-              className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-[#f5d98f] bg-[#1f3f2b] border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
-            >
-              {t('game.result.youLoseGame')}
-            </div>
-
-            {/* Continue button */}
-            <button
-              onClick={handleContinue}
-              className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d]"
-              style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
-            >
-              {t('game.continue')}
-            </button>
-          </div>
-        </div>
-      );
+    try {
+      await gameApi.playerContinue(game.id, localPlayerId);
+    } catch (e) {
+      console.error('Failed to record continue:', e);
+      onBack ? onBack() : window.location.reload();
     }
-
-    // ── WINNER SCREEN (Dobbelkoning) ───────────────────────────────
-    // Confetti particles (deterministic positions to avoid hydration issues)
-    const confettiItems = ['👑', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎆', '🏆', '🎊', '✨', '🎉', '🌟', '🎈', '⭐', '🥳', '🎇', '👑', '🎊', '✨', '🎉', '🌟', '🎈'];
-    const confettiPositions = [4, 10, 17, 25, 33, 42, 50, 58, 66, 74, 81, 88, 7, 19, 30, 44, 56, 68, 79, 91, 13, 37, 62, 86];
-    const confettiDelays = [0, 0.3, 0.15, 0.6, 0.45, 0.9, 0.2, 0.75, 1.0, 0.5, 0.35, 0.8, 0.1, 0.65, 0.25, 0.55, 0.4, 0.7, 0.05, 0.85, 0.95, 0.4, 0.7, 0.3];
-    const confettiSizes = [28, 22, 18, 24, 20, 26, 22, 28, 18, 24, 20, 22, 28, 24, 18, 26, 20, 22, 28, 18, 24, 20, 26, 22];
-
-    return (
-      <div className="game-table relative w-full h-screen overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#0d1a0d' }}>
-        {/* Background */}
-        <div
-          className="absolute inset-0 bg-center bg-no-repeat bg-cover opacity-20"
-          style={{ backgroundImage: "url(resources/bg.webp)" }}
-        />
-
-        {/* Dark vignette overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50" />
-
-        {/* Floating confetti particles */}
-        {animationsEnabled && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-            {confettiItems.map((emoji, i) => (
-              <span
-                key={i}
-                className="absolute animate-float"
-                style={{
-                  left: `${confettiPositions[i]}%`,
-                  top: `${4 + (i % 6) * 14}%`,
-                  animationDelay: `${confettiDelays[i]}s`,
-                  animationDuration: `${2.0 + (i % 4) * 0.35}s`,
-                  fontSize: `${confettiSizes[i]}px`,
-                  opacity: 0.9,
-                }}
-              >
-                {emoji}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Victory card */}
-        <div
-          className={`relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 ${animationsEnabled ? 'animate-bounce-in' : ''}`}
-          style={{
-            backgroundColor: '#052e16',
-            borderColor: '#8a6a1d',
-            ...(animationsEnabled
-              ? { animation: 'bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, pulse-green 1.6s ease-in-out 0.6s infinite' }
-              : {}),
-          }}
-        >
-          {/* Animated crown — larger and with float delay for extra drama */}
-          <div
-            className={`mb-4 ${animationsEnabled ? 'animate-float' : ''}`}
-            style={{
-              fontSize: '5.5rem',
-              lineHeight: 1,
-              ...(animationsEnabled ? { animationDelay: '0.2s', animationDuration: '1.8s' } : {}),
-            }}
-          >
-            👑
-          </div>
-
-          {/* Dobbelkoning title with golden glow */}
-          <h1
-            className="text-4xl font-extrabold mb-2"
-            style={{
-              color: '#fbbf24',
-              textShadow: '0 0 18px rgba(251, 191, 36, 0.85), 0 0 36px rgba(251, 191, 36, 0.45)',
-              ...(animationsEnabled
-                ? { animation: 'fade-in 0.45s ease-out 200ms forwards', opacity: 0 }
-                : {}),
-            }}
-          >
-            {t('game.dobbelkoning')}
-          </h1>
-
-          {/* Winner name */}
-          <h2
-            className="text-2xl font-bold text-white mb-4"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 350ms forwards', opacity: 0 } : {}}
-          >
-            {winner?.name || t('common.unknownPlayer')}
-          </h2>
-
-          {/* You win message */}
-          <div
-            className="text-xl font-extrabold rounded-2xl px-5 py-3 mb-6 border-2 text-[#f5d98f] bg-[#1f3f2b] border-[#8a6a1d]"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 500ms forwards', opacity: 0 } : {}}
-          >
-            {t('game.result.youWinGame')}
-          </div>
-
-          {/* Continue button */}
-          <button
-            onClick={handleContinue}
-            className="px-8 py-4 rounded-xl font-bold text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 bg-[#2e2417] hover:bg-[#3c2f1f] text-[#f5d98f] border border-[#8a6a1d]"
-            style={animationsEnabled ? { animation: 'fade-in 0.45s ease-out 650ms forwards', opacity: 0 } : {}}
-          >
-            {t('game.continue')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  };
 
   const localPlayer = getLocalPlayer();
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
@@ -989,7 +1150,7 @@ const GameTable: React.FC<GameTableProps> = ({
       ? game.currentBid
       : null;
   const shouldShowPreviousBid = !!currentBidFromActivePlayer;
-  const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED");
+  const roundEnded = !!(game.showAllDice || game.state === "ROUND_ENDED" || !!game.gameWinner);
   const snugMobileLayout = useMobileLayout && opponentsInTurnOrder.length >= 3;
 
   return (
@@ -1003,7 +1164,7 @@ const GameTable: React.FC<GameTableProps> = ({
       {/* Mobile/Tablet Layout - Clean Vertical Stack with fixed bottom elements */}
       <div className="lg:hidden flex flex-col h-screen">
         {/* Scrollable content area - opponents and results/bid display */}
-        <div className={`flex-1 overflow-y-auto pt-20 ${snugMobileLayout ? "pb-72" : "pb-80"}`}>
+        <div className={`flex-1 overflow-y-auto pt-14 ${snugMobileLayout ? "pb-72" : "pb-80"}`}>
           {/* Opponent Players - Top section with natural flow, below header */}
           <div className={snugMobileLayout ? "px-2" : "px-3"}>
             <div className={`grid grid-cols-2 items-start ${snugMobileLayout ? "gap-1" : "gap-2"}`}>
@@ -1035,25 +1196,10 @@ const GameTable: React.FC<GameTableProps> = ({
                     isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
                     isRoundWinner={game.winner === opponent.id}
                     compactMobile={snugMobileLayout}
+                    landscapeMobile={useMobileLayout && isLandscape}
                   />
                 );
               })}
-            </div>
-          </div>
-
-          {/* Mobile center status panel */}
-          <div className={snugMobileLayout ? "px-2 py-1" : "px-3 py-2"}>
-            <div className={`rounded-2xl border shadow-lg text-center ${snugMobileLayout ? "p-2" : "p-2.5"}`} style={{ borderColor: 'var(--game-border)', backgroundColor: 'var(--game-surface)' }}>
-              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--game-accent-text)' }}>
-                {t("game.round", { roundNumber: game.roundNumber })}
-              </div>
-              {currentBidFromActivePlayer ? (
-                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text)' }}>
-                  {t("game.currentBid")}: {currentBidFromActivePlayer.quantity}x{currentBidFromActivePlayer.faceValue}
-                </div>
-              ) : (
-                <div className="text-sm font-semibold mt-1" style={{ color: 'var(--game-text-muted)' }}>{t("game.waitingForFirstBid")}</div>
-              )}
             </div>
           </div>
 
@@ -1062,7 +1208,9 @@ const GameTable: React.FC<GameTableProps> = ({
           {currentBidFromActivePlayer &&
             game.state !== "ROUND_ENDED" &&
             !game.showAllDice &&
-            showBidDisplay && (() => {
+            showBidDisplay &&
+            !tabletLandscapeStack &&
+            (() => {
               const bidNode = (
                 <BidDisplay
                   currentBid={currentBidFromActivePlayer}
@@ -1071,6 +1219,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   roundNumber={game.roundNumber}
                   winner={game.winner || undefined}
                   isMobile={useMobileLayout}
+                  stacked={false}
                 />
               );
               return isHistoryOpen && historyPanelBottom > 0 ? (
@@ -1081,120 +1230,77 @@ const GameTable: React.FC<GameTableProps> = ({
                   {bidNode}
                 </div>
               ) : (
-                <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>{bidNode}</div>
+                <div
+                  className={`${snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"} ${portraitTablet ? "flex justify-center" : ""}`}
+                >
+                  {bidNode}
+                </div>
               );
             })()}
 
           {/* Mobile Game Result Display - Below opponents */}
           {game.showAllDice && (
             <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
-              <div className={`rounded-2xl shadow-2xl border-2 ${snugMobileLayout ? "p-1.5" : "p-2 md:p-3"}`} style={{ backgroundColor: '#0f2a1b', borderColor: '#8a6a1d' }}>
-                {/* Compact Header - Action and Who */}
-                <div className={snugMobileLayout ? "text-center mb-1" : "text-center mb-1 md:mb-2"}>
-                  <div className={`rounded-lg border border-[#365844] bg-[#143322] ${snugMobileLayout ? "px-2 py-1" : "px-2.5 py-1.5"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
-                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Action</div>
-                    <div className="text-sm md:text-base font-bold text-[#f5d98f]">
-                    {game.lastActionType &&
-                      game.lastActionPlayerId &&
-                      (game.lastActionType === "DOUBT"
-                        ? t("game.action.doubt", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          })
-                        : game.lastActionType === "SPOT_ON"
-                        ? t("game.action.spotOn", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          })
-                        : t("game.action.raise", {
-                            playerName:
-                              game.players.find(
-                                (p) => p.id === game.lastActionPlayerId
-                              )?.name || t("common.unknownPlayer"),
-                          }))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Result - Correct/Incorrect with Clear Visual Indicator */}
-                {game.lastActualCount !== undefined &&
-                  game.lastBidQuantity !== undefined &&
-                  game.lastBidFaceValue !== undefined && (
-                    <div className={`text-center rounded-lg bg-[#163726] border-2 border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"}`}>
-                      <div
-                        className="text-sm md:text-lg font-bold text-[#f5d98f]"
-                      >
-                        {game.lastActualCount >= game.lastBidQuantity
-                          ? t("game.result.thereWere", {
-                              actualCount: game.lastActualCount,
-                              faceValue: game.lastBidFaceValue,
-                            })
-                          : t("game.result.thereWereOnly", {
-                              actualCount: game.lastActualCount,
-                              faceValue: game.lastBidFaceValue,
-                            })}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Winner - Prominent */}
-                {game.winner && (
-                  <div className={`text-center rounded-lg border-2 bg-[#1b412c] border-[#d9b45a] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-pulse-green" : ""}`}>
-                    <div className="text-[10px] uppercase tracking-wide font-semibold text-[#b9cbbf]">Round winner</div>
-                    <div className="text-base md:text-xl font-bold text-[#f5d98f]">
-                      {t("game.result.winsRound", {
-                        playerName:
-                          game.players.find((p) => p.id === game.winner)
-                            ?.name || "Unknown Player",
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Eliminated Player - Very Prominent */}
-                {game.lastEliminatedPlayerId && (
-                  <div className={`text-center rounded-lg border-2 bg-[#22382b] border-[#8a6a1d] ${snugMobileLayout ? "mb-1 p-1.5" : "mb-1 md:mb-2 p-1.5 md:p-2"} ${animationsEnabled ? "animate-slide-up" : ""}`}>
-                    <div className="text-sm md:text-lg font-bold text-[#f5d98f]">
-                      {t("game.result.isEliminated", {
-                        playerName:
-                          game.players.find(
-                            (p) => p.id === game.lastEliminatedPlayerId
-                          )?.name || "Unknown Player",
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Compact Dice Analysis Chart */}
-                <DiceAnalysisChart game={game} />
-              </div>
+              <GameResultDisplay
+                game={game}
+                currentPlayerId={localPlayerId}
+                variant="inline"
+                compact={snugMobileLayout}
+              />
             </div>
           )}
 
-          {/* Waiting Message - In scrollable area, below results */}
-          {localPlayer && (!isMyTurn() || localPlayer.eliminated) && (
-            <div className={snugMobileLayout ? "px-1.5 py-0.5" : "px-2 py-1"}>
-              <div className={`bg-[#0f2a1b] rounded-2xl md:rounded-3xl shadow-lg border-2 border-[#365844] max-w-sm w-full mx-auto ${snugMobileLayout ? "p-1.5" : "p-2 md:p-4"}`}>
-                <div className="text-center text-white text-sm md:text-lg font-bold">
-                  {localPlayer.eliminated
-                    ? t("game.waitingForNextRound")
-                    : t("game.waitingForTurn")}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Bid Selector - Fixed above local player (only when active turn) */}
+        {/* Tablet landscape: bid readout centered above bidding controls, both above local player */}
+        {tabletLandscapeStack &&
+          showBidDisplay &&
+          !game.showAllDice &&
+          game.state !== "ROUND_ENDED" && (
+            <div
+              className="fixed left-1/2 z-[1000] flex flex-col items-center gap-1 pointer-events-none bottom-[5.5rem] w-[min(100vw-1rem,28rem)] max-w-[min(100vw-1rem,28rem)] px-2 -translate-x-1/2"
+            >
+              {currentBidFromActivePlayer && (
+                <div className="pointer-events-auto w-full">
+                  <BidDisplay
+                    currentBid={currentBidFromActivePlayer}
+                    currentPlayerId={game.currentPlayerId}
+                    players={game.players}
+                    roundNumber={game.roundNumber}
+                    winner={game.winner || undefined}
+                    isMobile={useMobileLayout}
+                    stacked
+                  />
+                </div>
+              )}
+              {localPlayer && isMyTurn() && !localPlayer.eliminated && (
+                <div className="pointer-events-auto w-full">
+                  <BidSelector
+                    currentBid={game.currentBid}
+                    previousBid={game.previousBid}
+                    onBidSelect={(quantity, faceValue) =>
+                      handleAction("bid", { quantity, faceValue })
+                    }
+                    onDoubt={() => handleAction("doubt")}
+                    onSpotOn={() => handleAction("spotOn")}
+                    disabled={isLoading || bettingDisabled}
+                    isMobile={useMobileLayout}
+                    stacked
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+        {/* Bid Selector - Fixed above local player (only when active turn); not when tablet landscape stack handles it */}
         {showBidDisplay &&
           localPlayer &&
           isMyTurn() &&
-          !localPlayer.eliminated && (
-            <div className={`fixed bottom-28 left-0 right-0 z-45 ${snugMobileLayout ? "px-1.5" : "px-2"}`}>
+          !localPlayer.eliminated &&
+          !tabletLandscapeStack && (
+            <div
+              className={`fixed left-0 right-0 z-[45] flex bottom-24 ${portraitTablet ? "justify-center" : ""} ${snugMobileLayout ? "px-1.5" : "px-2"}`}
+            >
               <BidSelector
                 currentBid={game.currentBid}
                 previousBid={game.previousBid}
@@ -1211,7 +1317,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
         {/* Local Player - Fixed to bottom */}
         {localPlayer && (
-          <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div
+            className="fixed bottom-0 left-0 right-0 z-[1200]"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
             <LocalPlayer
               player={localPlayer}
               isMyTurn={isMyTurn()}
@@ -1220,18 +1329,11 @@ const GameTable: React.FC<GameTableProps> = ({
               disabled={isLoading || bettingDisabled}
               currentBid={game.currentBid}
               previousBid={shouldShowPreviousBid ? game.previousBid : null}
-              showDice={
-                game.showAllDice ||
-                game.state === "ROUND_ENDED" ||
-                game.winner !== null
-              }
-              previousRoundPlayer={game.previousRoundPlayers?.find(
-                (p) => p.id === localPlayer.id
-              )}
               isMobile={useMobileLayout}
               isRoundEnded={roundEnded}
               isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
               isRoundWinner={game.winner === localPlayer.id}
+              landscapeMobile={useMobileLayout && isLandscape}
             />
           </div>
         )}
@@ -1239,28 +1341,72 @@ const GameTable: React.FC<GameTableProps> = ({
 
       {/* Desktop Layout */}
       <div className="hidden lg:block">
-        {/* Local Player - Bottom Center */}
-        {localPlayer && (
-          <LocalPlayer
-            player={localPlayer}
-            isMyTurn={isMyTurn()}
-            isDealer={false}
-            onAction={handleAction}
-            disabled={isLoading || bettingDisabled}
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            showDice={
-              game.showAllDice ||
-              game.state === "ROUND_ENDED" ||
-              game.winner !== null
+        {/* Current bid — independent, centered above the dock */}
+        {showBidDisplay &&
+          game.state !== "ROUND_ENDED" &&
+          !game.showAllDice &&
+          !game.gameWinner && (
+            <BidDisplay
+              currentBid={currentBidFromActivePlayer}
+              currentPlayerId={game.currentPlayerId}
+              players={game.players}
+              roundNumber={game.roundNumber}
+              winner={game.winner || undefined}
+              isMobile={false}
+              draggable
+              statusLabel={
+                localPlayer?.eliminated
+                  ? t("game.waitingForNextRound")
+                  : isMyTurn()
+                    ? t("game.yourTurn")
+                    : (() => {
+                        const turnPlayer = game.players.find(
+                          (p) => p.id === game.currentPlayerId
+                        );
+                        return turnPlayer
+                          ? t("game.playersTurn", { name: turnPlayer.name })
+                          : t("game.waitingForTurn");
+                      })()
+              }
+            />
+          )}
+
+        {/* Local player + bid selector — one centered dock */}
+        {localPlayer && !game.gameWinner && (
+          <DesktopPlayerDock
+            playerSlot={
+              <LocalPlayer
+                player={localPlayer}
+                isMyTurn={isMyTurn()}
+                isDealer={false}
+                onAction={handleAction}
+                disabled={isLoading || bettingDisabled}
+                currentBid={game.currentBid}
+                previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                isRoundEnded={roundEnded}
+                isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
+                isRoundWinner={game.winner === localPlayer.id}
+                compactDesktopLandscape={isLandscape}
+                docked
+              />
             }
-            previousRoundPlayer={game.previousRoundPlayers?.find(
-              (p) => p.id === localPlayer.id
+          >
+            {isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
+              <BidSelector
+                currentBid={game.currentBid}
+                previousBid={shouldShowPreviousBid ? game.previousBid : null}
+                onBidSelect={(quantity, faceValue) =>
+                  handleAction("bid", { quantity, faceValue })
+                }
+                onDoubt={() => handleAction("doubt")}
+                onSpotOn={() => handleAction("spotOn")}
+                disabled={isLoading || bettingDisabled}
+                isMobile={false}
+                stacked
+                compactDesktopLandscape={isLandscape}
+              />
             )}
-            isRoundEnded={roundEnded}
-            isRoundLoser={game.lastEliminatedPlayerId === localPlayer.id}
-            isRoundWinner={game.winner === localPlayer.id}
-          />
+          </DesktopPlayerDock>
         )}
 
         {/* Opponents */}
@@ -1308,65 +1454,23 @@ const GameTable: React.FC<GameTableProps> = ({
               isRoundEnded={roundEnded}
               isRoundLoser={game.lastEliminatedPlayerId === opponent.id}
               isRoundWinner={game.winner === opponent.id}
+              compactDesktopLandscape={isLandscape}
             />
           );
         })}
-
-        {/* Bid Selector - Draggable on desktop */}
-        {localPlayer && isMyTurn() && !localPlayer.eliminated && (
-          <BidSelector
-            currentBid={game.currentBid}
-            previousBid={shouldShowPreviousBid ? game.previousBid : null}
-            onBidSelect={(quantity, faceValue) =>
-              handleAction("bid", { quantity, faceValue })
-            }
-            onDoubt={() => handleAction("doubt")}
-            onSpotOn={() => handleAction("spotOn")}
-            disabled={isLoading || bettingDisabled}
-          />
-        )}
       </div>
-
-      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
-      <div className="hidden lg:block">
-        <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="rounded-2xl border border-[#365844] bg-[#0f2a1b]/85 px-5 py-3 text-center shadow-xl">
-            <div className="text-xs uppercase tracking-wide font-semibold text-[#d9b45a]">
-              {t("game.round", { roundNumber: game.roundNumber })}
-            </div>
-            <div className="text-base text-[#f7f3e8] font-semibold mt-1">
-              {currentBidFromActivePlayer
-                ? `${t("game.currentBid")}: ${currentBidFromActivePlayer.quantity}x${currentBidFromActivePlayer.faceValue}`
-                : t("game.waitingForFirstBid")}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Center Bid Display - Desktop only (only show bid from players still in game) */}
-      {currentBidFromActivePlayer && game.state !== "ROUND_ENDED" && !game.showAllDice && showBidDisplay && (
-        <div className="hidden lg:block">
-          <BidDisplay
-            currentBid={currentBidFromActivePlayer}
-            currentPlayerId={game.currentPlayerId}
-            players={game.players}
-            roundNumber={game.roundNumber}
-            winner={game.winner || undefined}
-            isMobile={false}
-          />
-        </div>
-      )}
 
       {/* Game Result Display - Desktop only */}
       <div className="hidden lg:block">
         <GameResultDisplay game={game} currentPlayerId={localPlayerId} />
       </div>
 
-      {/* Error Display - Only show critical errors, not WebSocket warnings */}
+      {/* Error Display - Only show critical errors, not WebSocket / transient noise */}
       {error &&
         !error.toLowerCase().includes("stomp") &&
         !error.toLowerCase().includes("websocket") &&
-        !error.toLowerCase().includes("connection") && (
+        !error.toLowerCase().includes("connection") &&
+        !/^request failed with status code (502|503|504)/i.test(error) && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 border px-4 py-2 rounded-xl z-50" style={{ backgroundColor: 'var(--game-surface)', color: 'var(--game-text)', borderColor: 'var(--game-border-strong)' }}>
             {error}
           </div>
@@ -1387,9 +1491,9 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
 
             {/* Settings gear button */}
-            <div className="relative">
+            <div className="relative" ref={gameSettingsAnchorRef}>
               <button
-                onMouseDown={(e) => e.stopPropagation()}
+                type="button"
                 onClick={() =>
                   setShowSettings((prev) => {
                     const next = !prev;
@@ -1402,8 +1506,9 @@ const GameTable: React.FC<GameTableProps> = ({
                     return next;
                   })
                 }
-                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                 aria-label="Settings"
+                aria-expanded={showSettings}
               >
                 ⚙
               </button>
@@ -1412,9 +1517,86 @@ const GameTable: React.FC<GameTableProps> = ({
                 onClose={() => setShowSettings(false)}
                 onLeaveGame={() => setShowLeaveConfirm(true)}
                 leaveGameLabel={t("game.leaveGame")}
+                onEndGame={isMultiplayerGame && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
+                endGameLabel={t("game.endGame")}
                 mobileCentered={useMobileLayout}
+                anchorRef={gameSettingsAnchorRef}
               />
             </div>
+
+            {/* Chat button - only for multiplayer */}
+            {isMultiplayerGame && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioService.playRaise();
+                    setShowChat((prev) => {
+                      const next = !prev;
+                      if (next) {
+                        setLastSeenChatCount(countIncomingMessages(game.chatMessages));
+                      }
+                      return next;
+                    });
+                  }}
+                  className={`rounded-full menu-pill menu-pill-fixed font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] relative flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 ${
+                    useMobileLayout ? 'menu-pill-icon min-w-[44px]' : 'menu-pill-label px-3'
+                  } ${
+                    Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount) > 0 ? 'animate-pulse' : ''
+                  }`}
+                  aria-label={useMobileLayout ? t('game.chat') : `${t('game.pressEnterToChat')} Enter ${t('game.pressEnterToChatSuffix')}`}
+                  aria-expanded={showChat}
+                  style={{
+                    ...(showChat ? { backgroundColor: 'var(--menu-button-hover-bg)', borderColor: 'var(--game-border-strong)' } : {})
+                  }}
+                >
+                  {useMobileLayout ? (
+                    <span className="w-5 h-5 transition-transform" style={{ color: showChat ? 'var(--game-accent-text)' : 'var(--menu-button-text)' }}>
+                      <ChatIcon />
+                    </span>
+                  ) : showChat ? (
+                    <span className="w-5 h-5" style={{ color: 'var(--game-accent-text)' }}>
+                      <ChatIcon />
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[13px] whitespace-nowrap" style={{ color: 'var(--menu-button-text)' }}>
+                      <span>{t('game.pressEnterToChat')}</span>
+                      <kbd
+                        className="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1 rounded border text-[11px] font-semibold leading-none"
+                        style={{
+                          borderColor: 'var(--menu-border)',
+                          backgroundColor: 'var(--menu-button-hover-bg)',
+                          color: 'var(--menu-button-text)',
+                        }}
+                        aria-hidden
+                      >
+                        ↵
+                      </kbd>
+                      <span>{t('game.pressEnterToChatSuffix')}</span>
+                    </span>
+                  )}
+                  {(() => {
+                    const unread = Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount);
+                    return unread > 0 ? (
+                      <span 
+                        className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-lg animate-bounce-in"
+                        style={{
+                          animation: 'bounce-in 0.5s ease-out, pulse-red 2s ease-in-out 0.5s infinite'
+                        }}
+                      >
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    ) : null;
+                  })()}
+                </button>
+                <ChatMessageToasts
+                  messages={game.chatMessages ?? []}
+                  localPlayerId={localPlayerId}
+                  chatOpen={showChat}
+                  compact={useMobileLayout}
+                />
+              </div>
+            )}
 
             <div className="relative">
               <button
@@ -1452,9 +1634,42 @@ const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
 
-        {/* History Panel - Positioned below the header */}
+        {/* History + chat panels - desktop */}
+        {(!useMobileLayout && (isHistoryOpen || (isMultiplayerGame && showChat))) && (
+          <div className="mt-1 md:mt-2 hidden lg:flex absolute top-36 right-4 z-40 items-start justify-end gap-3">
+            {isMultiplayerGame && showChat && (
+              <ChatPanel
+                isOpen={showChat}
+                onClose={() => setShowChat(false)}
+                messages={game.chatMessages ?? []}
+                playerId={localPlayerId}
+                playerName={game.players.find(p => p.id === localPlayerId)?.name ?? ''}
+                gameId={game.id}
+                isMobile={false}
+                variant="inline"
+                playerColors={game.players.reduce((acc, player) => {
+                  acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
+                  return acc;
+                }, {} as Record<string, string>)}
+              />
+            )}
+            {isHistoryOpen && (
+              <div ref={historyPanelRef}>
+                <HistoryPanel
+                  game={game}
+                  isOpen={isHistoryOpen}
+                  onClose={() => setIsHistoryOpen(false)}
+                  openedFromGameStart={openedForGameStart}
+                  onClearGameStartOpen={() => setOpenedForGameStart(false)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* History Panel - Mobile/Tablet: Below header, centered */}
         {isHistoryOpen && (
-          <div ref={historyPanelRef} className="mt-1 md:mt-2 flex justify-end">
+          <div ref={historyPanelRef} className="mt-1 md:mt-2 lg:hidden flex justify-end">
             <HistoryPanel
               game={game}
               isOpen={isHistoryOpen}
@@ -1507,6 +1722,171 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
+      {/* Game end overlay — keeps top bar + history visible */}
+      {game.gameWinner && (
+        <div className="absolute inset-0 z-[35] flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 bg-black/50" />
+          {currentPlayerHasContinued ? (
+            <div
+              className="relative z-10 text-center rounded-3xl shadow-2xl border-4 p-10 max-w-md mx-4 pointer-events-auto"
+              style={{
+                backgroundColor: '#0f2a1b',
+                borderColor: '#8a6a1d',
+              }}
+            >
+              <div className="text-5xl mb-4">⏳</div>
+              <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
+              <div className="space-y-3">
+                {game.players
+                  .filter((p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI '))
+                  .map((p) => {
+                    const hasContinued = playersContinued.includes(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl ${
+                          hasContinued ? 'bg-[#1f3f2b] text-[#f5d98f]' : 'bg-[#163124] text-[#c6d4cb]'
+                        }`}
+                      >
+                        <span className="text-xl">{hasContinued ? '✅' : '⏳'}</span>
+                        <span className="font-semibold">{p.name}</span>
+                        {!hasContinued && (
+                          <span className="ml-auto text-xs opacity-70">{t('game.waitingForPlayerLabel')}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : isCurrentPlayerGameWinner ? (
+            <div
+              className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 pointer-events-auto ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
+              style={{
+                backgroundColor: 'var(--game-surface)',
+                borderColor: 'var(--game-border)',
+              }}
+            >
+              {animationsEnabled && !isDesktop && (
+                <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+                  {['👑', '🎊', '✨', '🎉', '🌟', '🎈'].map((emoji, i) => (
+                    <span
+                      key={i}
+                      className="absolute animate-float"
+                      style={{
+                        left: `${10 + i * 14}%`,
+                        top: `${8 + (i % 3) * 20}%`,
+                        animationDelay: `${i * 0.2}s`,
+                        fontSize: '22px',
+                        opacity: 0.85,
+                      }}
+                    >
+                      {emoji}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div
+                className={`mb-3 ${animationsEnabled && !isDesktop ? 'animate-float' : ''}`}
+                style={{ fontSize: isDesktop ? '2.5rem' : '5.5rem', lineHeight: 1 }}
+              >
+                👑
+              </div>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--game-accent-text)' }}>
+                {t('game.dobbelkoning')}
+              </h1>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--game-text)' }}>
+                {gameWinnerPlayer?.name || t('common.unknownPlayer')}
+              </h2>
+              <div
+                className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+                style={{
+                  color: 'var(--game-accent-text)',
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                }}
+              >
+                {t('game.result.youWinGame')}
+              </div>
+              <button
+                onClick={handleGameEndContinue}
+                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                style={{
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                  color: 'var(--game-accent-text)',
+                }}
+              >
+                {t('game.continue')}
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`relative z-10 text-center rounded-2xl shadow-xl border px-8 py-8 max-w-md mx-4 pointer-events-auto ${animationsEnabled && !isDesktop ? 'animate-bounce-in' : ''}`}
+              style={{
+                backgroundColor: 'var(--game-surface)',
+                borderColor: 'var(--game-border)',
+              }}
+            >
+              {!isDesktop && <div className="text-4xl mb-3">😔</div>}
+              <h1
+                className="text-2xl md:text-3xl font-bold mb-3"
+                style={{ color: 'var(--game-accent-text)' }}
+              >
+                {t('game.result.opponentHasWonGame', {
+                  playerName: gameWinnerPlayer?.name || t('common.unknownPlayer'),
+                })}
+              </h1>
+              <div
+                className="text-base font-semibold rounded-xl px-4 py-2.5 mb-6 border"
+                style={{
+                  color: 'var(--game-accent-text)',
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                }}
+              >
+                {t('game.result.youLoseGame')}
+              </div>
+              <button
+                onClick={handleGameEndContinue}
+                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                style={{
+                  backgroundColor: 'var(--game-surface-soft)',
+                  borderColor: 'var(--game-border-strong)',
+                  color: 'var(--game-accent-text)',
+                }}
+              >
+                {t('game.continue')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Matchpoint notification - styled prominently, gold/yellow theme */}
+      {showMatchpoint && matchpointPlayerId && (
+        <div
+          className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[9999] border-4 rounded-2xl px-8 py-6 md:px-12 md:py-8 shadow-2xl max-w-[95vw] text-center animate-bounce-in"
+          style={{ 
+            backgroundColor: '#2e2417', 
+            borderColor: '#f2c96d',
+            boxShadow: '0 0 40px 10px rgba(242, 201, 109, 0.6)'
+          }}
+        >
+          <div className="text-4xl md:text-6xl font-extrabold mb-2 animate-pulse" style={{ 
+            color: '#f2c96d',
+            textShadow: '0 0 20px rgba(242, 201, 109, 0.8)'
+          }}>
+            MATCHPOINT!
+          </div>
+          <p className="text-lg md:text-2xl font-bold" style={{ color: '#f7f3e8' }}>
+            {game.players.find(p => p.id === matchpointPlayerId)?.name || t("common.unknownPlayer")}
+          </p>
+          <p className="text-sm md:text-base mt-1" style={{ color: '#d9b45a' }}>
+            {t("game.matchpointMessage")}
+          </p>
+        </div>
+      )}
+
       {/* Player left notification - styled like bid element, compact on mobile */}
       {playerLeftNotification && (
         <div
@@ -1525,18 +1905,95 @@ const GameTable: React.FC<GameTableProps> = ({
         onClose={() => setShowStatistics(false)}
       />
 
-      {/* Shared animated dealer chip */}
+      {/* Chat Panel - for multiplayer games on mobile/tablet */}
+      {isMultiplayerGame && useMobileLayout && (
+        <ChatPanel
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          messages={game.chatMessages ?? []}
+          playerId={localPlayerId}
+          playerName={game.players.find(p => p.id === localPlayerId)?.name ?? ''}
+          gameId={game.id}
+          isMobile={useMobileLayout}
+          playerColors={game.players.reduce((acc, player) => {
+            acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
+            return acc;
+          }, {} as Record<string, string>)}
+        />
+      )}
+
+      {/* End Game confirmation dialog (host only) */}
+      {showEndGameConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div
+            className="border-2 rounded-2xl px-6 py-5 md:px-8 md:py-6 shadow-2xl max-w-sm w-full mx-4"
+            style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
+          >
+            <h2 className="text-lg md:text-xl font-bold mb-2 text-center" style={{ color: 'var(--game-accent-text)' }}>
+              {t("game.endGame")}
+            </h2>
+            <p className="text-sm md:text-base text-center mb-4" style={{ color: 'var(--game-text)' }}>
+              {t("game.endGameConfirm")}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={async () => {
+                  setShowEndGameConfirm(false);
+                  if (gameId && localPlayerId) {
+                    try {
+                      await gameApi.endGame(gameId, localPlayerId);
+                    } catch (err) {
+                      console.error("End game failed:", err);
+                    }
+                  }
+                  onBack?.();
+                }}
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border transition-colors"
+                style={{ backgroundColor: '#7f1d1d', borderColor: '#991b1b', color: '#fca5a5' }}
+              >
+                {t("game.endGame")}
+              </button>
+              <button
+                onClick={() => setShowEndGameConfirm(false)}
+                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
+                style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
+              >
+                {t("game.leaveConfirmCancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mini Tutorial overlay */}
+      {minitutorial && !tutorialDismissed && game.state === 'IN_PROGRESS' && (
+        <MiniTutorial
+          game={game}
+          localPlayerId={localPlayerId}
+          onDismiss={() => setTutorialDismissed(true)}
+          isMobile={useMobileLayout}
+        />
+      )}
+
+      {/* Shared dealer chip — fixed + highest game z-index; slowly eases back to dealer player */}
       {dealerChipPos.visible && (
         <div
-          className="pointer-events-none absolute z-[70] transition-all duration-[1200ms] ease-in-out"
+          className={`fixed z-[9000] touch-none select-none ${
+            dealerChipDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
           style={{
             left: dealerChipPos.x,
             top: dealerChipPos.y,
             transform: 'translate(-50%, -50%)',
           }}
+          onPointerDown={handleDealerPointerDown}
+          onPointerMove={handleDealerPointerMove}
+          onPointerUp={handleDealerPointerUp}
+          onPointerCancel={handleDealerPointerUp}
+          title="Drag dealer chip"
         >
-          <div className="inline-flex items-center justify-center w-6 h-6 bg-[#173d2b] border-2 border-[#8a6a1d] rounded-full shadow-lg">
-            <span className="text-[#f5d98f] text-xs font-bold">D</span>
+          <div className="inline-flex items-center justify-center w-8 h-8 bg-[#173d2b] border-2 border-[#8a6a1d] rounded-full shadow-xl hover:scale-110 active:scale-95 transition-transform">
+            <span className="text-[#f5d98f] text-sm font-bold pointer-events-none">D</span>
           </div>
         </div>
       )}

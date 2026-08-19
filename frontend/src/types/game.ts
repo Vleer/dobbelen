@@ -15,6 +15,14 @@ export interface Bid {
   type: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface Game {
   id: string;
   players: Player[];
@@ -37,12 +45,14 @@ export interface Game {
   lastActualCount?: number;
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
+  lastBidPlayerId?: string;
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
   currentHandBidHistory?: Bid[];
   countdownEndTime?: number | null;
   playersContinued?: string[];
+  chatMessages?: ChatMessage[];
 }
 
 export interface CreateGameRequest {
@@ -96,8 +106,10 @@ export interface GameResponse {
   lastActualCount?: number;
   lastBidQuantity?: number;
   lastBidFaceValue?: number;
+  lastBidPlayerId?: string;
   lastEliminatedPlayerId?: string;
   lastActionPlayerId?: string;
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
   currentHandBidHistory?: Bid[];
+  chatMessages?: ChatMessage[];
 }

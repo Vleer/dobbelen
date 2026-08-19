@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Player } from "../types/game";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -23,6 +23,10 @@ interface OpponentPlayerProps {
   isRoundLoser?: boolean; // This player lost a die this round – flash red briefly
   isRoundWinner?: boolean; // This player won this round – glow green
   compactMobile?: boolean; // Extra snug spacing for dense mobile layouts
+  /** Shorter / narrower cards in landscape (tablet/phone) */
+  landscapeMobile?: boolean;
+  /** lg+ layout: narrower opponent cards in landscape */
+  compactDesktopLandscape?: boolean;
 }
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
@@ -40,6 +44,8 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   isRoundWinner = false,
   totalOpponents = 0,
   compactMobile = false,
+  landscapeMobile = false,
+  compactDesktopLandscape = false,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
@@ -56,6 +62,11 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   const prevEliminatedRef = useRef(player.eliminated);
   const prevIsRoundLoserRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [dragPosition, setDragPosition] = useState<{ left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     console.log("OpponentPlayer rendering:", {
@@ -106,6 +117,75 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     prevIsRoundLoserRef.current = isRoundLoser;
   }, [isRoundLoser, animationsEnabled]);
 
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 420;
+    const height = el?.offsetHeight ?? 140;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  const onDesktopPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setDragPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (isMobile) return;
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setDragPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [isMobile, clampToViewport]);
+
+  useEffect(() => {
+    if (isMobile || !dragPosition) return;
+    const onResize = () =>
+      setDragPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [isMobile, dragPosition, clampToViewport]);
+
   const scoreSlots = 7;
   const filledScore = Math.min(player.winTokens || 0, scoreSlots);
 
@@ -141,19 +221,19 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     // 3 opponents: simple arch around the local player.
     if (totalOpponents === 2) {
       return position === 0
-        ? { left: "22%", top: "24%", transform: "translateX(-50%)" }
-        : { left: "78%", top: "24%", transform: "translateX(-50%)" };
+        ? { left: "22%", top: "16%", transform: "translateX(-50%)" }
+        : { left: "78%", top: "16%", transform: "translateX(-50%)" };
     }
     if (totalOpponents === 3) {
-      if (position === 0) return { left: "22%", top: "24%", transform: "translateX(-50%)" };
-      if (position === 1) return { left: "50%", top: "15%", transform: "translateX(-50%)" };
-      return { left: "78%", top: "24%", transform: "translateX(-50%)" };
+      if (position === 0) return { left: "22%", top: "16%", transform: "translateX(-50%)" };
+      if (position === 1) return { left: "50%", top: "10%", transform: "translateX(-50%)" };
+      return { left: "78%", top: "16%", transform: "translateX(-50%)" };
     }
 
     const spread = Math.max(totalOpponents, 1);
     const slot = Math.min(position + 1, spread);
     const leftPercent = (slot / (spread + 1)) * 100;
-    return { left: `${leftPercent}%`, top: "18%", transform: "translateX(-50%)" };
+    return { left: `${leftPercent}%`, top: "12%", transform: "translateX(-50%)" };
   };
 
   const revealedDice = previousRoundPlayer?.dice || [];
@@ -169,7 +249,15 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         <div
           className={`rounded-xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[3px]' : isRoundWinner ? 'border-[3px]' : 'border-2'
-          } ${player.eliminated ? "opacity-50" : ""} ${compactMobile ? "p-1.5 h-[72px]" : "p-2 h-[82px]"} min-w-0 flex-shrink-0 w-full ${animClasses}`}
+          } ${player.eliminated ? "opacity-50" : ""} ${
+            landscapeMobile
+              ? compactMobile
+                ? "p-1 h-[62px]"
+                : "p-1.5 h-[68px]"
+              : compactMobile
+                ? "p-1.5 h-[72px]"
+                : "p-2 h-[82px]"
+          } min-w-0 flex-shrink-0 w-full max-w-[min(100%,11.5rem)] mx-auto ${animClasses}`}
           style={{
             backgroundColor: 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
@@ -193,7 +281,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                   ))}
                 </div>
               ) : (
-                <span className={`${compactMobile ? "text-[9px]" : "text-[10px]"} font-medium`} style={{ color: 'var(--game-text-muted)' }}>{t("game.diceHidden") || "Hidden"}</span>
+                <span className={`${compactMobile ? "text-[9px]" : "text-[10px]"} font-medium`} style={{ color: 'transparent' }}>&nbsp;</span>
               )}
             </div>
           </div>
@@ -202,7 +290,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           {Array.from({ length: scoreSlots }, (_, index) => (
             <div
               key={`opp-mobile-score-${player.id}-${index}`}
-              className={`${compactMobile ? "h-1" : "h-1.5"} flex-1 rounded-[2px] border ${
+              className={`${compactMobile ? "h-1" : "h-1.5"} flex-1 rounded-md border ${
                 index < filledScore ? "" : "bg-transparent"
               }`}
               style={{
@@ -218,10 +306,24 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
 
   return (
     <div
-      className="absolute"
-      style={getDesktopPositionStyle()}
+      ref={panelRef}
+      onPointerDown={onDesktopPointerDown}
+      className={`touch-none select-none ${
+        dragPosition ? "fixed z-[1100]" : "absolute z-[1000]"
+      } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+      style={
+        dragPosition
+          ? { left: dragPosition.left, top: dragPosition.top, transform: "none" }
+          : getDesktopPositionStyle()
+      }
+      title="Drag to move"
     >
-      <div className="relative pb-6 flex flex-col items-center" data-player-card={player.id}>
+      <div
+        className={`relative pb-6 flex flex-col items-center ${
+          compactDesktopLandscape ? "w-[min(360px,88vw)]" : "w-[420px]"
+        }`}
+        data-player-card={player.id}
+      >
         <div
           data-dealer-anchor={player.id}
           data-dealer-placement="below"
@@ -230,19 +332,22 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         {/* Player Container - Rounded Rectangle with Green Background */}
         <div
           ref={containerRef}
-          className={`w-72 h-[136px] rounded-2xl shadow-lg select-none transition-all duration-300 ${
+          className={`w-full rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
           } ${
-            player.eliminated ? "opacity-50" : ""
-          } ${animClasses} flex flex-col items-center justify-between p-3`}
+            player.eliminated ? "opacity-40" : ""
+          } ${animClasses} flex flex-col items-center justify-between p-2 ${
+            compactDesktopLandscape ? "h-[100px]" : "h-[112px]"
+          }`}
           style={{
-            backgroundColor: 'var(--game-surface)',
+            backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
             borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
+            filter: player.eliminated ? 'brightness(0.6)' : 'none',
           }}
         >
           <div className="w-full h-full flex flex-col items-center justify-between">
           {/* Username with Dealer Button and Win Tokens */}
-          <div className="text-center mb-1 min-h-8 flex items-center justify-center">
+          <div className="text-center min-h-6 flex items-center justify-center">
             <div className="flex items-center justify-center space-x-1">
               <span className="font-bold text-sm break-words" style={{ color: 'var(--game-accent-text)' }}>
                 {player.name}
@@ -264,31 +369,31 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                 ))}
               </div>
             ) : (
-              <div className="text-center text-sm font-medium" style={{ color: 'var(--game-text-muted)' }}>
-                {t("game.diceHidden") || "Hidden"}
+              // Remove "Hidden" text for cleaner UI
+              <div className="text-center text-sm font-medium" style={{ color: 'transparent' }}>
+                &nbsp;
               </div>
             )}
           </div>
 
-          {/* Previous Bid Display - Only show when relevant to current game state */}
+          {/* Previous bid — small dice */}
           {previousBid &&
             previousBid.playerId === player.id &&
             !player.eliminated && (
-              <div className="text-center text-xs font-bold mb-1 break-words" style={{ color: 'var(--game-accent-text)' }}>
-                {t("game.previousBid", {
-                  quantity: previousBid.quantity,
-                  faceValue: previousBid.faceValue,
-                })}
+              <div className="flex items-center justify-center gap-0.5 flex-wrap mb-1">
+                {Array.from({ length: previousBid.quantity }).map((_, index) => (
+                  <DiceSVG key={index} value={previousBid.faceValue} size="xs" />
+                ))}
               </div>
             )}
 
         </div>
         </div>
-        <div className="mt-1 w-72 flex items-center justify-between gap-1 px-1">
+        <div className="mt-1 w-full flex items-center justify-between gap-1 px-1">
           {Array.from({ length: scoreSlots }, (_, index) => (
             <div
               key={`opp-desktop-score-${player.id}-${index}`}
-              className={`h-2 flex-1 rounded-[2px] border ${
+              className={`h-2 flex-1 rounded-md border ${
                 index < filledScore ? "" : "bg-transparent"
               }`}
               style={{

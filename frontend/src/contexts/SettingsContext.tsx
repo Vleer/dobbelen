@@ -32,7 +32,7 @@ interface SettingsProviderProps {
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(() => {
     const saved = localStorage.getItem('colorScheme');
-    return isColorScheme(saved) ? saved : 'default';
+    return isColorScheme(saved) ? saved : 'dark';
   });
 
   const [fontSize, setFontSizeState] = useState<FontSize>(() => {

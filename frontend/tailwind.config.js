@@ -26,8 +26,8 @@ module.exports = {
           '100%': { transform: 'scale(1)' },
         },
         'turn-glow': {
-          '0%, 100%': { 'box-shadow': '0 0 8px 2px rgba(217, 180, 90, 0.25)' },
-          '50%':       { 'box-shadow': '0 0 32px 12px rgba(217, 180, 90, 0.65)' },
+          '0%, 100%': { 'box-shadow': '0 0 24px 8px rgba(242, 201, 109, 0.5)' },
+          '50%':       { 'box-shadow': '0 0 48px 16px rgba(242, 201, 109, 0.9)' },
         },
         'bounce-in': {
           '0%':   { transform: 'scale(0.65)', opacity: '0' },

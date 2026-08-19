@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bid, Player } from '../types/game';
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
@@ -12,13 +12,38 @@ interface BidDisplayProps {
   winner?: string;
   playerName?: string;
   isMobile?: boolean;
+  /** When true, no fixed positioning — parent stacks this above BidSelector (centered column) */
+  stacked?: boolean;
+  /** Desktop: independently draggable (default when not stacked/mobile) */
+  draggable?: boolean;
+  /** Desktop-only turn/waiting status shown inside the bid card */
+  statusLabel?: string;
 }
 
-const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, players, roundNumber, winner, playerName, isMobile = false }) => {
+const BidDisplay: React.FC<BidDisplayProps> = ({
+  currentBid,
+  currentPlayerId,
+  players,
+  roundNumber,
+  winner,
+  playerName,
+  isMobile = false,
+  stacked = false,
+  draggable = false,
+  statusLabel,
+}) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
   const [showSlideAnim, setShowSlideAnim] = useState(false);
   const prevBidKeyRef = useRef('');
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const canDrag = draggable && !isMobile && !stacked;
+  const showStatus = !isMobile && !!statusLabel;
 
   // Animate whenever the bid changes
   useEffect(() => {
@@ -33,52 +58,181 @@ const BidDisplay: React.FC<BidDisplayProps> = ({ currentBid, currentPlayerId, pl
     prevBidKeyRef.current = newKey;
   }, [currentBid, animationsEnabled]);
 
-  if (!currentBid) {
+  const clampToViewport = useCallback((left: number, top: number) => {
+    const el = panelRef.current;
+    const width = el?.offsetWidth ?? 200;
+    const height = el?.offsetHeight ?? 80;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!canDrag) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    const el = panelRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const origin = { left: rect.left, top: rect.top };
+    setPosition(origin);
+    dragOffsetRef.current = {
+      x: e.clientX - origin.left,
+      y: e.clientY - origin.top,
+    };
+    draggingRef.current = true;
+    setDragging(true);
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // window listeners still handle the drag
+    }
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!canDrag) return;
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      setPosition(
+        clampToViewport(
+          e.clientX - dragOffsetRef.current.x,
+          e.clientY - dragOffsetRef.current.y
+        )
+      );
+    };
+    const onUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [canDrag, clampToViewport]);
+
+  useEffect(() => {
+    if (!canDrag || !position) return;
+    const onResize = () =>
+      setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [canDrag, position, clampToViewport]);
+
+  if (!currentBid && !showStatus) {
     return null;
   }
 
   // Get the player name who made the bid
-  const bidderName = playerName || (players && currentPlayerId ? 
-    players.find(p => p.id === currentBid.playerId)?.name : 
-    t('common.unknownPlayer'));
+  const bidderName = currentBid
+    ? (playerName || (players && currentPlayerId ?
+        players.find(p => p.id === currentBid.playerId)?.name :
+        t('common.unknownPlayer')))
+    : null;
 
   // Create an array of dice values for visualization
-  const diceValues = Array(currentBid.quantity).fill(currentBid.faceValue);
+  const diceValues = currentBid
+    ? Array(currentBid.quantity).fill(currentBid.faceValue)
+    : [];
+
+  const statusBlock = showStatus ? (
+    <div
+      className={`pointer-events-none text-sm font-semibold text-center ${currentBid ? 'mt-2' : ''}`}
+      style={{ color: 'var(--game-text-muted)' }}
+    >
+      {statusLabel}
+    </div>
+  ) : null;
+
+  const mobileCard = currentBid ? (
+    <div
+      className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
+      style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}
+    >
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}:</span>
+        <div className="flex items-center flex-shrink-0">
+          <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (isMobile) {
-    return (
-      <div className={`border-2 rounded-xl px-3 py-2 shadow-lg ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`} style={{ backgroundColor: 'var(--game-surface)', borderColor: 'var(--game-border-strong)' }}>
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-bold truncate" style={{ color: 'var(--game-text)' }}>{bidderName}</span>
-          <div className="flex items-center flex-shrink-0">
-            <DiceHandSVG diceValues={diceValues} size="xs" noWrap />
+    if (!mobileCard) return null;
+    if (stacked) {
+      return (
+        <div className="w-full max-w-md mx-auto flex justify-center px-2">
+          {mobileCard}
+        </div>
+      );
+    }
+    return mobileCard;
+  }
+
+  const desktopCard = (
+    <div
+      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-0 max-w-[min(24rem,80vw)] select-none ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
+      style={{
+        backgroundColor: 'var(--game-surface)',
+        borderColor: 'var(--game-border-strong)',
+      }}
+    >
+      {currentBid && (
+        <div className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2">
+          <div className="text-xl font-bold text-center" style={{ color: 'var(--game-text)' }}>{bidderName}:</div>
+          <div className="flex items-center justify-center space-x-2">
+            <DiceHandSVG diceValues={diceValues} size="lg" />
           </div>
         </div>
+      )}
+      {statusBlock}
+    </div>
+  );
+
+  if (stacked) {
+    return (
+      <div className="relative w-full flex justify-center pointer-events-auto">
+        {desktopCard}
       </div>
     );
   }
 
+  if (canDrag) {
+    return (
+      <div
+        ref={panelRef}
+        onPointerDown={onPointerDown}
+        className={`fixed z-[1100] pointer-events-auto touch-none ${
+          dragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        style={
+          position
+            ? { left: position.left, top: position.top, transform: 'none' }
+            : { left: '50%', bottom: '20rem', transform: 'translateX(-50%)' }
+        }
+        title="Drag to move"
+      >
+        {desktopCard}
+      </div>
+    );
+  }
+
+  /* Legacy floating center (kept for safety); animation runs on inner card so translateX(-50%) is not clobbered */
   return (
     <div
-      className={`border-2 rounded-xl px-6 py-4 shadow-lg z-40 min-w-96 select-none relative ${showSlideAnim && animationsEnabled ? 'animate-slide-up' : ''}`}
-      style={{
-        backgroundColor: 'var(--game-surface)',
-        borderColor: 'var(--game-border-strong)',
-        position: "fixed",
-        left: "50%",
-        top: "calc(50% + 64px)",
-        transform: "translateX(-50%)",
-        zIndex: 1000
-      }}
+      className="fixed left-1/2 top-[calc(50%+64px)] z-[1000] pointer-events-none"
+      style={{ transform: 'translateX(-50%)' }}
     >
-      <div className="flex items-center justify-center space-x-6">
-        <div className="text-xl font-bold" style={{ color: 'var(--game-text)' }}>{bidderName}</div>
-
-        {/* Dice Visualization */}
-        <div className="flex items-center space-x-2">
-          <DiceHandSVG diceValues={diceValues} size="lg" />
-        </div>
-      </div>
+      <div className="pointer-events-auto">{desktopCard}</div>
     </div>
   );
 };

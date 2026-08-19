@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import GameTable from "./components/GameTable";
 import MultiplayerLobby from "./components/MultiplayerLobby";
 import LanguageSelector from "./components/LanguageSelector";
 import SettingsPanel from "./components/SettingsPanel";
+import ChatPanel from "./components/ChatPanel";
+import ChatIcon from "./components/ChatIcon";
+import ChatMessageToasts from "./components/ChatMessageToasts";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { StatisticsProvider } from "./contexts/StatisticsContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
@@ -10,6 +13,10 @@ import { Game } from "./types/game";
 import { gameApi } from "./api/gameApi";
 import { getSessionLikeStorage } from "./config/storage";
 import { audioService } from "./services/audioService";
+import { getPlayerColorFromString } from "./utils/playerColors";
+import useWindowSize from "./utils/useWindowSize";
+import { clearGameSnapshot, loadGameSnapshot } from "./utils/gameSnapshot";
+import { PrefKeys, getBoolPref } from "./config/prefs";
 
 const GAME_SESSION_KEY = "game_session";
 
@@ -23,36 +30,88 @@ function App() {
   const [restored, setRestored] = useState(false);
   const [lobbyKey, setLobbyKey] = useState(0);
   const [showLobbySettings, setShowLobbySettings] = useState(false);
-  const [isLobbyMuted, setIsLobbyMuted] = useState(false);
+  const [isLobbyMuted, setIsLobbyMuted] = useState(() => audioService.getMuted());
+  const lobbySettingsAnchorRef = useRef<HTMLDivElement>(null);
+  const [lobbyMenuNarrow, setLobbyMenuNarrow] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+  const [lobbyGame, setLobbyGame] = useState<Game | null>(null);
+  const [lobbyPlayerId, setLobbyPlayerId] = useState<string | null>(null);
+  const [lobbyPlayerName, setLobbyPlayerName] = useState('');
+  const [showLobbyChat, setShowLobbyChat] = useState(false);
+  const [lastSeenLobbyChatCount, setLastSeenLobbyChatCount] = useState(0);
+  const [initialGameChatOpen, setInitialGameChatOpen] = useState(false);
+  const [initialGameLastSeenChatCount, setInitialGameLastSeenChatCount] = useState(0);
+  const { isMobile, isTablet } = useWindowSize();
 
-  // On load: restore in-progress game from sessionStorage so refresh keeps you in the game
+  const countIncomingMessages = (messages: Game["chatMessages"] | undefined, currentPlayerId: string | null) => {
+    if (!messages || !currentPlayerId) return 0;
+    return messages.filter((message) => message.playerId !== currentPlayerId).length;
+  };
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setLobbyMenuNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  // On load: restore in-progress game — paint cached snapshot immediately, then revalidate
   useEffect(() => {
     if (restored) return;
     setRestored(true);
     const storage = getSessionLikeStorage();
     const raw = storage.getItem(GAME_SESSION_KEY);
-    if (!raw) return;
+    if (!raw) {
+      clearGameSnapshot();
+      return;
+    }
     try {
       const { gameId, playerId: savedPlayerId, username: savedUsername } = JSON.parse(raw);
       if (!gameId || !savedPlayerId || !savedUsername) return;
-      gameApi.getMultiplayerGame(gameId)
+
+      const snapshot = loadGameSnapshot();
+      if (snapshot && snapshot.game.id === gameId && snapshot.playerId === savedPlayerId) {
+        setGame(snapshot.game);
+        setPlayerId(savedPlayerId);
+        setUsername(savedUsername);
+        setAppState("game");
+      }
+
+      gameApi.getMultiplayerGame(gameId, savedPlayerId)
         .then((g) => {
-          if (g.state === "IN_PROGRESS") {
+          if (g.state === "IN_PROGRESS" || g.state === "ROUND_ENDED") {
             setGame(g);
             setPlayerId(savedPlayerId);
             setUsername(savedUsername);
             setAppState("game");
           } else {
             storage.removeItem(GAME_SESSION_KEY);
+            clearGameSnapshot();
+            setAppState("lobby");
+            setGame(null);
           }
         })
-        .catch(() => storage.removeItem(GAME_SESSION_KEY));
+        .catch(() => {
+          storage.removeItem(GAME_SESSION_KEY);
+          clearGameSnapshot();
+          setAppState("lobby");
+          setGame(null);
+        });
     } catch {
       getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
+      clearGameSnapshot();
     }
   }, [restored]);
 
   const handleGameStart = (gameData: Game, userPlayerId: string, userUsername: string) => {
+    const seenIncomingCount = showLobbyChat
+      ? countIncomingMessages(gameData.chatMessages, userPlayerId)
+      : 0;
+    // Chat always starts closed when entering a game
+    setInitialGameChatOpen(false);
+    setInitialGameLastSeenChatCount(seenIncomingCount);
     getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
       gameId: gameData.id,
       playerId: userPlayerId,
@@ -64,18 +123,92 @@ function App() {
     setAppState('game');
   };
 
-  const handleBackToLobby = () => {
-    getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
+  const handleBackToLobby = (options?: { preserveLobby?: boolean; game?: Game | null }) => {
+    const storage = getSessionLikeStorage();
+    const currentGame = options?.game ?? game;
+    let gameIdToClear: string | undefined = currentGame?.id;
+    if (!gameIdToClear) {
+      try {
+        const raw = storage.getItem(GAME_SESSION_KEY);
+        if (raw) gameIdToClear = JSON.parse(raw)?.gameId;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    if (options?.preserveLobby && gameIdToClear) {
+      const currentPlayerId = playerId || lobbyPlayerId || "";
+      const fallbackUsername = currentGame?.players.find((player) => player.id === currentPlayerId)?.name || "";
+      const currentUsername = username || lobbyPlayerName || fallbackUsername;
+      const isHost = !!currentGame?.players[0] && currentGame.players[0].id === currentPlayerId;
+
+      if (currentUsername) {
+        storage.setItem(
+          `lobby_${gameIdToClear}`,
+          JSON.stringify({ playerName: currentUsername, isHost })
+        );
+      }
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.origin}${window.location.pathname}?gameId=${gameIdToClear}`
+      );
+    } else if (gameIdToClear) {
+      storage.removeItem(`lobby_${gameIdToClear}`);
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.origin}${window.location.pathname}`
+      );
+    }
+
+    storage.removeItem(GAME_SESSION_KEY);
+    clearGameSnapshot();
     setAppState('lobby');
     setGame(null);
     setUsername('');
     setPlayerId('');
+    setLobbyGame(null);
+    setLobbyPlayerId(null);
+    setLobbyPlayerName('');
+    setShowLobbyChat(false);
+    setLastSeenLobbyChatCount(0);
+    setInitialGameChatOpen(false);
+    setInitialGameLastSeenChatCount(0);
     setLobbyKey((k) => k + 1);
   };
 
   useEffect(() => {
     audioService.setMuted(isLobbyMuted);
   }, [isLobbyMuted]);
+
+  const handleLobbyGameStateChange = (game: Game | null, playerId: string | null, playerName: string) => {
+    setLobbyGame(game);
+    setLobbyPlayerId(playerId);
+    setLobbyPlayerName(playerName);
+  };
+
+  const handleToggleLobbyChat = () => {
+    audioService.playRaise();
+    setShowLobbyChat((prev) => {
+      const next = !prev;
+      if (next) {
+        // Mark all messages as seen when opening
+        setLastSeenLobbyChatCount(countIncomingMessages(lobbyGame?.chatMessages, lobbyPlayerId));
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!showLobbyChat) return;
+    setLastSeenLobbyChatCount(countIncomingMessages(lobbyGame?.chatMessages, lobbyPlayerId));
+  }, [showLobbyChat, lobbyGame?.chatMessages, lobbyPlayerId]);
+
+  const handleGameChatStateChange = useCallback((isOpen: boolean, lastSeenIncomingCount: number) => {
+    setInitialGameChatOpen(isOpen);
+    setInitialGameLastSeenChatCount(lastSeenIncomingCount);
+  }, []);
 
   return (
     <LanguageProvider>
@@ -84,30 +217,78 @@ function App() {
           <div className="min-h-screen relative" style={{ backgroundColor: 'var(--felt-bg)' }}>
             {/* Language Selector + Settings - Only show in lobby */}
             {appState === 'lobby' && (
-              <div className="absolute top-0 left-0 right-0 z-50 p-2 md:p-4">
+              <div className="absolute top-0 left-0 right-0 z-50 px-2 pt-1.5 pb-1 md:px-3 md:pt-2 md:pb-1.5">
                 <div className="mx-auto rounded-full menu-shell menu-header-shell shadow-2xl">
                   <div className="menu-header-row">
                   <button
                     onClick={() => setIsLobbyMuted((m) => !m)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label={isLobbyMuted ? "Unmute" : "Mute"}
                   >
                     {isLobbyMuted ? "🔇" : "🔊"}
                   </button>
-                <div className="relative">
+                 <div className="relative" ref={lobbySettingsAnchorRef}>
                   <button
-                    onMouseDown={(e) => e.stopPropagation()}
+                    type="button"
                     onClick={() => setShowLobbySettings((s) => !s)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label="Settings"
+                    aria-expanded={showLobbySettings}
                   >
                     ⚙
                   </button>
                   <SettingsPanel
                     isOpen={showLobbySettings}
                     onClose={() => setShowLobbySettings(false)}
+                    anchorRef={lobbySettingsAnchorRef}
+                    mobileCentered={lobbyMenuNarrow}
                   />
                 </div>
+
+                {/* Chat button - only show when in a game lobby */}
+                {lobbyGame && lobbyPlayerId && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={handleToggleLobbyChat}
+                      className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
+                        Math.max(0, countIncomingMessages(lobbyGame.chatMessages, lobbyPlayerId) - lastSeenLobbyChatCount) > 0 ? 'animate-pulse' : ''
+                      }`}
+                      aria-label="Chat"
+                      aria-expanded={showLobbyChat}
+                      style={{
+                        ...(showLobbyChat ? { backgroundColor: 'var(--menu-button-hover-bg)', borderColor: 'var(--game-border-strong)' } : {})
+                      }}
+                    >
+                      <span className="w-5 h-5 transition-transform" style={{ color: showLobbyChat ? 'var(--game-accent-text)' : 'var(--menu-button-text)' }}>
+                        <ChatIcon />
+                      </span>
+                      {(() => {
+                        const unread = Math.max(
+                          0,
+                          countIncomingMessages(lobbyGame.chatMessages, lobbyPlayerId) - lastSeenLobbyChatCount
+                        );
+                        return unread > 0 ? (
+                          <span 
+                            className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-lg animate-bounce-in"
+                            style={{
+                              animation: 'bounce-in 0.5s ease-out, pulse-red 2s ease-in-out 0.5s infinite'
+                            }}
+                          >
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        ) : null;
+                      })()}
+                    </button>
+                    <ChatMessageToasts
+                      messages={lobbyGame.chatMessages ?? []}
+                      localPlayerId={lobbyPlayerId}
+                      chatOpen={showLobbyChat}
+                      compact={isMobile || isTablet}
+                    />
+                  </div>
+                )}
+
                 <LanguageSelector buttonClassName="menu-pill menu-pill-fixed menu-pill-label shadow text-[13px]" compact />
                   </div>
                 </div>
@@ -115,17 +296,42 @@ function App() {
             )}
 
             {appState === 'lobby' ? (
-              <MultiplayerLobby
-                key={lobbyKey}
-                onGameStart={handleGameStart}
-                onBack={() => {}} // No back button needed since this is the main page
-              />
+              <>
+                <MultiplayerLobby
+                  key={lobbyKey}
+                  onGameStart={handleGameStart}
+                  onBack={() => {}} // No back button needed since this is the main page
+                  onGameStateChange={handleLobbyGameStateChange}
+                  showChat={showLobbyChat}
+                  onToggleChat={handleToggleLobbyChat}
+                />
+                {/* Chat Panel for lobby */}
+                {lobbyGame && lobbyPlayerId && (
+                  <ChatPanel
+                    isOpen={showLobbyChat}
+                    onClose={() => setShowLobbyChat(false)}
+                    messages={lobbyGame.chatMessages ?? []}
+                    playerId={lobbyPlayerId}
+                    playerName={lobbyPlayerName}
+                    gameId={lobbyGame.id}
+                    isMobile={isMobile || isTablet}
+                    playerColors={lobbyGame.players.reduce((acc, player) => {
+                      acc[player.id] = player.color ? getPlayerColorFromString(player.color) : '#f5d98f';
+                      return acc;
+                    }, {} as Record<string, string>)}
+                  />
+                )}
+              </>
             ) : appState === 'game' ? (
               <GameTable
                 game={game}
                 username={username}
                 playerId={playerId}
                 onBack={handleBackToLobby}
+                initialShowChat={initialGameChatOpen}
+                initialLastSeenIncomingCount={initialGameLastSeenChatCount}
+                onChatStateChange={handleGameChatStateChange}
+                minitutorial={getBoolPref(PrefKeys.minitutorialEnabled, false)}
               />
             ) : null}
           </div>

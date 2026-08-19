@@ -5,33 +5,38 @@ This guide explains how to run the Dobbelen game using Docker and Docker Compose
 ## Prerequisites
 
 - [Docker](https://www.docker.com/get-started) installed and running
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) (v2 plugin: `docker compose`)
+- Optional: [Buildx](https://docs.docker.com/build/install-buildx/) for `./run.sh --bake` layer caching
 
 ## Quick Start
 
-### Option 1: Using the provided scripts
+Pre-pull base images once (optional, speeds first build):
 
-**For Linux/Mac:**
 ```bash
-chmod +x run.sh
-./run.sh
+./run.sh --prepull
+# or: ./scripts/docker-prepull.sh
 ```
 
-**For Windows:**
+**Linux/Mac (recommended):**
+```bash
+chmod +x run.sh
+./run.sh              # nginx frontend (production-like local)
+./run.sh --dev        # Vite hot-reload frontend (fast iteration)
+./run.sh --build      # parallel image build only
+./run.sh --bake       # buildx bake + local layer cache (.docker-cache/)
+```
+
+**Windows:**
 ```cmd
 run.bat
 ```
 
-### Option 2: Using Docker Compose directly
-
-**Development mode:**
+**Compose directly:**
 ```bash
-docker-compose up --build
-```
-
-**Production mode (local):**
-```bash
-docker compose -f docker-compose.prod.yml up --build
+export DOCKER_BUILDKIT=1
+docker compose build --parallel && docker compose up
+docker compose -f docker-compose.dev.yml up --build   # hot reload
+docker compose -f docker-compose.prod.yml up --build  # production
 ```
 
 **Production on 898944.xyz (with Cloudflare Tunnel):**  
@@ -39,7 +44,14 @@ Create a `.env` in the project root (see `.env.example`) with `CLOUDFLARED_CONFI
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d
 ```
-Compose reads `.env` automatically so the tunnel uses your config.
+
+## Build performance notes
+
+- **BuildKit cache mounts** in Dockerfiles keep Gradle (`/home/gradle/.gradle`) and npm (`/root/.npm`) caches across rebuilds.
+- **Frontend Docker builds omit optional Capacitor packages** (`npm ci --omit=optional`), then install `@rollup/rollup-linux-x64-musl` for Alpine. Install Capacitor locally for mobile (`npm install`).
+- **Same-origin API/WS** via nginx — web images do not bake `VITE_BACKEND_URL`.
+- **`.dockerignore`** excludes `android/`, `ios/`, Capacitor assets, and build artifacts from the frontend context.
+- Prefer `./run.sh --dev` when iterating on UI so you do not rebuild the nginx image each change.
 
 ## Services
 
@@ -48,28 +60,27 @@ Compose reads `.env` automatically so the tunnel uses your config.
 - **Health Check:** http://localhost:8080/actuator/health
 - **API Base:** http://localhost:8080/api/
 
-### Frontend (React + Nginx)
-- **Port:** 3000 (dev) / 80 (prod)
-- **URL:** http://localhost:3000 (dev) / http://localhost (prod)
+### Frontend (React + Nginx, or Vite in `--dev`)
+- **Port:** 3000 (local) / 80 (prod compose)
+- **URL:** http://localhost:3000 (local) / http://localhost (prod)
 
 ## Docker Configuration
 
 ### Backend Dockerfile
-- Uses OpenJDK 17
-- Builds the Spring Boot application
+- Multi-stage: `gradle:8.10-jdk21` builder → `eclipse-temurin:21-jre`
+- BuildKit cache mounts for Gradle
 - Exposes port 8080
 
 ### Frontend Dockerfile
-- Multi-stage build with Node.js 18
-- Builds React application
-- Serves with Nginx
-- Includes API proxy configuration
+- Multi-stage: `node:18.20-alpine` builder → `nginx:1.27-alpine`
+- BuildKit npm cache; Capacitor optional deps omitted
+- Nginx proxies `/api` and `/ws` to `backend:8080`
 
-### Docker Compose
-- **Development:** `docker-compose.yml`
-- **Production:** `docker-compose.prod.yml`
-- Includes health checks and service dependencies
-- Uses custom network for service communication
+### Compose files
+- `docker-compose.yml` — local nginx stack
+- `docker-compose.dev.yml` — Vite hot reload
+- `docker-compose.prod.yml` — hosted/prod + cloudflared
+- `docker-bake.hcl` — optional buildx bake targets with local layer cache
 
 ## Environment Variables
 
@@ -77,35 +88,37 @@ Compose reads `.env` automatically so the tunnel uses your config.
 - `SPRING_PROFILES_ACTIVE`: Set to `docker` or `prod`
 - `SERVER_ADDRESS`: Set to `0.0.0.0` for Docker
 
-### Frontend
-- `REACT_APP_BACKEND_URL`: Backend API URL
+### Frontend (Vite / native only)
+- `VITE_BACKEND_URL`: used for Capacitor/native and `--dev` (browser → `http://localhost:8080`)
+- Web Docker images use same-origin (empty URL); nginx proxies API/WS
 
 ## Useful Commands
 
 ### Start services
 ```bash
-docker-compose up -d
+docker compose up -d
+# or: ./run.sh -d
 ```
 
 ### Stop services
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### View logs
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
-### Rebuild services
+### Rebuild services (parallel)
 ```bash
-docker-compose up --build
+DOCKER_BUILDKIT=1 docker compose build --parallel && docker compose up -d
 ```
 
 ### Clean up
 ```bash
-docker-compose down -v
-docker system prune -f
+docker compose down -v
+docker builder prune -f
 ```
 
 ## Troubleshooting

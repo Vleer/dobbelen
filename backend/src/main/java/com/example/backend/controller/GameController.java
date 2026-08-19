@@ -34,11 +34,11 @@ public class GameController {
         }
     }
 
-    @GetMapping("/{gameId}")
-    public ResponseEntity<GameResponse> getGame(@PathVariable String gameId) {
+     @GetMapping("/{gameId}")
+    public ResponseEntity<GameResponse> getGame(@PathVariable String gameId, @RequestParam(required = false) String playerId) {
         try {
             Game game = gameService.getGame(gameId);
-            GameResponse response = new GameResponse(game);
+            GameResponse response = playerId != null ? new GameResponse(game, playerId) : new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -114,6 +114,23 @@ public class GameController {
         return ResponseEntity.ok("Game service is running!");
     }
 
+    /**
+     * Returns only the requesting player's own dice.
+     * In multiplayer the broadcast hides all dice; this endpoint lets each
+     * player retrieve their own values without exposing opponents' dice.
+     */
+    @GetMapping("/{gameId}/my-dice")
+    public ResponseEntity<List<Integer>> getMyDice(
+            @PathVariable String gameId,
+            @RequestParam String playerId) {
+        try {
+            List<Integer> dice = gameService.getPlayerDice(gameId, playerId);
+            return ResponseEntity.ok(dice);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     // Multiplayer endpoints
     @GetMapping("/multiplayer")
     public ResponseEntity<List<GameResponse>> listMultiplayerGames() {
@@ -149,9 +166,10 @@ public class GameController {
     }
 
     @GetMapping("/multiplayer/{gameId}")
-    public ResponseEntity<GameResponse> getMultiplayerGame(@PathVariable String gameId) {
+    public ResponseEntity<GameResponse> getMultiplayerGame(@PathVariable String gameId, @RequestParam(required = false) String playerId) {
         try {
-            GameResponse response = gameService.getGameResponse(gameId);
+            Game game = gameService.getGame(gameId);
+            GameResponse response = playerId != null ? new GameResponse(game, playerId) : new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -159,9 +177,10 @@ public class GameController {
     }
 
     @PostMapping("/multiplayer/{gameId}/start")
-    public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId) {
+    public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId,
+            @RequestBody ActionRequest request) {
         try {
-            gameService.startMultiplayerGame(gameId);
+            gameService.startMultiplayerGame(gameId, request.getPlayerId());
             GameResponse response = gameService.getGameResponse(gameId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
@@ -200,6 +219,17 @@ public class GameController {
         }
     }
 
+    /** Host-only: refresh public lobby presence while the lobby browser tab is active */
+    @PostMapping("/multiplayer/{gameId}/lobby-presence")
+    public ResponseEntity<Void> lobbyPresence(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            gameService.recordHostLobbyPresence(gameId, request.getPlayerId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @DeleteMapping("/multiplayer/{gameId}")
     public ResponseEntity<Void> cancelMultiplayerGame(@PathVariable String gameId,
             @RequestParam String playerId) {
@@ -217,6 +247,27 @@ public class GameController {
         try {
             GameResponse response = gameService.playerContinue(gameId, request.getPlayerId());
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/chat")
+    public ResponseEntity<Void> sendChatMessage(@PathVariable String gameId,
+            @RequestBody ChatMessageRequest request) {
+        try {
+            gameService.sendChatMessage(gameId, request.getPlayerId(), request.getText());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/end")
+    public ResponseEntity<Void> endGame(@PathVariable String gameId, @RequestBody ActionRequest request) {
+        try {
+            gameService.endGameAsHost(gameId, request.getPlayerId());
+            return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

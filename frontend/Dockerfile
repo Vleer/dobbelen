@@ -1,44 +1,33 @@
-# Build stage
-FROM node:18-alpine AS builder
+# syntax=docker/dockerfile:1.7
+# Web image: Vite build + nginx. Capacitor packages are optionalDependencies
+# and omitted here. Same-origin API/WS via nginx — no VITE_BACKEND_URL bake.
 
-# Set working directory
+FROM node:18.20-alpine AS builder
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-# Install all dependencies (including dev dependencies needed for build)
-RUN npm ci --legacy-peer-deps --no-audit --no-fund --silent
+# Omit Capacitor optional pkgs, then install Alpine Rollup native binary
+# (npm --omit=optional would also drop @rollup/rollup-linux-x64-musl).
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps --omit=optional --no-audit --no-fund \
+    && npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-musl
 
-# Copy source code
 COPY . .
 
-# Backend URL for API calls (baked in at build time; default for prod/localhost)
-ARG REACT_APP_BACKEND_URL=http://localhost:8080
-ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
-
-# Build the application (CI=false so ESLint warnings do not fail the build)
+# Same-origin (nginx proxies /api and /ws). Do not bake a backend URL.
 ENV CI=false
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+FROM nginx:1.27-alpine
 
-# Install curl for health checks and update package index
-RUN apk update && apk add --no-cache curl && rm -rf /var/cache/apk/*
+RUN apk add --no-cache curl && rm -rf /var/cache/apk/*
 
-# Copy built files from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
-
-# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Add health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost/ || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl -f -s http://localhost/ || exit 1
 
-# Expose port 80
 EXPOSE 80
-
-# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
