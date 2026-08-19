@@ -27,13 +27,15 @@ From `frontend/android/`:
 
 Output: `frontend/android/app/build/outputs/bundle/release/app-release.aab`
 
-### 5) Quick installable release APK (optional)
+### 5) Installable release APK (Telegram / sideload)
 
 ```bash
 ./gradlew :app:assembleRelease
 ```
 
-Output: `frontend/android/app/build/outputs/apk/release/app-release.apk`
+Output: `frontend/android/app/build/outputs/apk/release/dobbelen-<version>-release.apk`
+
+This build produces one signed universal APK. Upload that `.apk` file to Telegram — not the `.idsig` sidecar or `output-metadata.json`.
 
 ## iOS (macOS only)
 

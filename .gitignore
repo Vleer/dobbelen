@@ -2,3 +2,10 @@
 .vscode/
 .env
 .docker-cache/
+
+# Local Android SDK installed for CLI-only mobile builds
+.android-sdk/
+
+# Android transient metadata
+**/.cxx/
+**/.externalNativeBuild/

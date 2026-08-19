@@ -13,7 +13,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.allowed-origins:https://898944.xyz,http://localhost,http://127.0.0.1}")
+    @Value("${app.allowed-origins:https://898944.xyz,http://localhost,http://127.0.0.1,capacitor://localhost,ionic://localhost}")
     private String allowedOrigins;
 
     @Override

@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${app.allowed-origins:https://898944.xyz,http://localhost,http://127.0.0.1}")
+    @Value("${app.allowed-origins:https://898944.xyz,http://localhost,http://127.0.0.1,capacitor://localhost,ionic://localhost}")
     private String allowedOrigins;
 
     @Override
