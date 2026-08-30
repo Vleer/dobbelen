@@ -16,6 +16,8 @@ export class WebSocketService {
   private onGameUpdate: ((game: Game) => void) | null = null;
   private onPlayerLeft: ((playerName: string) => void) | null = null;
   private onGameCancelled: (() => void) | null = null;
+  /** Updated on every inbound STOMP frame (game events + broker heartbeats). */
+  private lastInboundAt = 0;
 
   connect(gameId: string, callbacks: WebSocketCallbacks | ((game: Game) => void)) {
     const onGameUpdate = typeof callbacks === 'function' ? callbacks : callbacks.onGameUpdate;
@@ -74,9 +76,11 @@ export class WebSocketService {
         connectionTimeout: 10000,
         onConnect: () => {
           console.log('✅ Connected to WebSocket successfully');
-          
+          this.lastInboundAt = Date.now();
+
           // Subscribe to game updates
           this.stompClient?.subscribe(`/topic/game/${gameId}`, (message) => {
+            this.lastInboundAt = Date.now();
             try {
               const data = JSON.parse(message.body);
               console.log('📨 Received WebSocket message:', data);
@@ -115,7 +119,17 @@ export class WebSocketService {
         },
         onDisconnect: () => {
           console.log('🔌 WebSocket disconnected');
-        }
+          this.lastInboundAt = 0;
+        },
+        onUnhandledMessage: () => {
+          this.lastInboundAt = Date.now();
+        },
+        onUnhandledReceipt: () => {
+          this.lastInboundAt = Date.now();
+        },
+        onUnhandledFrame: () => {
+          this.lastInboundAt = Date.now();
+        },
       });
       
       console.log('🚀 Activating WebSocket client...');
@@ -172,6 +186,16 @@ export class WebSocketService {
   /** True when STOMP is actively connected (safe to skip aggressive REST polling). */
   isConnected(): boolean {
     return Boolean(this.stompClient?.connected);
+  }
+
+  /**
+   * Connected and recently received frames (including STOMP heartbeats).
+   * On mobile, `connected` alone is unreliable — heartbeats may stop while the flag stays true.
+   */
+  isHealthy(maxSilenceMs = 25_000): boolean {
+    if (!this.stompClient?.connected) return false;
+    if (!this.lastInboundAt) return true;
+    return Date.now() - this.lastInboundAt < maxSilenceMs;
   }
 }
 

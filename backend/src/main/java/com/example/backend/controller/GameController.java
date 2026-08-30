@@ -71,7 +71,7 @@ public class GameController {
         try {
             GameService.GameResult result = gameService.processBid(gameId, request.getPlayerId(), request.getQuantity(),
                     request.getFaceValue());
-            ActionResponse response = new ActionResponse(result.getGame(), "Bid placed successfully");
+            ActionResponse response = new ActionResponse(result.getGame(), "Bid placed successfully", request.getPlayerId());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().build();
@@ -86,8 +86,8 @@ public class GameController {
                     ? String.format("Player eliminated! Actual count: %d, Bid: %d", result.getActualCount(),
                             result.getBidQuantity())
                     : "Doubt processed";
-            ActionResponse response = new ActionResponse(result.getGame(), message, result.getEliminatedPlayerId(),
-                    result.getActualCount(), result.getBidQuantity());
+            ActionResponse response = new ActionResponse(result.getGame(), message, request.getPlayerId(),
+                    result.getEliminatedPlayerId(), result.getActualCount(), result.getBidQuantity());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().build();
@@ -101,8 +101,8 @@ public class GameController {
             String message = result.getGame().getWinner() != null ? "Spot On correct! Round won!"
                     : String.format("Spot On incorrect! Actual count: %d, Bid: %d", result.getActualCount(),
                             result.getBidQuantity());
-            ActionResponse response = new ActionResponse(result.getGame(), message, result.getEliminatedPlayerId(),
-                    result.getActualCount(), result.getBidQuantity());
+            ActionResponse response = new ActionResponse(result.getGame(), message, request.getPlayerId(),
+                    result.getEliminatedPlayerId(), result.getActualCount(), result.getBidQuantity());
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().build();

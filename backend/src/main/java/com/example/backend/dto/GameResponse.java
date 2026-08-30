@@ -69,6 +69,11 @@ public class GameResponse {
                     PlayerInfo info = new PlayerInfo(p);
                     if (hideDice && !p.getId().equals(viewerPlayerId)) {
                         info.setDice(new ArrayList<>());
+                    } else if (game.isShowAllDice() && (info.getDice() == null || info.getDice().isEmpty())) {
+                        game.getPreviousRoundPlayers().stream()
+                                .filter(prev -> prev.getId().equals(p.getId()))
+                                .findFirst()
+                                .ifPresent(prev -> info.setDice(new ArrayList<>(prev.getDice())));
                     }
                     return info;
                 })

@@ -109,13 +109,10 @@ export const gameApi = {
   },
 
   getMultiplayerGame: async (gameId: string, playerId?: string): Promise<GameResponse> => {
-    const dedupeKey = `mp_game:${gameId}:${playerId ?? ""}`;
-    return dedupeRequest(dedupeKey, async () => {
-      const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`, {
-        params: playerId ? { playerId } : {},
-      });
-      return normalizeGame(response.data);
+    const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`, {
+      params: playerId ? { playerId } : {},
     });
+    return normalizeGame(response.data);
   },
 
   startMultiplayerGame: async (gameId: string, playerId: string): Promise<GameResponse> => {
@@ -164,12 +161,9 @@ export const gameApi = {
 
   /** Fetch only the requesting player's own dice (hidden in broadcasts for multiplayer). */
   getMyDice: async (gameId: string, playerId: string): Promise<number[]> => {
-    const dedupeKey = `my_dice:${gameId}:${playerId}`;
-    return dedupeRequest(dedupeKey, async () => {
-      const response = await axiosInstance.get<number[]>(`/api/games/${gameId}/my-dice`, {
-        params: { playerId },
-      });
-      return response.data;
+    const response = await axiosInstance.get<number[]>(`/api/games/${gameId}/my-dice`, {
+      params: { playerId },
     });
+    return response.data;
   },
 };

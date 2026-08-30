@@ -13,18 +13,28 @@ public class ActionResponse {
 
     public ActionResponse() {}
 
-    public ActionResponse(Game game, String message) {
-        this.game = new GameResponse(game);
+    public ActionResponse(Game game, String message, String viewerPlayerId) {
+        this.game = viewerPlayerId != null ? new GameResponse(game, viewerPlayerId) : new GameResponse(game);
         this.message = message;
         this.roundEnded = game.getState() == com.example.backend.model.GameState.ROUND_ENDED;
         this.roundWinner = game.getWinner();
     }
 
-    public ActionResponse(Game game, String message, String eliminatedPlayerId, int actualCount, int bidQuantity) {
-        this(game, message);
+    public ActionResponse(Game game, String message) {
+        this(game, message, null);
+    }
+
+    public ActionResponse(Game game, String message, String viewerPlayerId, String eliminatedPlayerId, int actualCount, int bidQuantity) {
+        this(game, message, viewerPlayerId);
         this.eliminatedPlayerId = eliminatedPlayerId;
         this.actualCount = actualCount;
         this.bidQuantity = bidQuantity;
+    }
+
+    /** @deprecated use {@link #ActionResponse(Game, String, String, String, int, int)} */
+    @Deprecated
+    public ActionResponse(Game game, String message, String eliminatedPlayerId, int actualCount, int bidQuantity) {
+        this(game, message, null, eliminatedPlayerId, actualCount, bidQuantity);
     }
 
     // Getters and Setters

@@ -19,6 +19,8 @@
   "scripts": {
     "start": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:android": "CAPACITOR=true tsc --noEmit && CAPACITOR=true vite build --mode capacitor && npx cap sync android",
+    "android:apk": "npm run build:android && cd android && ./gradlew assembleRelease",
     "preview": "vite preview",
     "cap:assets": "npx @capacitor/assets generate --assetPath assets --iconBackgroundColor \"#3d1f0d\" --splashBackgroundColor \"#3d1f0d\""
   },

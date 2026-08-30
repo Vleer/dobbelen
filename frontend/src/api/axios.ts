@@ -10,6 +10,7 @@ type RetryConfig = InternalAxiosRequestConfig & {
 
 const axiosInstance = axios.create({
   baseURL: getApiBaseUrl(),
+  timeout: 12_000,
   headers: {
     "Content-Type": "application/json",
   },

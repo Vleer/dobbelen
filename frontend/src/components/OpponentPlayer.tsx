@@ -236,7 +236,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     return { left: `${leftPercent}%`, top: "12%", transform: "translateX(-50%)" };
   };
 
-  const revealedDice = previousRoundPlayer?.dice || [];
+  const revealedDice =
+    previousRoundPlayer?.dice && previousRoundPlayer.dice.length > 0
+      ? previousRoundPlayer.dice
+      : player.dice || [];
 
   if (isMobile) {
     return (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Game, Player, CreateGameRequest } from '../types/game';
+import { Capacitor } from '@capacitor/core';
+import { Game, Player, CreateGameRequest, ActionResponse } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { aiService } from '../services/aiService';
 import { webSocketService } from '../services/websocketService';
@@ -26,6 +27,7 @@ import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
 import ChatIcon from './ChatIcon';
 import { saveGameSnapshot } from '../utils/gameSnapshot';
+import { mergeGameState } from '../utils/gameStateMerge';
 import { isTransientHttpError, userFacingApiError } from '../utils/httpError';
 
 interface GameTableProps {
@@ -101,6 +103,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const gameSettingsAnchorRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Game | null>(game);
+  const actionInFlightRef = useRef(false);
   const withStableMultiplayerFlag = useCallback(
     (incomingGame: Game, previousGame: Game | null = gameRef.current): Game => ({
       ...incomingGame,
@@ -114,6 +117,12 @@ const GameTable: React.FC<GameTableProps> = ({
               : false,
     }),
     [initialGame?.isMultiplayer]
+  );
+  const mergeGameFromServer = useCallback(
+    (incomingGame: Game, previousGame: Game | null): Game => {
+      return mergeGameState(incomingGame, previousGame, localPlayerId);
+    },
+    [localPlayerId]
   );
   const isMultiplayerGame =
     typeof game?.isMultiplayer === "boolean"
@@ -738,19 +747,7 @@ const GameTable: React.FC<GameTableProps> = ({
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
-            setGame((prev) => {
-              const next = withStableMultiplayerFlag(updatedGame);
-              // In multiplayer with hidden dice, preserve already-fetched local player dice
-              // so broadcasts don't wipe them out between getMyDice refreshes.
-              if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
-                const prevLocal = prev.players.find(p => p.id === localPlayerId);
-                const nextLocal = next.players.find(p => p.id === localPlayerId);
-                if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
-                  return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
-                }
-              }
-              return next;
-            });
+            setGame((prev) => mergeGameFromServer(updatedGame, prev));
           },
           onPlayerLeft: (playerName) => {
             setPlayerLeftNotification(playerName);
@@ -777,7 +774,7 @@ const GameTable: React.FC<GameTableProps> = ({
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
+  }, [gameId, localPlayerId, mergeGameFromServer]);
 
   // Handle bid display and betting delay when round ends or showAllDice changes
   useEffect(() => {
@@ -865,17 +862,7 @@ const GameTable: React.FC<GameTableProps> = ({
           return;
         }
 
-        setGame((prev) => {
-          const next = withStableMultiplayerFlag(updatedGame);
-          if (prev && localPlayerId && next.isMultiplayer && !next.showAllDice && next.state === 'IN_PROGRESS') {
-            const prevLocal = prev.players.find(p => p.id === localPlayerId);
-            const nextLocal = next.players.find(p => p.id === localPlayerId);
-            if (prevLocal && nextLocal && prevLocal.dice.length > 0 && prevLocal.dice.length === nextLocal.diceCount) {
-              return { ...next, players: next.players.map(p => p.id === localPlayerId ? { ...p, dice: prevLocal.dice } : p) };
-            }
-          }
-          return next;
-        });
+        setGame((prev) => mergeGameFromServer(updatedGame, prev));
       } catch (err: unknown) {
         console.error("Error polling game updates:", err);
         if (err && typeof err === 'object' && 'response' in err) {
@@ -887,8 +874,15 @@ const GameTable: React.FC<GameTableProps> = ({
       }
     };
 
+    const pollDelayMs = () => {
+      if (!webSocketService.isHealthy()) return 2_000;
+      // Mobile WebViews often keep STOMP "connected" while game events stop flowing.
+      if (Capacitor.isNativePlatform()) return 5_000;
+      return 15_000;
+    };
+
     const schedule = () => {
-      const delay = webSocketService.isConnected() ? 15_000 : 2_000;
+      const delay = pollDelayMs();
       timeoutId = setTimeout(async () => {
         await pollOnce();
         if (!cancelled) schedule();
@@ -905,7 +899,7 @@ const GameTable: React.FC<GameTableProps> = ({
       if (timeoutId) clearTimeout(timeoutId);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, localPlayerId, withStableMultiplayerFlag]);
+  }, [gameId, localPlayerId, mergeGameFromServer]);
 
   // Clear pending action when round ends (actual tracking is done in the next useEffect for all actions)
   useEffect(() => {
@@ -985,8 +979,9 @@ const GameTable: React.FC<GameTableProps> = ({
   }, [game, localPlayerId]);
 
   const handleAction = async (action: string, data?: any) => {
-    if (!game || !localPlayerId) return;
+    if (!game || !localPlayerId || isLoading) return;
 
+    actionInFlightRef.current = true;
     setIsLoading(true);
     setError("");
 
@@ -995,7 +990,6 @@ const GameTable: React.FC<GameTableProps> = ({
       const localPlayer = getLocalPlayer();
       if (localPlayer) {
         if (action === 'bid' && data) {
-          // Track bid
           const bid = {
             playerId: localPlayerId,
             quantity: data.quantity,
@@ -1004,49 +998,32 @@ const GameTable: React.FC<GameTableProps> = ({
           };
           trackBid(bid, game);
         } else if (action === 'doubt' && game.currentBid) {
-          // Doubt tracking happens when the result comes back from the server
           console.log('Doubt action initiated, will track when result is received');
         } else if (action === 'spoton' && game.currentBid) {
-          // Spot-on tracking happens when the result comes back from the server
           console.log('Spot-on action initiated, will track when result is received');
         }
       }
 
-      // Use WebSocket for multiplayer; fallback to REST if socket isn't connected yet
-      const actionName =
-        action === "bid"
-          ? "BID"
-          : action === "spotOn"
-          ? "SPOT_ON"
-          : action.toUpperCase();
-
-      const sentViaWebSocket = webSocketService.sendAction(actionName, data, localPlayerId);
-
-      if (!sentViaWebSocket) {
-        console.warn('⚠️ WebSocket unavailable, falling back to REST for action:', action);
-        if (action === 'bid' && data) {
-          const response = await gameApi.makeBid(game.id, {
-            playerId: localPlayerId,
-            quantity: data.quantity,
-            faceValue: data.faceValue,
-          });
-          if (response?.game) {
-            setGame(withStableMultiplayerFlag(response.game));
-          }
-        } else if (action === 'doubt') {
-          const response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
-          if (response?.game) {
-            setGame(withStableMultiplayerFlag(response.game));
-          }
-        } else if (action === 'spotOn') {
-          const response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
-          if (response?.game) {
-            setGame(withStableMultiplayerFlag(response.game));
-          }
-        }
+      // Always submit via REST so the client gets authoritative state immediately.
+      // WebSocket is kept for passive updates from other players; on mobile it often
+      // reports "connected" while game events stop flowing (15s poll felt like a stuck bid).
+      let response: ActionResponse | null = null;
+      if (action === 'bid' && data) {
+        response = await gameApi.makeBid(game.id, {
+          playerId: localPlayerId,
+          quantity: data.quantity,
+          faceValue: data.faceValue,
+        });
+      } else if (action === 'doubt') {
+        response = await gameApi.doubtBid(game.id, { playerId: localPlayerId });
+      } else if (action === 'spotOn') {
+        response = await gameApi.spotOn(game.id, { playerId: localPlayerId });
       }
 
-      // Track doubt/spot-on actions immediately when button is pressed
+      if (response?.game) {
+        setGame((prev) => mergeGameFromServer(response.game, prev));
+      }
+
       if (action === "doubt" || action === "spotOn") {
         setPendingAction({
           playerId: localPlayerId,
@@ -1055,13 +1032,10 @@ const GameTable: React.FC<GameTableProps> = ({
 
         setBettingDisabled(true);
 
-        // Re-enable betting after 15 seconds
         setTimeout(() => {
           setBettingDisabled(false);
         }, 15000);
       }
-
-      // The game state will be updated via WebSocket subscription
     } catch (err: any) {
       // Transient blips: refresh quietly; don't flash a 503 banner if the action may have landed.
       if (isTransientHttpError(err)) {
@@ -1078,6 +1052,7 @@ const GameTable: React.FC<GameTableProps> = ({
         }
       }
     } finally {
+      actionInFlightRef.current = false;
       setIsLoading(false);
     }
   };
@@ -1144,6 +1119,13 @@ const GameTable: React.FC<GameTableProps> = ({
   };
 
   const localPlayer = getLocalPlayer();
+  const localPlayerForDisplay =
+    localPlayer && game.showAllDice
+      ? (() => {
+          const snap = game.previousRoundPlayers?.find((p) => p.id === localPlayer.id);
+          return snap && snap.dice.length > 0 ? { ...localPlayer, dice: snap.dice } : localPlayer;
+        })()
+      : localPlayer;
   const opponentsInTurnOrder = getOpponentsInTurnOrder();
   const currentBidFromActivePlayer =
     game.currentBid && game.players.some((p) => p.id === game.currentBid!.playerId)
@@ -1322,7 +1304,7 @@ const GameTable: React.FC<GameTableProps> = ({
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
             <LocalPlayer
-              player={localPlayer}
+              player={localPlayerForDisplay ?? localPlayer}
               isMyTurn={isMyTurn()}
               isDealer={false}
               onAction={handleAction}
@@ -1376,7 +1358,7 @@ const GameTable: React.FC<GameTableProps> = ({
           <DesktopPlayerDock
             playerSlot={
               <LocalPlayer
-                player={localPlayer}
+                player={localPlayerForDisplay ?? localPlayer}
                 isMyTurn={isMyTurn()}
                 isDealer={false}
                 onAction={handleAction}
