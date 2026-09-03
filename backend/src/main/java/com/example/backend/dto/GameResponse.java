@@ -19,6 +19,7 @@ public class GameResponse {
     private String winner;
     private String gameWinner;
     private String dealerId;
+    private String hostPlayerId;
     @JsonProperty("isMultiplayer")
     private boolean isMultiplayer;
     @JsonProperty("isPrivate")
@@ -82,6 +83,7 @@ public class GameResponse {
         this.winner = game.getWinner();
         this.gameWinner = game.getGameWinner();
         this.dealerId = game.getDealer() != null ? game.getDealer().getId() : null;
+        this.hostPlayerId = game.getHostPlayerId();
         this.isMultiplayer = game.isMultiplayer();
         this.isPrivate = game.isPrivate();
         this.maxPlayers = game.getMaxPlayers();
@@ -157,6 +159,14 @@ public class GameResponse {
 
     public void setDealerId(String dealerId) {
         this.dealerId = dealerId;
+    }
+
+    public String getHostPlayerId() {
+        return hostPlayerId;
+    }
+
+    public void setHostPlayerId(String hostPlayerId) {
+        this.hostPlayerId = hostPlayerId;
     }
 
     public boolean isMultiplayer() {

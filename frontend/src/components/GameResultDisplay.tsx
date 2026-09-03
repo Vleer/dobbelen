@@ -145,15 +145,35 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
         cursor: variant === 'overlay' ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
     >
-      {/* Verdict banner — largest text */}
+      {/* Elimination is the headline outcome */}
+      {eliminatedPlayer && (
+        <div
+          className={`text-center font-black tracking-wide ${
+            compact ? 'text-base px-3 py-2.5' : 'text-xl md:text-2xl px-4 py-3.5'
+          }`}
+          style={{
+            backgroundColor: 'rgba(160, 45, 55, 0.92)',
+            color: '#fff5f5',
+            borderBottom: '1px solid rgba(255, 180, 180, 0.35)',
+          }}
+        >
+          {t('game.result.isEliminated', {
+            playerName: eliminatedPlayer.name,
+          })}
+        </div>
+      )}
+
+      {/* Verdict banner */}
       <div
         className={`text-center font-black uppercase tracking-wide ${
-          compact ? 'text-base px-3 py-2' : 'text-xl md:text-2xl px-4 py-3'
+          compact ? 'text-sm px-3 py-1.5' : 'text-lg md:text-xl px-4 py-2.5'
         }`}
         style={
           verdictFailed
             ? {
-                backgroundColor: 'rgba(160, 45, 55, 0.92)',
+                backgroundColor: eliminatedPlayer
+                  ? 'rgba(120, 35, 42, 0.88)'
+                  : 'rgba(160, 45, 55, 0.92)',
                 color: '#fff5f5',
                 borderBottom: '1px solid rgba(255, 180, 180, 0.35)',
               }
@@ -231,29 +251,6 @@ const GameResultDisplay: React.FC<GameResultDisplayProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Elimination consequence */}
-        {eliminatedPlayer && (
-          <div
-            className={`flex items-center justify-center gap-2 rounded-xl border font-semibold ${
-              compact ? 'text-sm px-3 py-2' : 'text-base px-4 py-2.5'
-            }`}
-            style={{
-              backgroundColor: 'var(--game-surface-soft)',
-              borderColor: 'var(--game-border)',
-              color: 'var(--game-text)',
-            }}
-          >
-            <span className={compact ? 'text-base' : 'text-lg'} aria-hidden>
-              💔
-            </span>
-            <span>
-              {t('game.result.isEliminated', {
-                playerName: eliminatedPlayer.name,
-              })}
-            </span>
           </div>
         )}
 

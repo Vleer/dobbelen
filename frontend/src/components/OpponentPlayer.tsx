@@ -3,9 +3,12 @@ import { Player } from "../types/game";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
 import DiceSVG from "./DiceSVG";
+import { playerCardSurfaceStyle } from "../utils/playerCardStyles";
+import WinTokenTracks from "./WinTokenTracks";
 
 interface OpponentPlayerProps {
   player: Player;
+  players: Player[];
   position: number; // 0 = left, 1 = right, 2 = across, etc.
   totalOpponents?: number;
   isMyTurn: boolean;
@@ -31,6 +34,7 @@ interface OpponentPlayerProps {
 
 const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
   player,
+  players,
   position,
   isMyTurn,
   isDealer,
@@ -186,9 +190,6 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
     return () => window.removeEventListener("resize", onResize);
   }, [isMobile, dragPosition, clampToViewport]);
 
-  const scoreSlots = 7;
-  const filledScore = Math.min(player.winTokens || 0, scoreSlots);
-
   // Computed state flags
   const activeTurn = isMyTurn && !isRoundEnded;
 
@@ -249,7 +250,7 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
         <div
           className={`rounded-xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[3px]' : isRoundWinner ? 'border-[3px]' : 'border-2'
-          } ${player.eliminated ? "opacity-50" : ""} ${
+          } ${
             landscapeMobile
               ? compactMobile
                 ? "p-1 h-[62px]"
@@ -258,10 +259,10 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
                 ? "p-1.5 h-[72px]"
                 : "p-2 h-[82px]"
           } min-w-0 flex-shrink-0 w-full max-w-[min(100%,11.5rem)] mx-auto ${animClasses}`}
-          style={{
-            backgroundColor: 'var(--game-surface)',
-            borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
-          }}
+          style={playerCardSurfaceStyle({
+            eliminated: player.eliminated,
+            emphasized: activeTurn || isRoundWinner,
+          })}
         >
           <div className={`h-full w-full flex flex-col justify-between ${compactMobile ? "gap-0.5" : "gap-1"}`}>
             <div className="flex items-center justify-center gap-1 min-w-0">
@@ -286,19 +287,12 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
             </div>
           </div>
         </div>
-        <div className={`${compactMobile ? "mt-0.5" : "mt-1"} w-full flex items-center justify-between gap-0.5 px-1`}>
-          {Array.from({ length: scoreSlots }, (_, index) => (
-            <div
-              key={`opp-mobile-score-${player.id}-${index}`}
-              className={`${compactMobile ? "h-1" : "h-1.5"} flex-1 rounded-md border ${
-                index < filledScore ? "" : "bg-transparent"
-              }`}
-              style={{
-                backgroundColor: index < filledScore ? 'var(--game-highlight)' : 'transparent',
-                borderColor: index < filledScore ? 'var(--game-highlight)' : 'var(--game-border-strong)',
-              }}
-            />
-          ))}
+        <div className={`${compactMobile ? "mt-0.5" : "mt-1"} w-full px-1`}>
+          <WinTokenTracks
+            player={player}
+            players={players}
+            pipClassName={compactMobile ? "h-1" : "h-1.5"}
+          />
         </div>
       </div>
     );
@@ -334,16 +328,13 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
           ref={containerRef}
           className={`w-full rounded-2xl shadow-lg select-none transition-all duration-300 ${
             activeTurn ? 'border-[6px]' : isRoundWinner ? 'border-[6px]' : 'border-4'
-          } ${
-            player.eliminated ? "opacity-40" : ""
           } ${animClasses} flex flex-col items-center justify-between p-2 ${
             compactDesktopLandscape ? "h-[100px]" : "h-[112px]"
           }`}
-          style={{
-            backgroundColor: player.eliminated ? 'var(--game-surface-soft)' : 'var(--game-surface)',
-            borderColor: activeTurn || isRoundWinner ? 'var(--game-highlight)' : 'var(--game-border)',
-            filter: player.eliminated ? 'brightness(0.6)' : 'none',
-          }}
+          style={playerCardSurfaceStyle({
+            eliminated: player.eliminated,
+            emphasized: activeTurn || isRoundWinner,
+          })}
         >
           <div className="w-full h-full flex flex-col items-center justify-between">
           {/* Username with Dealer Button and Win Tokens */}
@@ -389,19 +380,8 @@ const OpponentPlayer: React.FC<OpponentPlayerProps> = ({
 
         </div>
         </div>
-        <div className="mt-1 w-full flex items-center justify-between gap-1 px-1">
-          {Array.from({ length: scoreSlots }, (_, index) => (
-            <div
-              key={`opp-desktop-score-${player.id}-${index}`}
-              className={`h-2 flex-1 rounded-md border ${
-                index < filledScore ? "" : "bg-transparent"
-              }`}
-              style={{
-                backgroundColor: index < filledScore ? 'var(--game-highlight)' : 'transparent',
-                borderColor: index < filledScore ? 'var(--game-highlight)' : 'var(--game-border-strong)',
-              }}
-            />
-          ))}
+        <div className="mt-1 w-full px-1">
+          <WinTokenTracks player={player} players={players} pipClassName="h-2" />
         </div>
       </div>
     </div>

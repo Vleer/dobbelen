@@ -48,6 +48,8 @@
   "game.waitingForNextRound": "In attesa del prossimo round...",
   "game.waitingForFirstBid": "In attesa della prima offerta",
   "game.doubt": "Dubita",
+  "game.cannotDoubtOwnBid": "Non puoi dubitare della tua offerta",
+  "game.noBidToDoubt": "Nessuna offerta da dubitare",
   "game.spotOn": "Esatto",
   "game.dealer": "D",
   "game.dice": "dadi",
@@ -142,7 +144,7 @@
   "instructions.raise": "Rilancio: Clicca sul numero di dadi che credi ci siano in mano a tutti i giocatori",
   "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
   "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
-  "instructions.winRound": "L'ultimo giocatore in piedi vince il round",
+  "instructions.winRound": "Primo a 7 round — se due sono al matchpoint, si continua fino a 2 di scarto!",
   "settings.colorScheme": "Schema colori",
   "settings.colorLight": "Chiaro",
   "settings.colorDark": "Scuro",
@@ -155,5 +157,9 @@
   "game.pressEnterToChat": "Premi",
   "game.pressEnterToChatSuffix": "per chattare",
   "game.closeEsc": "esc",
-  "lobby.minitutorial": "Tutorial"
+  "lobby.minitutorial": "Tutorial",
+  "game.matchpointOvertimeTitle": "DI 2 PUNTI!",
+  "game.matchpointOvertimeMessage": "Due giocatori al matchpoint — si continua finché uno non guida di due.",
+  "lobby.randomizeOrder": "Mescola ordine",
+  "lobby.dragToReorder": "Trascina per impostare l'ordine dei posti"
 }

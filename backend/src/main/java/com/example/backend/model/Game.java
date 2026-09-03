@@ -26,6 +26,7 @@ public class Game {
         if (dealerIndex < players.size()) {
             currentPlayerIndex = dealerIndex;
         }
+        roundStartDealerIndex = dealerIndex;
         currentBid = null;
         previousBid = null;
         winner = null;
@@ -46,13 +47,34 @@ public class Game {
         }
         if (idx != -1) {
             dealerIndex = idx;
+            roundStartDealerIndex = idx;
         }
     }
 
-    // Pass dealer button to the next player in sequence
+    /**
+     * Pass dealer button to the next seat after whoever held it at the start of this round.
+     * Uses the full seating order (including players eliminated mid-round) so a temporary
+     * mid-round move of the chip onto the hand starter does not skip a seat for next round.
+     */
     public void passDealerToNextPlayer() {
         if (!players.isEmpty()) {
-            dealerIndex = (dealerIndex + 1) % players.size();
+            dealerIndex = (roundStartDealerIndex + 1) % players.size();
+            roundStartDealerIndex = dealerIndex;
+        }
+    }
+
+    /** Remember who holds the dealer button at the start of the current round. */
+    public void markRoundStartDealer() {
+        roundStartDealerIndex = dealerIndex;
+    }
+
+    /**
+     * Move the dealer chip to the player who starts the next hand (e.g. after an
+     * elimination when the previous dealer is out). Does not change roundStartDealerIndex.
+     */
+    public void syncDealerToHandStarter(int starterIndex) {
+        if (starterIndex >= 0 && starterIndex < players.size()) {
+            dealerIndex = starterIndex;
         }
     }
 
@@ -64,8 +86,9 @@ public class Game {
             .orElse(null);
         if (winnerPlayer != null) {
             winnerPlayer.addWinToken();
-            if (winnerPlayer.getWinTokens() >= 7) {
-                gameWinner = winnerId;
+            Player gameWinnerPlayer = GameRules.findGameWinner(players);
+            if (gameWinnerPlayer != null) {
+                gameWinner = gameWinnerPlayer.getId();
                 state = GameState.GAME_ENDED;
                 return true;
             }
@@ -83,6 +106,14 @@ public class Game {
     private String winner;
     private String gameWinner;
     private int dealerIndex;
+    /** Stable host identity (creator). Seat order can change without moving host. */
+    private String hostPlayerId;
+    /**
+     * Dealer seat at the beginning of the current round. Mid-round the visible
+     * dealerIndex may move to the hand starter when the original dealer is
+     * eliminated; round-end rotation still advances from this index among all seats.
+     */
+    private int roundStartDealerIndex;
     private boolean isMultiplayer;
     private boolean isPrivate;
     private int maxPlayers;
@@ -123,6 +154,7 @@ public class Game {
         this.eliminatedPlayers = new ArrayList<>();
         this.roundNumber = 1;
         this.dealerIndex = 0;
+        this.roundStartDealerIndex = 0;
         this.isMultiplayer = false;
         this.isPrivate = false;
         this.maxPlayers = 4;
@@ -174,6 +206,7 @@ public class Game {
         lastActionPlayerId = null;
         lastActionType = null;
         dealerIndex = 0;
+        roundStartDealerIndex = 0;
         currentPlayerIndex = 0;
         lastHostLobbyPresenceAt = System.currentTimeMillis();
     }
@@ -195,6 +228,7 @@ public class Game {
         this.isWaitingForPlayers = false;
     // Randomize dealer, and always start with dealer as current player
     this.dealerIndex = (int) (Math.random() * players.size());
+    this.roundStartDealerIndex = this.dealerIndex;
     this.currentPlayerIndex = this.dealerIndex;
     }
 
@@ -253,14 +287,31 @@ public class Game {
     }
 
     public boolean hasGameWinner() {
-        return players.stream().anyMatch(player -> player.getWinTokens() >= 7);
+        return GameRules.findGameWinner(players) != null;
     }
 
     public Player getGameWinnerPlayer() {
-        return players.stream()
-                .filter(player -> player.getWinTokens() >= 7)
-                .findFirst()
-                .orElse(null);
+        return GameRules.findGameWinner(players);
+    }
+
+    public String getHostPlayerId() {
+        if (hostPlayerId != null) {
+            return hostPlayerId;
+        }
+        // Legacy games: first seat was always the host
+        return players.isEmpty() ? null : players.get(0).getId();
+    }
+
+    public void setHostPlayerId(String hostPlayerId) {
+        this.hostPlayerId = hostPlayerId;
+    }
+
+    public boolean isHost(String playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        String hostId = getHostPlayerId();
+        return hostId != null && hostId.equals(playerId);
     }
 
     public int getDealerIndex() {
@@ -269,6 +320,14 @@ public class Game {
 
     public void setDealerIndex(int dealerIndex) {
         this.dealerIndex = dealerIndex;
+    }
+
+    public int getRoundStartDealerIndex() {
+        return roundStartDealerIndex;
+    }
+
+    public void setRoundStartDealerIndex(int roundStartDealerIndex) {
+        this.roundStartDealerIndex = roundStartDealerIndex;
     }
 
     public Player getDealer() {

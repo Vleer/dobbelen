@@ -176,6 +176,28 @@ public class GameController {
         }
     }
 
+    @PostMapping("/multiplayer/{gameId}/player-order")
+    public ResponseEntity<GameResponse> reorderPlayers(@PathVariable String gameId,
+            @RequestBody ReorderPlayersRequest request) {
+        try {
+            Game game = gameService.reorderPlayers(gameId, request.getPlayerId(), request.getPlayerIds());
+            return ResponseEntity.ok(new GameResponse(game));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/multiplayer/{gameId}/randomize-order")
+    public ResponseEntity<GameResponse> randomizePlayerOrder(@PathVariable String gameId,
+            @RequestBody ActionRequest request) {
+        try {
+            Game game = gameService.randomizePlayerOrder(gameId, request.getPlayerId());
+            return ResponseEntity.ok(new GameResponse(game));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PostMapping("/multiplayer/{gameId}/start")
     public ResponseEntity<GameResponse> startMultiplayerGame(@PathVariable String gameId,
             @RequestBody ActionRequest request) {

@@ -25,6 +25,7 @@ import ChatMessageToasts from './ChatMessageToasts';
 import MiniTutorial from './MiniTutorial';
 import useWindowSize from '../utils/useWindowSize';
 import ChatIcon from './ChatIcon';
+import { isMatchpointOvertime, MATCHPOINT_THRESHOLD } from '../utils/winTokens';
 
 interface GameTableProps {
   game?: Game | null;
@@ -90,6 +91,10 @@ const GameTable: React.FC<GameTableProps> = ({
   const dealerChipPosRef = useRef(dealerChipPos);
   const [showMatchpoint, setShowMatchpoint] = useState(false);
   const [matchpointPlayerId, setMatchpointPlayerId] = useState<string>('');
+  const [matchpointMode, setMatchpointMode] = useState<'single' | 'overtime'>('single');
+  /** Survive BidDisplay / dock remounts (dice reveal, turn changes) so drag position sticks */
+  const [bidDisplayDragPos, setBidDisplayDragPos] = useState<{ left: number; top: number } | null>(null);
+  const [playerDockDragPos, setPlayerDockDragPos] = useState<{ left: number; top: number } | null>(null);
   // Chat state
   const [showChat, setShowChat] = useState(initialShowChat);
   const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
@@ -682,12 +687,23 @@ const GameTable: React.FC<GameTableProps> = ({
         trackRoundEnd(winnerPlayer, game, wasLastRound);
       }
       
-      // Check for matchpoint (6 tokens = 1 away from winning)
-      if (winnerPlayer && winnerPlayer.winTokens === 6 && matchpointPlayerId !== game.winner) {
-        console.log('Matchpoint reached for player:', winnerPlayer.name);
-        setShowMatchpoint(true);
-        setMatchpointPlayerId(game.winner);
-        setTimeout(() => setShowMatchpoint(false), 3000);
+      // Matchpoint / win-by-2 overtime banner
+      if (winnerPlayer && matchpointPlayerId !== game.winner) {
+        const atMatchpoint = winnerPlayer.winTokens === MATCHPOINT_THRESHOLD;
+        const enteredOvertime =
+          isMatchpointOvertime(game.players) &&
+          game.players.filter((p) => (p.winTokens || 0) >= MATCHPOINT_THRESHOLD)
+            .length >= 2 &&
+          atMatchpoint;
+        if (atMatchpoint || enteredOvertime) {
+          console.log('Matchpoint reached for player:', winnerPlayer.name);
+          setMatchpointMode(
+            isMatchpointOvertime(game.players) ? 'overtime' : 'single'
+          );
+          setShowMatchpoint(true);
+          setMatchpointPlayerId(game.winner);
+          setTimeout(() => setShowMatchpoint(false), 3000);
+        }
       }
     }
 
@@ -1191,6 +1207,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   <OpponentPlayer
                     key={opponent.id}
                     player={opponent}
+                    players={game.players}
                     position={index}
                     isMyTurn={game.currentPlayerId === opponent.id}
                     isDealer={false}
@@ -1285,7 +1302,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   />
                 </div>
               )}
-              {localPlayer && isMyTurn() && !localPlayer.eliminated && (
+              {localPlayer && !localPlayer.eliminated && (
                 <div className="pointer-events-auto w-full">
                   <BidSelector
                     currentBid={game.currentBid}
@@ -1298,16 +1315,17 @@ const GameTable: React.FC<GameTableProps> = ({
                     disabled={isLoading || bettingDisabled}
                     isMobile={useMobileLayout}
                     stacked
+                    canBid={isMyTurn()}
+                    localPlayerId={localPlayerId}
                   />
                 </div>
               )}
             </div>
           )}
 
-        {/* Bid Selector - Fixed above local player (only when active turn); not when tablet landscape stack handles it */}
+        {/* Bid Selector — always visible for active players (Doubt off-turn; full grid on turn) */}
         {showBidDisplay &&
           localPlayer &&
-          isMyTurn() &&
           !localPlayer.eliminated &&
           !tabletLandscapeStack && (
             <div
@@ -1323,6 +1341,8 @@ const GameTable: React.FC<GameTableProps> = ({
                 onSpotOn={() => handleAction("spotOn")}
                 disabled={isLoading || bettingDisabled}
                 isMobile={useMobileLayout}
+                canBid={isMyTurn()}
+                localPlayerId={localPlayerId}
               />
             </div>
           )}
@@ -1335,6 +1355,7 @@ const GameTable: React.FC<GameTableProps> = ({
           >
             <LocalPlayer
               player={localPlayer}
+              players={game.players}
               isMyTurn={isMyTurn()}
               isDealer={false}
               onAction={handleAction}
@@ -1366,6 +1387,8 @@ const GameTable: React.FC<GameTableProps> = ({
               winner={game.winner || undefined}
               isMobile={false}
               draggable
+              dragPosition={bidDisplayDragPos}
+              onDragPositionChange={setBidDisplayDragPos}
               statusLabel={
                 localPlayer?.eliminated
                   ? t("game.waitingForNextRound")
@@ -1386,9 +1409,12 @@ const GameTable: React.FC<GameTableProps> = ({
         {/* Local player + bid selector — one centered dock */}
         {localPlayer && !game.gameWinner && (
           <DesktopPlayerDock
+            dragPosition={playerDockDragPos}
+            onDragPositionChange={setPlayerDockDragPos}
             playerSlot={
               <LocalPlayer
                 player={localPlayer}
+                players={game.players}
                 isMyTurn={isMyTurn()}
                 isDealer={false}
                 onAction={handleAction}
@@ -1403,7 +1429,7 @@ const GameTable: React.FC<GameTableProps> = ({
               />
             }
           >
-            {isMyTurn() && !localPlayer.eliminated && showBidDisplay && (
+            {!localPlayer.eliminated && showBidDisplay && (
               <BidSelector
                 currentBid={game.currentBid}
                 previousBid={shouldShowPreviousBid ? game.previousBid : null}
@@ -1416,6 +1442,8 @@ const GameTable: React.FC<GameTableProps> = ({
                 isMobile={false}
                 stacked
                 compactDesktopLandscape={isLandscape}
+                canBid={isMyTurn()}
+                localPlayerId={localPlayerId}
               />
             )}
           </DesktopPlayerDock>
@@ -1451,6 +1479,7 @@ const GameTable: React.FC<GameTableProps> = ({
             <OpponentPlayer
               key={opponent.id}
               player={opponent}
+              players={game.players}
               position={index}
               isMyTurn={game.currentPlayerId === opponent.id}
               isDealer={false}
@@ -1528,7 +1557,14 @@ const GameTable: React.FC<GameTableProps> = ({
                 onClose={() => setShowSettings(false)}
                 onLeaveGame={() => setShowLeaveConfirm(true)}
                 leaveGameLabel={t("game.leaveGame")}
-                onEndGame={isMultiplayerGame && game.players[0]?.id === localPlayerId ? () => setShowEndGameConfirm(true) : undefined}
+                onEndGame={
+                  isMultiplayerGame &&
+                  (game.hostPlayerId
+                    ? game.hostPlayerId === localPlayerId
+                    : game.players[0]?.id === localPlayerId)
+                    ? () => setShowEndGameConfirm(true)
+                    : undefined
+                }
                 endGameLabel={t("game.endGame")}
                 mobileCentered={useMobileLayout}
                 anchorRef={gameSettingsAnchorRef}
@@ -1873,28 +1909,38 @@ const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Matchpoint notification - styled prominently, gold/yellow theme */}
+      {/* Matchpoint notification — centered on all viewports (incl. tablet) */}
       {showMatchpoint && matchpointPlayerId && (
-        <div
-          className="fixed top-1/4 left-1/2 -translate-x-1/2 z-[9999] border-4 rounded-2xl px-8 py-6 md:px-12 md:py-8 shadow-2xl max-w-[95vw] text-center animate-bounce-in"
-          style={{ 
-            backgroundColor: '#2e2417', 
-            borderColor: '#f2c96d',
-            boxShadow: '0 0 40px 10px rgba(242, 201, 109, 0.6)'
-          }}
-        >
-          <div className="text-4xl md:text-6xl font-extrabold mb-2 animate-pulse" style={{ 
-            color: '#f2c96d',
-            textShadow: '0 0 20px rgba(242, 201, 109, 0.8)'
-          }}>
-            MATCHPOINT!
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none p-4">
+          <div
+            className="border-4 rounded-2xl px-8 py-6 md:px-12 md:py-8 shadow-2xl max-w-[min(28rem,95vw)] w-full text-center animate-bounce-in pointer-events-auto"
+            style={{
+              backgroundColor: '#2e2417',
+              borderColor: '#f2c96d',
+              boxShadow: '0 0 40px 10px rgba(242, 201, 109, 0.6)',
+            }}
+          >
+            <div
+              className="text-4xl md:text-6xl font-extrabold mb-2 animate-pulse"
+              style={{
+                color: '#f2c96d',
+                textShadow: '0 0 20px rgba(242, 201, 109, 0.8)',
+              }}
+            >
+              {matchpointMode === 'overtime'
+                ? t('game.matchpointOvertimeTitle')
+                : 'MATCHPOINT!'}
+            </div>
+            <p className="text-lg md:text-2xl font-bold" style={{ color: '#f7f3e8' }}>
+              {game.players.find((p) => p.id === matchpointPlayerId)?.name ||
+                t('common.unknownPlayer')}
+            </p>
+            <p className="text-sm md:text-base mt-1" style={{ color: '#d9b45a' }}>
+              {matchpointMode === 'overtime'
+                ? t('game.matchpointOvertimeMessage')
+                : t('game.matchpointMessage')}
+            </p>
           </div>
-          <p className="text-lg md:text-2xl font-bold" style={{ color: '#f7f3e8' }}>
-            {game.players.find(p => p.id === matchpointPlayerId)?.name || t("common.unknownPlayer")}
-          </p>
-          <p className="text-sm md:text-base mt-1" style={{ color: '#d9b45a' }}>
-            {t("game.matchpointMessage")}
-          </p>
         </div>
       )}
 

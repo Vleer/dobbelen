@@ -117,7 +117,11 @@ function App() {
       const currentPlayerId = playerId || lobbyPlayerId || "";
       const fallbackUsername = currentGame?.players.find((player) => player.id === currentPlayerId)?.name || "";
       const currentUsername = username || lobbyPlayerName || fallbackUsername;
-      const isHost = !!currentGame?.players[0] && currentGame.players[0].id === currentPlayerId;
+      const isHost =
+        (!!currentGame?.hostPlayerId && currentGame.hostPlayerId === currentPlayerId) ||
+        (!currentGame?.hostPlayerId &&
+          !!currentGame?.players[0] &&
+          currentGame.players[0].id === currentPlayerId);
 
       if (currentUsername) {
         storage.setItem(

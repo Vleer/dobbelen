@@ -54,6 +54,8 @@
   "game.waitingForNextRound": "Esperando la siguiente ronda...",
   "game.waitingForFirstBid": "Esperando la primera puja",
   "game.doubt": "Dudar",
+  "game.cannotDoubtOwnBid": "No puedes dudar de tu propia puja",
+  "game.noBidToDoubt": "Aún no hay puja que dudar",
   "game.spotOn": "Justo",
   "game.dealer": "D",
   "game.dice": "dados",
@@ -146,7 +148,7 @@
   "instructions.raise": "Subir: Pulsa el número de dados que crees que hay en total en todas las manos",
   "instructions.doubt": "Dudar: Desafía la puja anterior si te parece demasiado alta",
   "instructions.spotOn": "Justo: Afirma que la puja es exacta (¡arriesgado!) Si es verdad, la ronda se reinicia.",
-  "instructions.winRound": "¡El último jugador en pie gana la ronda!",
+  "instructions.winRound": "Primero a 7 rondas — si dos llegan a matchpoint, seguid hasta liderar por 2!",
   "settings.colorScheme": "Esquema de color",
   "settings.colorLight": "Claro",
   "settings.colorDark": "Oscuro",
@@ -159,5 +161,9 @@
   "game.pressEnterToChat": "Pulsa",
   "game.pressEnterToChatSuffix": "para chatear",
   "game.closeEsc": "esc",
-  "lobby.minitutorial": "Tutorial"
+  "lobby.minitutorial": "Tutorial",
+  "game.matchpointOvertimeTitle": "¡POR 2!",
+  "game.matchpointOvertimeMessage": "Dos jugadores en matchpoint — seguid hasta que uno lidere por dos.",
+  "lobby.randomizeOrder": "Barajar orden",
+  "lobby.dragToReorder": "Arrastra para fijar el orden de asientos"
 }

@@ -35,6 +35,8 @@ export interface Game {
   winner: string | null;
   gameWinner: string | null;
   dealerId: string | null;
+  /** Stable host (creator); seating order may differ from index 0 */
+  hostPlayerId?: string | null;
   isMultiplayer: boolean;
   isPrivate?: boolean;
   maxPlayers: number;
@@ -96,6 +98,7 @@ export interface GameResponse {
   winner: string | null;
   gameWinner: string | null;
   dealerId: string | null;
+  hostPlayerId?: string | null;
   isMultiplayer: boolean;
   isPrivate?: boolean;
   maxPlayers: number;

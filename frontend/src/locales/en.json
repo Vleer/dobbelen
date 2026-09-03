@@ -1,7 +1,6 @@
 {
   "game.title": "Liar's Dice",
   "game.subtitle": "The classic bluffing game",
-
   "lobby.createGame": "Create New Game",
   "lobby.privateGame": "Private game",
   "lobby.minitutorial": "Tutorial",
@@ -27,7 +26,6 @@
   "lobby.pleaseEnterUsername": "Please enter your username.",
   "lobby.failedToCreateGame": "Failed to create game",
   "lobby.failedToJoinGame": "Failed to join game",
-
   "lobby.shareLink": "Share this link to invite players:",
   "lobby.copy": "Copy",
   "lobby.players": "Players",
@@ -40,7 +38,6 @@
   "lobby.needAtLeastTwoPlayers": "At least 2 players required to start",
   "lobby.gameStarting": "Game starting in...",
   "lobby.go": "Go!",
-
   "game.round": "Round {{roundNumber}}",
   "game.currentBid": "Current Bid",
   "game.noCurrentBid": "No current bid",
@@ -51,7 +48,6 @@
   "game.fours": "Fours",
   "game.fives": "Fives",
   "game.sixes": "Sixes",
-
   "game.makeYourBid": "Make Your Bid",
   "game.yourTurn": "Your Turn",
   "game.playersTurn": "{{name}}'s turn",
@@ -59,8 +55,9 @@
   "game.waitingForNextRound": "Waiting for next round...",
   "game.waitingForFirstBid": "Waiting for first bid",
   "game.doubt": "Doubt",
+  "game.cannotDoubtOwnBid": "You can't doubt your own bid",
+  "game.noBidToDoubt": "No bid to doubt yet",
   "game.spotOn": "Spot On",
-
   "game.dealer": "D",
   "game.dice": "dice",
   "game.revealed": "REVEALED",
@@ -71,7 +68,6 @@
   "game.activePlayers": "Active Players",
   "game.winTokens": "🏆 {{count}}",
   "game.diceHidden": "Hidden",
-
   "game.result.thereWere": "There were {{actualCount}} {{faceValue}}s",
   "game.result.bidWasCorrect": "Bid was correct ✓",
   "game.result.bidWasWrong": "Bid was wrong ✗",
@@ -98,7 +94,6 @@
   "game.history.playerBidWasDoubted": "{{playerName}}'s bid was doubted",
   "game.history.playerBidWasSpotOn": "{{playerName}}'s bid was called spot on",
   "game.action.raise": "{{playerName}} raises to {{quantity}} of {{faceValue}}s",
-
   "game.matchpointMessage": "One point away from victory!",
   "game.continue": "Continue",
   "game.continuing": "Continuing...",
@@ -115,17 +110,13 @@
   "game.pressEnterToChat": "Press",
   "game.pressEnterToChatSuffix": "to chat",
   "game.closeEsc": "esc",
-
   "game.dobbelkoning": "Dobbelkoning",
-
   "errors.failedToAddPlayer": "Failed to add AI player",
   "errors.failedToStart": "Failed to start game",
   "errors.failedToRemove": "Failed to remove AI player",
-
   "common.playAgain": "Play Again",
   "common.state": "State",
   "common.unknownPlayer": "Unknown Player",
-
   "game.history.title": "History",
   "game.history.currentHand": "Current Hand",
   "game.history.lastHand": "Last Hand",
@@ -158,19 +149,21 @@
   "game.history.spotOnsFaced": "Spot-ons faced",
   "game.history.eliminations": "Eliminations",
   "game.history.statsHint": "Ratios are correct / total. Bluffs are when your bid was doubted.",
-
   "instructions.title": "How to Play",
   "instructions.rules": "Rules",
   "instructions.close": "Close",
   "instructions.raise": "Raise: Click on the number of dice you believe is in all player's hands combined",
-  "instructions.doubt": "Doubt: Challenged the previous bid if too high",
+  "instructions.doubt": "Doubt: Challenge the current bid if too high — any active player can doubt at any time",
   "instructions.spotOn": "Spot On: Claim Bid is exactly correct (risky!) If true, the round resets.",
-  "instructions.winRound": "Last player standing wins the round!",
-
+  "instructions.winRound": "First to 7 round wins — but if two reach matchpoint, play on until someone leads by 2!",
   "settings.colorScheme": "Color Scheme",
   "settings.colorLight": "Light",
   "settings.colorDark": "Dark",
   "settings.colorWhite": "White",
   "settings.fontSize": "Font Size",
-  "settings.animations": "Animations"
+  "settings.animations": "Animations",
+  "game.matchpointOvertimeTitle": "WIN BY 2!",
+  "game.matchpointOvertimeMessage": "Two players at matchpoint — keep going until someone leads by two.",
+  "lobby.randomizeOrder": "Shuffle order",
+  "lobby.dragToReorder": "Drag to set seating order"
 }

@@ -49,6 +49,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const [lobbyGames, setLobbyGames] = useState<Game[]>([]);
   const [lobbyExpanded, setLobbyExpanded] = useState(false);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
+  const [dragPlayerId, setDragPlayerId] = useState<string | null>(null);
+  const [dragOverPlayerId, setDragOverPlayerId] = useState<string | null>(null);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [internalShowChat, setInternalShowChat] = useState(false);
   const { isMobile, isTablet } = useWindowSize();
@@ -487,7 +489,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
 
   const kickPlayer = async (playerId: string) => {
     if (!game || !isHost) return;
-    const hostId = game.players[0]?.id;
+    const hostId = game.hostPlayerId || game.players[0]?.id;
     if (playerId === hostId) return; // Host uses "Cancel game" to leave
 
     try {
@@ -497,6 +499,73 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       console.error("Error kicking player:", err);
       setError(err.response?.data?.message || err.message || "Failed to remove player");
     }
+  };
+
+  const applyPlayerOrder = async (orderedIds: string[]) => {
+    if (!game || !isHost || !myPlayerId) return;
+    try {
+      const updatedGame = await gameApi.reorderPlayers(game.id, myPlayerId, orderedIds);
+      setGame(updatedGame);
+    } catch (err: any) {
+      console.error("Error reordering players:", err);
+      setError(err.response?.data?.message || err.message || "Failed to reorder players");
+    }
+  };
+
+  const randomizePlayerOrder = async () => {
+    if (!game || !isHost || !myPlayerId) return;
+    try {
+      audioService.playRaise();
+      const updatedGame = await gameApi.randomizePlayerOrder(game.id, myPlayerId);
+      setGame(updatedGame);
+    } catch (err: any) {
+      console.error("Error randomizing order:", err);
+      setError(err.response?.data?.message || err.message || "Failed to shuffle order");
+    }
+  };
+
+  const onPlayerDragStart = (playerId: string) => (e: React.DragEvent) => {
+    if (!isHost) return;
+    setDragPlayerId(playerId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", playerId);
+  };
+
+  const onPlayerDragOver = (playerId: string) => (e: React.DragEvent) => {
+    if (!isHost || !dragPlayerId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverPlayerId !== playerId) {
+      setDragOverPlayerId(playerId);
+    }
+  };
+
+  const onPlayerDrop = (targetPlayerId: string) => async (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!game || !isHost || !dragPlayerId) return;
+    const fromId = dragPlayerId;
+    setDragPlayerId(null);
+    setDragOverPlayerId(null);
+    if (fromId === targetPlayerId) return;
+
+    const ids = game.players.map((p) => p.id);
+    const fromIndex = ids.indexOf(fromId);
+    const toIndex = ids.indexOf(targetPlayerId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    ids.splice(fromIndex, 1);
+    ids.splice(toIndex, 0, fromId);
+    // Optimistic local reorder
+    const byId = new Map(game.players.map((p) => [p.id, p]));
+    setGame({
+      ...game,
+      players: ids.map((id) => byId.get(id)!).filter(Boolean),
+    });
+    await applyPlayerOrder(ids);
+  };
+
+  const onPlayerDragEnd = () => {
+    setDragPlayerId(null);
+    setDragOverPlayerId(null);
   };
 
   const copyGameLink = () => {
@@ -759,9 +828,31 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
             </div>
 
             <div className="p-3 md:p-4 rounded-lg" style={{ backgroundColor: 'var(--panel-bg-soft)', border: '1px solid var(--panel-border)' }}>
-              <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">
-                {t("lobby.players")} ({game.players.length})
-              </h3>
+              <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+                <h3 className="font-bold text-base md:text-lg">
+                  {t("lobby.players")} ({game.players.length})
+                </h3>
+                {isHost && game.players.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={randomizePlayerOrder}
+                    className="shrink-0 px-2.5 py-1 rounded-lg text-xs md:text-sm font-semibold border"
+                    style={{
+                      backgroundColor: 'var(--panel-bg)',
+                      color: 'var(--accent-gold)',
+                      borderColor: 'var(--accent-gold-strong)',
+                    }}
+                    title={t("lobby.randomizeOrder")}
+                  >
+                    🔀 {t("lobby.randomizeOrder")}
+                  </button>
+                )}
+              </div>
+              {isHost && (
+                <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                  {t("lobby.dragToReorder")}
+                </p>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {game.players.map((player, index) => {
                   console.log("MultiplayerLobby player color:", player.color);
@@ -780,12 +871,36 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     console.warn("Unknown player color:", player.color);
                     playerColorClass = "bg-rose-700"; // fallback to rose for visibility
                   }
+                  const hostId = game.hostPlayerId || game.players[0]?.id;
+                  const playerIsHost = player.id === hostId;
+                  const isDragging = dragPlayerId === player.id;
+                  const isDragOver = dragOverPlayerId === player.id && dragPlayerId !== player.id;
                   return (
                     <div
                       key={player.id}
-                      className="flex items-center p-2 rounded"
-                      style={{ backgroundColor: 'var(--panel-bg-soft)' }}
+                      draggable={isHost}
+                      onDragStart={onPlayerDragStart(player.id)}
+                      onDragOver={onPlayerDragOver(player.id)}
+                      onDrop={onPlayerDrop(player.id)}
+                      onDragEnd={onPlayerDragEnd}
+                      className={`flex items-center p-2 rounded transition-opacity ${
+                        isHost ? "cursor-grab active:cursor-grabbing" : ""
+                      } ${isDragging ? "opacity-50" : ""}`}
+                      style={{
+                        backgroundColor: 'var(--panel-bg-soft)',
+                        outline: isDragOver ? '2px solid var(--accent-gold)' : undefined,
+                        outlineOffset: isDragOver ? '1px' : undefined,
+                      }}
                     >
+                      {isHost && (
+                        <span
+                          className="mr-1.5 text-sm select-none"
+                          style={{ color: 'var(--text-muted)' }}
+                          aria-hidden
+                        >
+                          ⠿
+                        </span>
+                      )}
                       <span
                         className={`w-5 h-5 md:w-6 md:h-6 ${playerColorClass} text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold`}
                       >
@@ -809,11 +924,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                         ) : (
                           <>
                             {player.name}
-                            {index === 0 && <span className="ml-1" title={t("lobby.host")}>👑</span>}
+                            {playerIsHost && <span className="ml-1" title={t("lobby.host")}>👑</span>}
                           </>
                         )}
                       </span>
-                      {isHost && game.players[0]?.id !== player.id && (
+                      {isHost && !playerIsHost && (
                         <button
                           onClick={() => {
                             audioService.playRaise();

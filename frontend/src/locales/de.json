@@ -48,6 +48,8 @@
   "game.waitingForNextRound": "Warten auf die nächste Runde...",
   "game.waitingForFirstBid": "Warten auf das erste Gebot",
   "game.doubt": "Zweifel",
+  "game.cannotDoubtOwnBid": "Du kannst dein eigenes Gebot nicht anzweifeln",
+  "game.noBidToDoubt": "Noch kein Gebot zum Anzweifeln",
   "game.spotOn": "Genau richtig",
   "game.dealer": "D",
   "game.dice": "Würfel",
@@ -142,7 +144,7 @@
   "instructions.raise": "Erhöhen: Klicke auf die Anzahl der Würfel, die du glaubst, dass alle Spieler zusammen haben",
   "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
   "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
-  "instructions.winRound": "Der letzte verbleibende Spieler gewinnt die Runde",
+  "instructions.winRound": "Zuerst 7 Rundensiege — bei zwei Matchpoints weiter bis jemand mit 2 führt!",
   "settings.colorScheme": "Farbschema",
   "settings.colorLight": "Hell",
   "settings.colorDark": "Dunkel",
@@ -155,5 +157,9 @@
   "game.pressEnterToChat": "Drücke",
   "game.pressEnterToChatSuffix": "zum Chatten",
   "game.closeEsc": "esc",
-  "lobby.minitutorial": "Tutorial"
+  "lobby.minitutorial": "Tutorial",
+  "game.matchpointOvertimeTitle": "MIT 2 VORSPRUNG!",
+  "game.matchpointOvertimeMessage": "Zwei Spieler am Matchpoint — weiter bis jemand mit zwei Punkten führt.",
+  "lobby.randomizeOrder": "Reihenfolge mischen",
+  "lobby.dragToReorder": "Ziehen, um die Sitzordnung festzulegen"
 }

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -186,11 +188,11 @@ public class GameService {
             player.rollDice();
         }
 
-        // Randomize starting player from all players
-        if (!game.getPlayers().isEmpty()) {
-            Player randomPlayer = game.getPlayers().get((int) (Math.random() * game.getPlayers().size()));
-            game.setCurrentPlayerIndex(game.getPlayers().indexOf(randomPlayer));
+        // Always start the round with the dealer (button already advanced at round end)
+        if (game.getDealerIndex() < game.getPlayers().size()) {
+            game.setCurrentPlayerIndex(game.getDealerIndex());
         }
+        game.markRoundStartDealer();
         game.setCurrentBid(null);
         game.setPreviousBid(null);
         game.setWinner(null);
@@ -203,7 +205,9 @@ public class GameService {
         Player newCurrent = game.getCurrentPlayer();
         if (newCurrent != null) recordActivity(gameId, newCurrent.getId());
         System.out.println("New round started. State: " + game.getState() + ", Current player: "
-                + (newCurrent != null ? newCurrent.getName() : "none"));
+                + (newCurrent != null ? newCurrent.getName() : "none") + ", Dealer: "
+                + (game.getDealer() != null ? game.getDealer().getName() : "none"));
+        broadcastGameUpdate(gameId);
     }
 
     // Use GameRules for bid validation and dice counting
@@ -221,6 +225,9 @@ public class GameService {
         
         if (currentBid == null) {
             throw new IllegalStateException("No current bid to doubt");
+        }
+        if (currentBid.getPlayerId() != null && currentBid.getPlayerId().equals(doubtingPlayerId)) {
+            throw new IllegalArgumentException("Cannot doubt your own bid");
         }
 
         List<Player> activePlayers = game.getActivePlayers();
@@ -298,6 +305,8 @@ public class GameService {
             attempts++;
         }
         game.setCurrentPlayerIndex(nextIndex);
+        // Button follows who starts this hand; round-end rotation still uses roundStartDealerIndex
+        game.syncDealerToHandStarter(nextIndex);
 
         // If elimination resulted in 2 active players, set the start index for the
         // 2-player phase
@@ -313,8 +322,8 @@ public class GameService {
                     break;
                 }
             }
-            if (eliminatedIndex == game.getDealerIndex()) {
-                // Find next non-eliminated player after the eliminated dealer
+            if (eliminatedIndex == game.getRoundStartDealerIndex()) {
+                // Find next non-eliminated player after the eliminated round-start dealer
                 int idx = (eliminatedIndex + 1) % game.getPlayers().size();
                 int attempts2 = 0;
                 while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
@@ -337,6 +346,9 @@ public class GameService {
         } else {
             scheduleEnableContinue(gameId);
         }
+
+        // Re-broadcast so clients see updated dealer / turn after elimination
+        broadcastGameUpdate(gameId);
 
         return new GameResult(game, eliminatedPlayerId, actualCount, currentBid.getQuantity());
     }
@@ -420,6 +432,7 @@ public class GameService {
                 attempts++;
             }
             game.setCurrentPlayerIndex(nextIndex);
+            game.syncDealerToHandStarter(nextIndex);
 
             // Schedule to enable continue button after 15 seconds
             scheduleEnableContinue(gameId);
@@ -481,6 +494,8 @@ public class GameService {
                 attempts++;
             }
             game.setCurrentPlayerIndex(nextIndex);
+            // Button follows who starts this hand; round-end rotation still uses roundStartDealerIndex
+            game.syncDealerToHandStarter(nextIndex);
 
             // If elimination resulted in 2 active players, set the start index for the
             // 2-player phase
@@ -494,8 +509,8 @@ public class GameService {
                         break;
                     }
                 }
-                if (eliminatedIndex == game.getDealerIndex()) {
-                    // Find next non-eliminated player after the eliminated dealer
+                if (eliminatedIndex == game.getRoundStartDealerIndex()) {
+                    // Find next non-eliminated player after the eliminated round-start dealer
                     int idx = (eliminatedIndex + 1) % game.getPlayers().size();
                     int attempts2 = 0;
                     while (game.getEliminatedPlayers().contains(game.getPlayers().get(idx).getId())
@@ -519,6 +534,9 @@ public class GameService {
                 scheduleEnableContinue(gameId);
             }
         }
+
+        // Re-broadcast so clients see updated dealer / turn after spot-on resolution
+        broadcastGameUpdate(gameId);
 
         // Dice will be hidden when continue is pressed, not automatically
 
@@ -640,10 +658,7 @@ public class GameService {
         if (!game.isMultiplayer() || game.getState() != GameState.WAITING_FOR_PLAYERS) {
             throw new IllegalArgumentException("Lobby presence only applies while waiting for players");
         }
-        if (game.getPlayers().isEmpty()) {
-            throw new IllegalArgumentException("Game has no players");
-        }
-        if (!game.getPlayers().get(0).getId().equals(playerId)) {
+        if (!game.isHost(playerId)) {
             throw new IllegalArgumentException("Only the host can refresh lobby presence");
         }
         game.setLastHostLobbyPresenceAt(System.currentTimeMillis());
@@ -719,6 +734,7 @@ public class GameService {
         Player player = new Player(playerName, color, aiType);
         game.getPlayers().add(player);
         if (game.getPlayers().size() == 1) {
+            game.setHostPlayerId(player.getId());
             game.setLastHostLobbyPresenceAt(System.currentTimeMillis());
         }
 
@@ -752,6 +768,9 @@ public class GameService {
         }
 
         // Find and remove the player
+        if (game.isHost(playerId)) {
+            throw new IllegalArgumentException("Cannot remove the host");
+        }
         boolean removed = game.getPlayers().removeIf(p -> p.getId().equals(playerId));
 
         if (!removed) {
@@ -766,7 +785,68 @@ public class GameService {
     }
 
     /**
-     * Leave an in-progress multiplayer game. If the leaving player is the host (first player),
+     * Host-only: set seating / turn order while waiting in the lobby.
+     * {@code orderedPlayerIds} must be a permutation of the current player ids.
+     */
+    public Game reorderPlayers(String gameId, String requestingPlayerId, List<String> orderedPlayerIds) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            throw new IllegalArgumentException("Can only reorder players in the lobby");
+        }
+        if (!game.isHost(requestingPlayerId)) {
+            throw new IllegalArgumentException("Only the host can reorder players");
+        }
+        if (orderedPlayerIds == null || orderedPlayerIds.isEmpty()) {
+            throw new IllegalArgumentException("Player order is required");
+        }
+        List<Player> current = game.getPlayers();
+        if (orderedPlayerIds.size() != current.size()) {
+            throw new IllegalArgumentException("Player order must include every player exactly once");
+        }
+        Map<String, Player> byId = new HashMap<>();
+        for (Player p : current) {
+            byId.put(p.getId(), p);
+        }
+        List<Player> reordered = new ArrayList<>(current.size());
+        for (String id : orderedPlayerIds) {
+            Player p = byId.remove(id);
+            if (p == null) {
+                throw new IllegalArgumentException("Unknown or duplicate player id in order: " + id);
+            }
+            reordered.add(p);
+        }
+        if (!byId.isEmpty()) {
+            throw new IllegalArgumentException("Player order must include every player exactly once");
+        }
+        game.setPlayers(reordered);
+        broadcastGameUpdate(gameId);
+        return game;
+    }
+
+    /** Host-only: shuffle seating order while waiting in the lobby. */
+    public Game randomizePlayerOrder(String gameId, String requestingPlayerId) {
+        Game game = getGame(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found");
+        }
+        if (game.getState() != GameState.WAITING_FOR_PLAYERS) {
+            throw new IllegalArgumentException("Can only reorder players in the lobby");
+        }
+        if (!game.isHost(requestingPlayerId)) {
+            throw new IllegalArgumentException("Only the host can reorder players");
+        }
+        List<Player> shuffled = new ArrayList<>(game.getPlayers());
+        Collections.shuffle(shuffled);
+        game.setPlayers(shuffled);
+        broadcastGameUpdate(gameId);
+        return game;
+    }
+
+    /**
+     * Leave an in-progress multiplayer game. If the leaving player is the host,
      * the entire game is cancelled. If the leaving player is the current player and there is a bid,
      * they are treated as having called "spot on" (and lost), then removed. Otherwise the player is
      * simply removed. If one or zero players remain after removal, the game is cancelled.
@@ -793,8 +873,8 @@ public class GameService {
             throw new IllegalArgumentException("Player not found");
         }
 
-        // If the host (first player) leaves, cancel the entire game
-        if (leaveIndex == 0) {
+        // If the host leaves, cancel the entire game
+        if (game.isHost(playerId)) {
             games.remove(gameId);
             System.out.println("LEAVE GAME: Game " + gameId + " cancelled (host " + playerName + " left)");
             messagingTemplate.convertAndSend("/topic/game/" + gameId,
@@ -846,6 +926,17 @@ public class GameService {
             game.setDealerIndex(0);
         }
 
+        // Keep round-start dealer seat aligned with the same removal
+        int rs = game.getRoundStartDealerIndex();
+        if (rs == leaveIndex) {
+            game.setRoundStartDealerIndex(newSize > 0 ? 0 : 0);
+        } else if (rs > leaveIndex) {
+            game.setRoundStartDealerIndex(rs - 1);
+        }
+        if (game.getRoundStartDealerIndex() >= newSize && newSize > 0) {
+            game.setRoundStartDealerIndex(0);
+        }
+
         // Clear current bid if it was from the leaving player
         if (game.getCurrentBid() != null && game.getCurrentBid().getPlayerId().equals(playerId)) {
             game.setCurrentBid(null);
@@ -890,7 +981,7 @@ public class GameService {
             if (current == null) continue;
             String currentPlayerId = current.getId();
             String key = gameId + ":" + currentPlayerId;
-            boolean isHost = !game.getPlayers().isEmpty() && game.getPlayers().get(0).getId().equals(currentPlayerId);
+            boolean isHost = game.isHost(currentPlayerId);
             long timeout = isHost ? HOST_INACTIVITY_TIMEOUT_MS : RECONNECT_TIMEOUT_MS;
             Long last = lastActivityByGameAndPlayer.get(key);
             if (last != null && (now - last) > timeout) {
@@ -920,8 +1011,7 @@ public class GameService {
         if (game.getPlayers().isEmpty()) {
             throw new IllegalArgumentException("Game has no players");
         }
-        com.example.backend.model.Player host = game.getPlayers().get(0);
-        if (!host.getId().equals(playerId)) {
+        if (!game.isHost(playerId)) {
             throw new IllegalArgumentException("Only the host can cancel the game");
         }
         games.remove(gameId);
@@ -929,7 +1019,7 @@ public class GameService {
     }
 
     /**
-     * End an in-progress game immediately. Only the host (first player) may call this.
+     * End an in-progress game immediately. Only the host may call this.
      * Broadcasts GAME_CANCELLED so all clients return to the lobby.
      */
     public void endGameAsHost(String gameId, String playerId) {
@@ -940,8 +1030,7 @@ public class GameService {
         if (game.getPlayers().isEmpty()) {
             throw new IllegalArgumentException("Game has no players");
         }
-        com.example.backend.model.Player host = game.getPlayers().get(0);
-        if (!host.getId().equals(playerId)) {
+        if (!game.isHost(playerId)) {
             throw new IllegalArgumentException("Only the host can end the game");
         }
         // Broadcast cancellation before removing the game so clients receive it
@@ -1053,8 +1142,8 @@ public class GameService {
         if (game.getPlayers().isEmpty()) {
             throw new IllegalArgumentException("Game has no players");
         }
-        // Only the host (first player) may start the game
-        if (!game.getPlayers().get(0).getId().equals(requestingPlayerId)) {
+        // Only the host may start the game
+        if (!game.isHost(requestingPlayerId)) {
             throw new IllegalArgumentException("Only the host can start the game");
         }
         if (game.getPlayers().size() < 2) {
@@ -1106,6 +1195,7 @@ public class GameService {
         }
         int dealerIdx = (int) (Math.random() * game.getPlayers().size());
         game.setDealerIndex(dealerIdx);
+        game.setRoundStartDealerIndex(dealerIdx);
         game.setCurrentPlayerIndex(dealerIdx);
         game.setState(GameState.IN_PROGRESS);
         game.setWaitingForPlayers(false);

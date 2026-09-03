@@ -1,10 +1,15 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+export type DragPos = { left: number; top: number };
+
 interface DesktopPlayerDockProps {
   /** Bid selector controls */
   children?: React.ReactNode;
   /** Local player card */
   playerSlot: React.ReactNode;
+  /** Controlled drag position (survives remount / bid-selector mount changes) */
+  dragPosition?: DragPos | null;
+  onDragPositionChange?: (pos: DragPos) => void;
 }
 
 const MAX_VIEWPORT_FRACTION = 0.8;
@@ -16,14 +21,35 @@ const MAX_VIEWPORT_FRACTION = 0.8;
 const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
   children,
   playerSlot,
+  dragPosition = null,
+  onDragPositionChange,
 }) => {
   const dockRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [internalPosition, setInternalPosition] = useState<DragPos | null>(null);
   const [dragging, setDragging] = useState(false);
   const [scale, setScale] = useState(1);
+
+  const isControlled = typeof onDragPositionChange === 'function';
+  const position = isControlled ? dragPosition : internalPosition;
+
+  const setPosition = useCallback(
+    (next: DragPos | ((prev: DragPos | null) => DragPos | null)) => {
+      const resolved =
+        typeof next === 'function'
+          ? next(isControlled ? dragPosition ?? null : internalPosition)
+          : next;
+      if (!resolved) return;
+      if (isControlled) {
+        onDragPositionChange!(resolved);
+      } else {
+        setInternalPosition(resolved);
+      }
+    },
+    [isControlled, dragPosition, internalPosition, onDragPositionChange]
+  );
 
   const updateScale = useCallback(() => {
     const el = contentRef.current;
@@ -122,7 +148,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [clampToViewport]);
+  }, [clampToViewport, setPosition]);
 
   useEffect(() => {
     if (!position) return;
@@ -130,7 +156,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
       setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [position, clampToViewport]);
+  }, [position, clampToViewport, setPosition]);
 
   const dragHandleClass = `pointer-events-auto touch-none select-none ${
     dragging ? 'cursor-grabbing' : 'cursor-grab'

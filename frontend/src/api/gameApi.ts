@@ -95,6 +95,21 @@ export const gameApi = {
     return normalizeGame(response.data);
   },
 
+  reorderPlayers: async (gameId: string, playerId: string, playerIds: string[]): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/player-order`, {
+      playerId,
+      playerIds,
+    });
+    return normalizeGame(response.data);
+  },
+
+  randomizePlayerOrder: async (gameId: string, playerId: string): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/randomize-order`, {
+      playerId,
+    });
+    return normalizeGame(response.data);
+  },
+
   removePlayer: async (gameId: string, playerId: string): Promise<GameResponse> => {
     const response = await axiosInstance.delete<GameResponse>(`/api/games/multiplayer/${gameId}/players/${playerId}`);
     return normalizeGame(response.data);

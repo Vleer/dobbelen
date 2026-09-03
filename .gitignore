@@ -2,3 +2,4 @@
 .vscode/
 .env
 .docker-cache/
+.android-sdk/

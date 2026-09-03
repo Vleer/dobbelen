@@ -139,8 +139,8 @@ const MiniTutorial: React.FC<MiniTutorialProps> = ({ game, localPlayerId, onDism
                 <strong style={{ color: 'var(--accent-gold)' }}>Raise</strong> — Bid a higher number or a different face value
               </li>
               <li style={{ color: 'var(--text-main)' }}>
-                <strong style={{ color: '#ef4444' }}>Doubt</strong> — Challenge the last bid if you think it's too high.{' '}
-                <span style={{ color: 'var(--text-muted)' }}>Loser loses a die. Risky!</span>
+                <strong style={{ color: '#ef4444' }}>Doubt</strong> — Challenge the current bid if you think it's too high (any time, even off-turn).{' '}
+                <span style={{ color: 'var(--text-muted)' }}>Loser is eliminated. Risky!</span>
               </li>
               <li style={{ color: 'var(--text-main)' }}>
                 <strong style={{ color: '#22c55e' }}>Spot On</strong> — Claim the bid is <em>exactly</em> right.{' '}
@@ -148,7 +148,7 @@ const MiniTutorial: React.FC<MiniTutorialProps> = ({ game, localPlayerId, onDism
               </li>
             </ul>
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--accent-gold)' }}>
-              🏆 Last remaining player wins!
+              🏆 First to 7 round wins — if two hit matchpoint, win by 2!
             </p>
             <button onClick={() => setStep('done')} className="w-full py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#1f3f2b', color: '#f5d98f', border: '1px solid #8a6a1d' }}>
               I'm ready to play! 🎲

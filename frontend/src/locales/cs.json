@@ -54,6 +54,8 @@
   "game.waitingForNextRound": "Čekáte na další kolo...",
   "game.waitingForFirstBid": "Čeká se na první příhoz",
   "game.doubt": "Nevěřím",
+  "game.cannotDoubtOwnBid": "Nemůžete zpochybnit vlastní příhoz",
+  "game.noBidToDoubt": "Zatím není žádný příhoz k napadení",
   "game.spotOn": "Přesně",
   "game.dealer": "D",
   "game.dice": "kostky",
@@ -146,7 +148,7 @@
   "instructions.raise": "Zvýšit: Klikněte na počet kostek, které podle vás mají všichni hráči dohromady",
   "instructions.doubt": "Nevěřím: Napadněte předchozí příhoz, pokud je příliš vysoký",
   "instructions.spotOn": "Přesně: Tvrdíte, že je příhoz přesně správný (riskantní!) Pokud ano, kolo se resetuje.",
-  "instructions.winRound": "Poslední zbývající hráč vyhrává kolo!",
+  "instructions.winRound": "První na 7 výher — pokud mají dva matchpoint, hraje se do vedení o 2!",
   "settings.colorScheme": "Barevné schéma",
   "settings.colorLight": "Světlé",
   "settings.colorDark": "Tmavé",
@@ -159,5 +161,9 @@
   "game.pressEnterToChat": "Stiskni",
   "game.pressEnterToChatSuffix": "pro chat",
   "game.closeEsc": "esc",
-  "lobby.minitutorial": "Tutoriál"
+  "lobby.minitutorial": "Tutoriál",
+  "game.matchpointOvertimeTitle": "O 2 BODY!",
+  "game.matchpointOvertimeMessage": "Dva hráči na matchpointu — hraje se, dokud někdo nevede o dva.",
+  "lobby.randomizeOrder": "Zamíchat pořadí",
+  "lobby.dragToReorder": "Přetažením nastavte pořadí míst"
 }

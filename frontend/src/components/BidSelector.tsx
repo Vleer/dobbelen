@@ -16,6 +16,13 @@ interface BidSelectorProps {
   stacked?: boolean;
   /** Desktop: match LocalPlayer width in landscape */
   compactDesktopLandscape?: boolean;
+  /**
+   * When false, hide raise grid / Spot On and only show Doubt
+   * (Doubt is allowed off-turn for any active player).
+   */
+  canBid?: boolean;
+  /** Local player id — used to block doubting your own bid */
+  localPlayerId?: string;
 }
 
 const BidSelector: React.FC<BidSelectorProps> = ({
@@ -28,12 +35,16 @@ const BidSelector: React.FC<BidSelectorProps> = ({
   isMobile = false,
   stacked = false,
   compactDesktopLandscape = false,
+  canBid = true,
+  localPlayerId,
 }) => {
   const { t } = useLanguage();
   const { animationsEnabled } = useSettings();
-  // Disable doubt/spot on if there's no current bid to challenge
-  // You can only doubt/spot-on a bid that exists
+  // You can only doubt a bid that exists, and not your own
   const noBidToChallenge = currentBid === null;
+  const isOwnBid =
+    !!currentBid && !!localPlayerId && currentBid.playerId === localPlayerId;
+  const doubtDisabled = disabled || noBidToChallenge || isOwnBid;
   const [isExpanded, setIsExpanded] = useState(() => {
     const saved = localStorage.getItem("bidSelectorExpanded");
     return saved ? JSON.parse(saved) : false;
@@ -108,7 +119,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     : quantities.slice(-2);
 
   const handleBidClick = (quantity: number, faceValue: number) => {
-    if (disabled) return;
+    if (disabled || !canBid) return;
 
     // Check if this is a valid bid
     const isValid = validBids.some(
@@ -145,6 +156,87 @@ const BidSelector: React.FC<BidSelectorProps> = ({
     if (isBidValid(quantity, faceValue)) return `${baseClass} hover:scale-105 cursor-pointer shadow-md`;
     return `${baseClass} cursor-not-allowed`;
   };
+
+  const fireDoubt = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (doubtDisabled) return;
+    if (animationsEnabled) {
+      setDoubtClicked(true);
+      setTimeout(() => setDoubtClicked(false), 480);
+    }
+    onDoubt?.();
+  };
+
+  const doubtButtonClass = (compact: boolean) =>
+    `${compact ? 'flex-1 py-2 h-10 text-xs rounded-xl' : 'flex-1 py-2.5 h-11 text-sm rounded-2xl'} hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold shadow-lg border-2 transition-all duration-200 ${
+      doubtClicked && animationsEnabled ? 'animate-shake' : ''
+    }`;
+
+  const doubtButtonStyle: CSSProperties = {
+    backgroundColor: 'var(--game-surface-soft)',
+    borderColor: 'var(--game-border-strong)',
+    color: 'var(--game-accent-text)',
+  };
+
+  // Off-turn: always show Doubt alone so it's available on every viewport
+  if (!canBid) {
+    const doubtOnlyShell: CSSProperties = {
+      backgroundColor: 'var(--game-surface-strong)',
+      borderColor: 'var(--game-border)',
+      ...(isMobile
+        ? {}
+        : stacked
+          ? {
+              width: compactDesktopLandscape
+                ? 'min(360px, 80vw)'
+                : 'min(420px, 80vw)',
+              maxWidth: '80vw',
+            }
+          : {
+              position: 'fixed',
+              left: '50%',
+              bottom: '12rem',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              width: compactDesktopLandscape
+                ? 'min(360px, 80vw)'
+                : 'min(420px, 80vw)',
+              maxWidth: '80vw',
+            }),
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={
+          isMobile
+            ? 'p-2 rounded-2xl shadow-lg border-2 w-full max-w-sm select-none relative z-10 mx-auto'
+            : stacked
+              ? 'p-2 rounded-2xl shadow-lg border-2 flex flex-col select-none relative z-10 pointer-events-auto mx-auto'
+              : 'p-2 rounded-2xl shadow-lg border-2 flex flex-col select-none relative z-10'
+        }
+        style={doubtOnlyShell}
+      >
+        <button
+          type="button"
+          onClick={fireDoubt}
+          onMouseDown={(e) => e.stopPropagation()}
+          disabled={doubtDisabled}
+          className={`${doubtButtonClass(isMobile)} w-full`}
+          style={doubtButtonStyle}
+          title={
+            isOwnBid
+              ? t('game.cannotDoubtOwnBid')
+              : noBidToChallenge
+                ? t('game.noBidToDoubt')
+                : t('game.doubt')
+          }
+        >
+          {t('game.doubt')}
+        </button>
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -210,21 +302,17 @@ const BidSelector: React.FC<BidSelectorProps> = ({
           {/* Action Buttons — same width as dice row above */}
           <div className="mt-2 flex gap-2 w-full">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (animationsEnabled) {
-                  setDoubtClicked(true);
-                  setTimeout(() => setDoubtClicked(false), 480);
-                }
-                onDoubt?.();
-              }}
-              disabled={disabled || noBidToChallenge}
-              className={`flex-1 py-2 h-10 text-[#f5d98f] rounded-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-xs shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
-              style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
+              type="button"
+              onClick={fireDoubt}
+              onMouseDown={(e) => e.stopPropagation()}
+              disabled={doubtDisabled}
+              className={doubtButtonClass(true)}
+              style={doubtButtonStyle}
             >
               {t("game.doubt")}
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 if (animationsEnabled) {
@@ -241,6 +329,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
               {t("game.spotOn")}
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleExpanded();
@@ -339,21 +428,17 @@ const BidSelector: React.FC<BidSelectorProps> = ({
       {/* Action Buttons — stretch to panel width (matches own player) */}
       <div className="mt-2 flex gap-2 w-full">
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (animationsEnabled) {
-              setDoubtClicked(true);
-              setTimeout(() => setDoubtClicked(false), 480);
-            }
-            onDoubt?.();
-          }}
-          disabled={disabled || noBidToChallenge}
-          className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${doubtClicked && animationsEnabled ? 'animate-shake' : ''}`}
-          style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
+          type="button"
+          onClick={fireDoubt}
+          onMouseDown={(e) => e.stopPropagation()}
+          disabled={doubtDisabled}
+          className={doubtButtonClass(false)}
+          style={doubtButtonStyle}
         >
           {t("game.doubt")}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             if (animationsEnabled) {
@@ -362,6 +447,7 @@ const BidSelector: React.FC<BidSelectorProps> = ({
             }
             onSpotOn?.();
           }}
+          onMouseDown={(e) => e.stopPropagation()}
           disabled={disabled || noBidToChallenge}
           className={`flex-1 py-2.5 h-11 rounded-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 font-bold text-sm shadow-lg border-2 transition-all duration-200 ${spotOnClicked && animationsEnabled ? 'animate-button-press' : ''}`}
           style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
@@ -369,10 +455,12 @@ const BidSelector: React.FC<BidSelectorProps> = ({
           {t("game.spotOn")}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             toggleExpanded();
           }}
+          onMouseDown={(e) => e.stopPropagation()}
           className="w-12 h-11 shrink-0 rounded-2xl hover:scale-105 font-bold text-lg shadow-lg border-2 transition-all duration-200 flex items-center justify-center"
           style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
         >

@@ -66,6 +66,7 @@ class GameServiceLeaveTest {
         game.getPlayers().addAll(Arrays.asList(players));
         game.setCurrentPlayerIndex(0);
         game.setDealerIndex(0);
+        game.setRoundStartDealerIndex(0);
         return game;
     }
 

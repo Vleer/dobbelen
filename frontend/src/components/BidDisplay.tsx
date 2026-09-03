@@ -4,6 +4,8 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useSettings } from "../contexts/SettingsContext";
 import DiceHandSVG from './DiceHandSVG';
 
+export type DragPos = { left: number; top: number };
+
 interface BidDisplayProps {
   currentBid: Bid | null;
   currentPlayerId?: string;
@@ -16,6 +18,9 @@ interface BidDisplayProps {
   stacked?: boolean;
   /** Desktop: independently draggable (default when not stacked/mobile) */
   draggable?: boolean;
+  /** Controlled drag position (survives remount when held by parent) */
+  dragPosition?: DragPos | null;
+  onDragPositionChange?: (pos: DragPos) => void;
   /** Desktop-only turn/waiting status shown inside the bid card */
   statusLabel?: string;
 }
@@ -30,6 +35,8 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
   isMobile = false,
   stacked = false,
   draggable = false,
+  dragPosition = null,
+  onDragPositionChange,
   statusLabel,
 }) => {
   const { t } = useLanguage();
@@ -39,11 +46,29 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const draggingRef = useRef(false);
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [internalPosition, setInternalPosition] = useState<DragPos | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const canDrag = draggable && !isMobile && !stacked;
   const showStatus = !isMobile && !!statusLabel;
+  const isControlled = typeof onDragPositionChange === 'function';
+  const position = isControlled ? dragPosition : internalPosition;
+
+  const setPosition = useCallback(
+    (next: DragPos | ((prev: DragPos | null) => DragPos | null)) => {
+      const resolved =
+        typeof next === 'function'
+          ? next(isControlled ? dragPosition ?? null : internalPosition)
+          : next;
+      if (!resolved) return;
+      if (isControlled) {
+        onDragPositionChange!(resolved);
+      } else {
+        setInternalPosition(resolved);
+      }
+    },
+    [isControlled, dragPosition, internalPosition, onDragPositionChange]
+  );
 
   // Animate whenever the bid changes
   useEffect(() => {
@@ -117,7 +142,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [canDrag, clampToViewport]);
+  }, [canDrag, clampToViewport, setPosition]);
 
   useEffect(() => {
     if (!canDrag || !position) return;
@@ -125,7 +150,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
       setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [canDrag, position, clampToViewport]);
+  }, [canDrag, position, clampToViewport, setPosition]);
 
   if (!currentBid && !showStatus) {
     return null;
