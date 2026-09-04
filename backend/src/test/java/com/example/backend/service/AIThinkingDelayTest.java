@@ -1,20 +1,41 @@
 package com.example.backend.service;
 
+import com.example.backend.service.hardai.AdaptiveDecisionEngine;
+import com.example.backend.service.hardai.HardAIHistoryStore;
+import com.example.backend.service.hardai.MixedStrategy;
+import com.example.backend.service.hardai.OpponentClusterer;
+import com.example.backend.service.hardai.OpponentProfiler;
+import com.example.backend.service.hardai.PatternBreaker;
+import com.example.backend.service.hardai.PatternRecognizer;
+import com.example.backend.service.hardai.PerformanceMonitor;
+import com.example.backend.service.hardai.SimpleMLModel;
+import com.example.backend.service.hardai.StrategySelector;
+import com.example.backend.service.hardai.ThresholdAdapter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AIThinkingDelayTest {
 
+    private HardAIService createHardAI() {
+        OpponentProfiler profiler = new OpponentProfiler();
+        HardAIHistoryStore history = new HardAIHistoryStore();
+        PerformanceMonitor monitor = new PerformanceMonitor();
+        SimpleMLModel ml = new SimpleMLModel();
+        StrategySelector selector = new StrategySelector();
+        AdaptiveDecisionEngine engine = new AdaptiveDecisionEngine(
+                profiler, new OpponentClusterer(), new ThresholdAdapter(), new MixedStrategy(),
+                new PatternBreaker(), ml, selector, new PatternRecognizer(history), monitor);
+        return new HardAIService(engine, profiler, history, monitor, ml, selector);
+    }
+
     @Test
     void testEasyAIFirstTurnDelay() {
         EasyAIService service = new EasyAIService();
         
-        // Test first turn delay
         long firstTurnDelay = service.getThinkingDelay(true);
         assertTrue(firstTurnDelay >= 5500 && firstTurnDelay <= 6500, 
             "First turn delay should be between 5.5 and 6.5 seconds, got: " + firstTurnDelay);
         
-        // Test normal turn delay
         long normalDelay = service.getThinkingDelay(false);
         assertTrue(normalDelay >= 500 && normalDelay <= 1500, 
             "Normal turn delay should be between 0.5 and 1.5 seconds, got: " + normalDelay);
@@ -24,12 +45,10 @@ class AIThinkingDelayTest {
     void testMediumAIFirstTurnDelay() {
         MediumAIService service = new MediumAIService();
         
-        // Test first turn delay
         long firstTurnDelay = service.getThinkingDelay(true);
         assertTrue(firstTurnDelay >= 5500 && firstTurnDelay <= 6500, 
             "First turn delay should be between 5.5 and 6.5 seconds, got: " + firstTurnDelay);
         
-        // Test normal turn delay
         long normalDelay = service.getThinkingDelay(false);
         assertTrue(normalDelay >= 500 && normalDelay <= 1500, 
             "Normal turn delay should be between 0.5 and 1.5 seconds, got: " + normalDelay);
@@ -37,7 +56,7 @@ class AIThinkingDelayTest {
 
     @Test
     void testHardAIThinkingDelayCappedAt10Seconds() {
-        HardAIService service = new HardAIService();
+        HardAIService service = createHardAI();
 
         for (int i = 0; i < 20; i++) {
             long firstTurnDelay = service.getThinkingDelay(true);
@@ -60,28 +79,15 @@ class AIThinkingDelayTest {
     void testFirstTurnDelayIsConsistentlyLonger() {
         EasyAIService easyService = new EasyAIService();
         MediumAIService mediumService = new MediumAIService();
-        HardAIService hardService = new HardAIService();
+        HardAIService hardService = createHardAI();
         
-        // Test multiple times to ensure consistency
         for (int i = 0; i < 10; i++) {
-            long easyFirstTurn = easyService.getThinkingDelay(true);
-            long easyNormalTurn = easyService.getThinkingDelay(false);
-            
-            assertTrue(easyFirstTurn > easyNormalTurn, 
-                "First turn delay should always be longer than normal turn delay");
-            
-            long mediumFirstTurn = mediumService.getThinkingDelay(true);
-            long mediumNormalTurn = mediumService.getThinkingDelay(false);
-            
-            assertTrue(mediumFirstTurn > mediumNormalTurn, 
-                "First turn delay should always be longer than normal turn delay");
-
-            long hardFirstTurn = hardService.getThinkingDelay(true);
-            long hardNormalTurn = hardService.getThinkingDelay(false);
-
-            assertTrue(hardFirstTurn > hardNormalTurn,
-                "Hard AI first turn delay should always be longer than normal turn delay");
-            assertTrue(hardFirstTurn <= 10_000 && hardNormalTurn <= 10_000);
+            assertTrue(easyService.getThinkingDelay(true) > easyService.getThinkingDelay(false));
+            assertTrue(mediumService.getThinkingDelay(true) > mediumService.getThinkingDelay(false));
+            long hardFirst = hardService.getThinkingDelay(true);
+            long hardNormal = hardService.getThinkingDelay(false);
+            assertTrue(hardFirst > hardNormal);
+            assertTrue(hardFirst <= 10_000 && hardNormal <= 10_000);
         }
     }
 }

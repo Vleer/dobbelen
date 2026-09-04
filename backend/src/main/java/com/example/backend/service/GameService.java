@@ -269,6 +269,8 @@ public class GameService {
         game.setLastActionPlayerId(doubtingPlayerId);
         game.setLastActionType(BidType.DOUBT);
 
+        hardAIService.learnFromReveal(game);
+
         // Add the DOUBT action to current hand history
         Bid doubtAction = new Bid(doubtingPlayerId, 0, 0, BidType.DOUBT);
         game.addBidToCurrentHand(doubtAction);
@@ -399,6 +401,8 @@ public class GameService {
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
 
+            hardAIService.learnFromReveal(game);
+
             // Add the SPOT_ON action to current hand history
             Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
             game.addBidToCurrentHand(spotOnAction);
@@ -457,6 +461,8 @@ public class GameService {
             game.setLastEliminatedPlayerId(spotOnPlayerId);
             game.setLastActionPlayerId(spotOnPlayerId);
             game.setLastActionType(BidType.SPOT_ON);
+
+            hardAIService.learnFromReveal(game);
 
             // Add the SPOT_ON action to current hand history
             Bid spotOnAction = new Bid(spotOnPlayerId, 0, 0, BidType.SPOT_ON);
@@ -584,13 +590,16 @@ public class GameService {
         }
 
         // Store the current bid as previous before setting the new one
-        game.setPreviousBid(game.getCurrentBid());
+        Bid previousBid = game.getCurrentBid();
+        game.setPreviousBid(previousBid);
         game.setCurrentBid(newBid);
 
         // Add the bid to the current hand history
         game.addBidToCurrentHand(newBid);
         System.out.println("📝 Added RAISE action to history. Current hand history size: "
                 + game.getCurrentHandBidHistory().size());
+
+        hardAIService.onBidPlaced(game, currentPlayer, quantity, faceValue, previousBid);
 
         // Move to next player
         int oldPlayerIndex = game.getCurrentPlayerIndex();
@@ -1260,6 +1269,7 @@ public class GameService {
         if (gameEnded) {
             System.out.println("Game ended! Winner: " + roundWinner.getName() + " with "
                     + roundWinner.getWinTokens() + " tokens");
+            hardAIService.onGameEnded(game);
         } else {
             game.passDealerToNextPlayer();
             System.out.println("Dealer button passed to next player: " + (game.getDealer() != null ? game.getDealer().getName() : "unknown"));

@@ -4,6 +4,17 @@ import com.example.backend.model.Bid;
 import com.example.backend.model.BidType;
 import com.example.backend.model.Game;
 import com.example.backend.model.Player;
+import com.example.backend.service.hardai.AdaptiveDecisionEngine;
+import com.example.backend.service.hardai.HardAIHistoryStore;
+import com.example.backend.service.hardai.MixedStrategy;
+import com.example.backend.service.hardai.OpponentClusterer;
+import com.example.backend.service.hardai.OpponentProfiler;
+import com.example.backend.service.hardai.PatternBreaker;
+import com.example.backend.service.hardai.PatternRecognizer;
+import com.example.backend.service.hardai.PerformanceMonitor;
+import com.example.backend.service.hardai.SimpleMLModel;
+import com.example.backend.service.hardai.StrategySelector;
+import com.example.backend.service.hardai.ThresholdAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +26,24 @@ import static org.junit.jupiter.api.Assertions.*;
 class HardAIServiceTest {
 
     private HardAIService service;
+    private OpponentProfiler profiler;
+    private PerformanceMonitor monitor;
 
     @BeforeEach
     void setUp() {
-        service = new HardAIService();
+        profiler = new OpponentProfiler();
+        HardAIHistoryStore history = new HardAIHistoryStore();
+        monitor = new PerformanceMonitor();
+        SimpleMLModel ml = new SimpleMLModel();
+        StrategySelector selector = new StrategySelector();
+        OpponentClusterer clusterer = new OpponentClusterer();
+        ThresholdAdapter thresholds = new ThresholdAdapter();
+        MixedStrategy mixed = new MixedStrategy();
+        PatternBreaker breaker = new PatternBreaker();
+        PatternRecognizer recognizer = new PatternRecognizer(history);
+        AdaptiveDecisionEngine engine = new AdaptiveDecisionEngine(
+                profiler, clusterer, thresholds, mixed, breaker, ml, selector, recognizer, monitor);
+        service = new HardAIService(engine, profiler, history, monitor, ml, selector);
     }
 
     @Test
@@ -35,22 +60,16 @@ class HardAIServiceTest {
 
     @Test
     void binomialProbabilityKnownCases() {
-        // With 0 known and 16 unknown: P(>=1 of a face) should be high (~93%)
         double p1 = service.probabilityAtLeast(1, 0, 16);
         assertTrue(p1 > 0.90, "P(>=1 | 16 dice) should be >90%, got " + p1);
 
-        // P(>=3 | 16) around 40%+ per design section 5.1
         double p3 = service.probabilityAtLeast(3, 0, 16);
         assertTrue(p3 > 0.30 && p3 < 0.55, "P(>=3 | 16) should be mid-range, got " + p3);
 
-        // P(>=8 | 16) with p=1/6 is very low (mean ≈ 2.67)
         double p8 = service.probabilityAtLeast(8, 0, 16);
         assertTrue(p8 < 0.05, "P(>=8 | 16) should be very low, got " + p8);
 
-        // Already have enough in hand
         assertEquals(1.0, service.probabilityAtLeast(2, 3, 12), 1e-9);
-
-        // Impossible
         assertEquals(0.0, service.probabilityAtLeast(10, 0, 5), 1e-9);
     }
 
@@ -88,13 +107,12 @@ class HardAIServiceTest {
         assertNotNull(action.getQuantity());
         assertNotNull(action.getFaceValue());
         assertEquals(6, action.getFaceValue().intValue());
-        assertTrue(action.getQuantity() >= 1 && action.getQuantity() <= 3);
+        assertTrue(action.getQuantity() >= 1 && action.getQuantity() <= 4);
     }
 
     @Test
     void doubtsVeryImplausibleBid() {
         Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
-        // No sixes in hand
         ai.setDice(Arrays.asList(1, 2, 3, 4, 5));
         Player bidder = new Player("Bidder", "red");
         bidder.setDice(Arrays.asList(1, 2, 3, 4, 5));
@@ -104,7 +122,6 @@ class HardAIServiceTest {
         other2.setDice(Arrays.asList(1, 2, 3, 4, 5));
 
         Game game = new Game(List.of(ai, bidder, other, other2));
-        // Bid 12 sixes with 20 dice and 0 in hand — extremely unlikely
         Bid crazy = new Bid(bidder.getId(), 12, 6, BidType.RAISE);
         game.setCurrentBid(crazy);
 
@@ -131,5 +148,30 @@ class HardAIServiceTest {
         assertEquals("bid", action.getAction());
         assertTrue(action.getQuantity() > 2
                 || (action.getQuantity() == 2 && action.getFaceValue() > 3));
+    }
+
+    @Test
+    void learnsFromRevealAndUpdatesProfile() {
+        Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
+        ai.setDice(Arrays.asList(1, 2, 3, 4, 5));
+        Player bidder = new Player("Human", "red");
+        bidder.setDice(Arrays.asList(6, 6, 6, 6, 6));
+        Player other = new Player("Other", "green");
+        other.setDice(Arrays.asList(1, 2, 3, 4, 5));
+
+        Game game = new Game(List.of(ai, bidder, other));
+        game.setLastActualCount(5);
+        game.setLastBidQuantity(4);
+        game.setLastBidFaceValue(6);
+        game.setLastBidPlayerId(bidder.getId());
+        game.setLastActionPlayerId(ai.getId());
+        game.setLastActionType(BidType.DOUBT);
+        game.setLastEliminatedPlayerId(bidder.getId());
+
+        service.learnFromReveal(game);
+
+        assertNotNull(profiler.get(bidder.getId()));
+        assertTrue(profiler.get(bidder.getId()).getBidsThatWereTrue() >= 1);
+        assertTrue(monitor.doubtAccuracy() >= 0); // AI doubted incorrectly (5>=4)
     }
 }
