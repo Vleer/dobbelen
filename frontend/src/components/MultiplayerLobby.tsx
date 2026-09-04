@@ -62,6 +62,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const [nameFieldGlow, setNameFieldGlow] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const nameGlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragOverPlayerIdRef = useRef<string | null>(null);
 
   const promptForName = useCallback(() => {
     setNameFieldGlow(false);
@@ -79,6 +80,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       if (nameGlowTimeoutRef.current) clearTimeout(nameGlowTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    dragOverPlayerIdRef.current = dragOverPlayerId;
+  }, [dragOverPlayerId]);
 
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
@@ -501,12 +506,35 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     }
   };
 
+  const buildOrderedPlayers = useCallback((sourceGame: Game, orderedIds: string[]) => {
+    const byId = new Map(sourceGame.players.map((player) => [player.id, player]));
+    return orderedIds.map((id) => byId.get(id)).filter((player): player is NonNullable<typeof player> => Boolean(player));
+  }, []);
+
+  const movePlayerId = useCallback((playerIds: string[], fromId: string, toId: string) => {
+    const nextIds = [...playerIds];
+    const fromIndex = nextIds.indexOf(fromId);
+    const toIndex = nextIds.indexOf(toId);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+      return null;
+    }
+    nextIds.splice(fromIndex, 1);
+    nextIds.splice(toIndex, 0, fromId);
+    return nextIds;
+  }, []);
+
   const applyPlayerOrder = async (orderedIds: string[]) => {
     if (!game || !isHost || !myPlayerId) return;
+    const previousGame = game;
+    setGame({
+      ...previousGame,
+      players: buildOrderedPlayers(previousGame, orderedIds),
+    });
     try {
       const updatedGame = await gameApi.reorderPlayers(game.id, myPlayerId, orderedIds);
       setGame(updatedGame);
     } catch (err: any) {
+      setGame(previousGame);
       console.error("Error reordering players:", err);
       setError(err.response?.data?.message || err.message || "Failed to reorder players");
     }
@@ -548,18 +576,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     setDragOverPlayerId(null);
     if (fromId === targetPlayerId) return;
 
-    const ids = game.players.map((p) => p.id);
-    const fromIndex = ids.indexOf(fromId);
-    const toIndex = ids.indexOf(targetPlayerId);
-    if (fromIndex < 0 || toIndex < 0) return;
-    ids.splice(fromIndex, 1);
-    ids.splice(toIndex, 0, fromId);
-    // Optimistic local reorder
-    const byId = new Map(game.players.map((p) => [p.id, p]));
-    setGame({
-      ...game,
-      players: ids.map((id) => byId.get(id)!).filter(Boolean),
-    });
+    const ids = movePlayerId(game.players.map((player) => player.id), fromId, targetPlayerId);
+    if (!ids) return;
     await applyPlayerOrder(ids);
   };
 
@@ -567,6 +585,58 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     setDragPlayerId(null);
     setDragOverPlayerId(null);
   };
+
+  const getPlayerIdAtPoint = useCallback((clientX: number, clientY: number) => {
+    const element = document.elementFromPoint(clientX, clientY);
+    return element?.closest<HTMLElement>("[data-player-id]")?.dataset.playerId ?? null;
+  }, []);
+
+  const onPlayerTouchStart = (playerId: string) => (e: React.TouchEvent) => {
+    if (!isHost) return;
+    e.preventDefault();
+    setDragPlayerId(playerId);
+    setDragOverPlayerId(playerId);
+  };
+
+  useEffect(() => {
+    if (!isHost || !dragPlayerId) return;
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      const playerIdAtPoint = getPlayerIdAtPoint(touch.clientX, touch.clientY);
+      if (playerIdAtPoint && playerIdAtPoint !== dragOverPlayerIdRef.current) {
+        setDragOverPlayerId(playerIdAtPoint);
+      }
+    };
+
+    const completeTouchReorder = async (event?: TouchEvent) => {
+      const touch = event?.changedTouches?.[0];
+      const targetPlayerId = touch
+        ? getPlayerIdAtPoint(touch.clientX, touch.clientY) ?? dragOverPlayerIdRef.current
+        : dragOverPlayerIdRef.current;
+      const fromId = dragPlayerId;
+      setDragPlayerId(null);
+      setDragOverPlayerId(null);
+
+      if (!game || !targetPlayerId || fromId === targetPlayerId) return;
+
+      const ids = movePlayerId(game.players.map((player) => player.id), fromId, targetPlayerId);
+      if (!ids) return;
+      await applyPlayerOrder(ids);
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", completeTouchReorder);
+    document.addEventListener("touchcancel", completeTouchReorder);
+
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", completeTouchReorder);
+      document.removeEventListener("touchcancel", completeTouchReorder);
+    };
+  }, [applyPlayerOrder, dragPlayerId, game, getPlayerIdAtPoint, isHost, movePlayerId]);
 
   const copyGameLink = () => {
     const gameLink = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
@@ -878,6 +948,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   return (
                     <div
                       key={player.id}
+                      data-player-id={player.id}
                       draggable={isHost}
                       onDragStart={onPlayerDragStart(player.id)}
                       onDragOver={onPlayerDragOver(player.id)}
@@ -893,13 +964,16 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       }}
                     >
                       {isHost && (
-                        <span
-                          className="mr-1.5 text-sm select-none"
-                          style={{ color: 'var(--text-muted)' }}
-                          aria-hidden
+                        <button
+                          type="button"
+                          onTouchStart={onPlayerTouchStart(player.id)}
+                          onTouchCancel={onPlayerDragEnd}
+                          className="mr-1.5 text-sm select-none bg-transparent border-0 p-0 leading-none"
+                          style={{ color: 'var(--text-muted)', touchAction: 'none' }}
+                          aria-label={t("lobby.dragToReorder")}
                         >
                           ⠿
-                        </span>
+                        </button>
                       )}
                       <span
                         className={`w-5 h-5 md:w-6 md:h-6 ${playerColorClass} text-white rounded-full flex items-center justify-center text-xs md:text-sm mr-2 font-bold`}
