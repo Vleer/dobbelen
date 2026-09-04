@@ -1193,10 +1193,9 @@ public class GameService {
             player.reset();
             player.rollDice();
         }
-        int dealerIdx = (int) (Math.random() * game.getPlayers().size());
-        game.setDealerIndex(dealerIdx);
-        game.setRoundStartDealerIndex(dealerIdx);
-        game.setCurrentPlayerIndex(dealerIdx);
+        game.setDealerIndex(0);
+        game.setRoundStartDealerIndex(0);
+        game.setCurrentPlayerIndex(0);
         game.setState(GameState.IN_PROGRESS);
         game.setWaitingForPlayers(false);
         game.setCurrentBid(null);
