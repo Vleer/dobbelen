@@ -52,6 +52,7 @@ class AdaptiveHardAIComponentsTest {
         assertEquals(OpponentCluster.CONSERVATIVE_HONEST, cluster);
         CounterStrategy cs = clusterer.getCounterStrategy(cluster);
         assertTrue(cs.bluffFrequency() >= 0.4);
+        assertEquals(StrategyType.TRAP_BLUFF, cs.preferredStyle());
     }
 
     @Test

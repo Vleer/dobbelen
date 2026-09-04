@@ -90,8 +90,11 @@ public class StrategySelector {
         for (StrategyType s : StrategyType.values()) {
             m.put(s, 0.0);
         }
-        // Mild prior for balanced
+        // Mild priors for a few fallback styles
         m.put(StrategyType.BALANCED, 0.05);
+        m.put(StrategyType.TRAP_BLUFF, 0.02);
+        m.put(StrategyType.VALUE_SQUEEZE, 0.02);
+        m.put(StrategyType.FACE_SWITCH, 0.01);
         return m;
     }
 

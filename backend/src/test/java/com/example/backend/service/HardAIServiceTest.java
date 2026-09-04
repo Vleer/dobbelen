@@ -151,6 +151,80 @@ class HardAIServiceTest {
     }
 
     @Test
+    void neverDoubtsWhenHoldingEntireBid() {
+        Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
+        ai.setDice(Arrays.asList(3, 3, 3, 3, 1)); // 4 threes
+        Player bidder = new Player("Bidder", "red");
+        bidder.setDice(Arrays.asList(1, 2, 4, 5, 6));
+        Player other = new Player("Other", "green");
+        other.setDice(Arrays.asList(1, 2, 4, 5, 6));
+        Player other2 = new Player("Other2", "yellow");
+        other2.setDice(Arrays.asList(1, 2, 4, 5, 6));
+
+        Game game = new Game(List.of(ai, bidder, other, other2));
+        // Bid equals what AI already holds
+        game.setCurrentBid(new Bid(bidder.getId(), 4, 3, BidType.RAISE));
+
+        for (int i = 0; i < 15; i++) {
+            HardAIService.AIAction action = service.generateOptimalAction(game, ai);
+            assertNotEquals("doubt", action.getAction(),
+                    "Must never doubt when holding all dice of the bid");
+        }
+    }
+
+    @Test
+    void neverDoubtsWhenBidIsOnlyOneMoreThanHolding() {
+        Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
+        ai.setDice(Arrays.asList(6, 6, 6, 2, 1)); // 3 sixes
+        Player bidder = new Player("Bidder", "red");
+        bidder.setDice(Arrays.asList(1, 2, 3, 4, 5));
+        Player other = new Player("Other", "green");
+        other.setDice(Arrays.asList(1, 2, 3, 4, 5));
+        Player other2 = new Player("Other2", "yellow");
+        other2.setDice(Arrays.asList(1, 2, 3, 4, 5));
+
+        Game game = new Game(List.of(ai, bidder, other, other2));
+        // Bid is myCount + 1
+        game.setCurrentBid(new Bid(bidder.getId(), 4, 6, BidType.RAISE));
+
+        for (int i = 0; i < 15; i++) {
+            HardAIService.AIAction action = service.generateOptimalAction(game, ai);
+            assertNotEquals("doubt", action.getAction(),
+                    "Must never doubt when bid is only one more than held count");
+        }
+    }
+
+    @Test
+    void canRaiseWithThinHoldingTrapBluff() {
+        // Soft current bid so many raises exist; AI has 0 of face 5 → trap raises possible
+        Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
+        ai.setDice(Arrays.asList(1, 1, 2, 2, 3)); // no fives
+        Player bidder = new Player("Bidder", "red");
+        bidder.setDice(Arrays.asList(4, 4, 4, 4, 4));
+        Player other = new Player("Other", "green");
+        other.setDice(Arrays.asList(6, 6, 6, 6, 6));
+        Player other2 = new Player("Other2", "yellow");
+        other2.setDice(Arrays.asList(3, 3, 3, 3, 3));
+
+        Game game = new Game(List.of(ai, bidder, other, other2));
+        game.setCurrentBid(new Bid(bidder.getId(), 1, 2, BidType.RAISE));
+
+        boolean sawThinRaise = false;
+        for (int i = 0; i < 40; i++) {
+            HardAIService.AIAction action = service.generateOptimalAction(game, ai);
+            if ("bid".equals(action.getAction()) && action.getFaceValue() != null) {
+                int face = action.getFaceValue();
+                long held = ai.getDice().stream().filter(d -> d == face).count();
+                if (held <= 1) {
+                    sawThinRaise = true;
+                    break;
+                }
+            }
+        }
+        assertTrue(sawThinRaise, "Expected at least one trap-style raise on a face held 0–1 times");
+    }
+
+    @Test
     void learnsFromRevealAndUpdatesProfile() {
         Player ai = new Player("🎯AI Test", "blue", "HARD_AI");
         ai.setDice(Arrays.asList(1, 2, 3, 4, 5));

@@ -42,10 +42,10 @@ public class OpponentClusterer {
     public CounterStrategy getCounterStrategy(OpponentCluster cluster) {
         return switch (cluster) {
             case AGGRESSIVE_BLUFFER -> new CounterStrategy(0.25, 0.35, 0.55, StrategyType.DOUBT_FOCUSED);
-            case CONSERVATIVE_HONEST -> new CounterStrategy(0.40, 0.45, 0.70, StrategyType.AGGRESSIVE_BLUFF);
-            case UNPREDICTABLE_MIXED -> new CounterStrategy(0.30, 0.30, 0.65, StrategyType.BALANCED);
-            case NOVICE_RANDOM -> new CounterStrategy(0.20, 0.20, 0.60, StrategyType.EXPLOITATIVE);
-            case ADAPTIVE_PRO -> new CounterStrategy(0.35, 0.25, 0.75, StrategyType.DEFENSIVE);
+            case CONSERVATIVE_HONEST -> new CounterStrategy(0.40, 0.45, 0.70, StrategyType.TRAP_BLUFF);
+            case UNPREDICTABLE_MIXED -> new CounterStrategy(0.30, 0.30, 0.65, StrategyType.FACE_SWITCH);
+            case NOVICE_RANDOM -> new CounterStrategy(0.20, 0.25, 0.60, StrategyType.PRESSURE_RAISE);
+            case ADAPTIVE_PRO -> new CounterStrategy(0.35, 0.25, 0.75, StrategyType.VALUE_SQUEEZE);
         };
     }
 }
