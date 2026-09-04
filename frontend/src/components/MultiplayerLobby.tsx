@@ -62,6 +62,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const [nameFieldGlow, setNameFieldGlow] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const nameGlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragOverPlayerIdRef = useRef<string | null>(null);
 
   const promptForName = useCallback(() => {
     setNameFieldGlow(false);
@@ -79,6 +80,10 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       if (nameGlowTimeoutRef.current) clearTimeout(nameGlowTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    dragOverPlayerIdRef.current = dragOverPlayerId;
+  }, [dragOverPlayerId]);
 
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
@@ -593,34 +598,45 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     setDragOverPlayerId(playerId);
   };
 
-  const onPlayerTouchMove = (e: React.TouchEvent) => {
+  useEffect(() => {
     if (!isHost || !dragPlayerId) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    e.preventDefault();
-    const playerIdAtPoint = getPlayerIdAtPoint(touch.clientX, touch.clientY);
-    if (playerIdAtPoint && playerIdAtPoint !== dragOverPlayerId) {
-      setDragOverPlayerId(playerIdAtPoint);
-    }
-  };
 
-  const onPlayerTouchEnd = async () => {
-    if (!game || !isHost || !dragPlayerId) {
-      onPlayerDragEnd();
-      return;
-    }
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      const playerIdAtPoint = getPlayerIdAtPoint(touch.clientX, touch.clientY);
+      if (playerIdAtPoint && playerIdAtPoint !== dragOverPlayerIdRef.current) {
+        setDragOverPlayerId(playerIdAtPoint);
+      }
+    };
 
-    const fromId = dragPlayerId;
-    const targetPlayerId = dragOverPlayerId;
-    setDragPlayerId(null);
-    setDragOverPlayerId(null);
+    const completeTouchReorder = async (event?: TouchEvent) => {
+      const touch = event?.changedTouches?.[0];
+      const targetPlayerId = touch
+        ? getPlayerIdAtPoint(touch.clientX, touch.clientY) ?? dragOverPlayerIdRef.current
+        : dragOverPlayerIdRef.current;
+      const fromId = dragPlayerId;
+      setDragPlayerId(null);
+      setDragOverPlayerId(null);
 
-    if (!targetPlayerId || fromId === targetPlayerId) return;
+      if (!game || !targetPlayerId || fromId === targetPlayerId) return;
 
-    const ids = movePlayerId(game.players.map((player) => player.id), fromId, targetPlayerId);
-    if (!ids) return;
-    await applyPlayerOrder(ids);
-  };
+      const ids = movePlayerId(game.players.map((player) => player.id), fromId, targetPlayerId);
+      if (!ids) return;
+      await applyPlayerOrder(ids);
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", completeTouchReorder);
+    document.addEventListener("touchcancel", completeTouchReorder);
+
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", completeTouchReorder);
+      document.removeEventListener("touchcancel", completeTouchReorder);
+    };
+  }, [applyPlayerOrder, dragPlayerId, game, getPlayerIdAtPoint, isHost, movePlayerId]);
 
   const copyGameLink = () => {
     const gameLink = `${window.location.origin}${window.location.pathname}?gameId=${gameId}`;
@@ -951,8 +967,6 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                         <button
                           type="button"
                           onTouchStart={onPlayerTouchStart(player.id)}
-                          onTouchMove={onPlayerTouchMove}
-                          onTouchEnd={onPlayerTouchEnd}
                           onTouchCancel={onPlayerDragEnd}
                           className="mr-1.5 text-sm select-none bg-transparent border-0 p-0 leading-none"
                           style={{ color: 'var(--text-muted)', touchAction: 'none' }}
