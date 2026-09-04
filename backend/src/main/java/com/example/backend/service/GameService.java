@@ -43,6 +43,9 @@ public class GameService {
     @Autowired
     private MediumAIService mediumAIService;
 
+    @Autowired
+    private HardAIService hardAIService;
+
     /**
      * On startup, remove all persisted games from the database.
      * This ensures that when a new version of the application is published,
@@ -62,7 +65,7 @@ public class GameService {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Player name cannot be empty");
         }
-        boolean isAi = name.startsWith("AI ") || name.startsWith("🧠AI ");
+        boolean isAi = isAiPlayerName(name);
         if (!isAi && !name.matches("[a-zA-Z0-9]{1,12}")) {
             throw new IllegalArgumentException(
                     "Player name must be letters/numbers only, max 12 characters: " + name);
@@ -85,13 +88,7 @@ public class GameService {
             String color = COLOR_ORDER[i % COLOR_ORDER.length];
             String name = playerNames.get(i);
             validatePlayerName(name);
-            // Check if player name starts with "AI " for easy AI or "🧠AI " for medium AI
-            String aiType = null;
-            if (name.startsWith("🧠AI ")) {
-                aiType = "MEDIUM_AI";
-            } else if (name.startsWith("AI ")) {
-                aiType = "EASY_AI";
-            }
+            String aiType = resolveAiTypeFromName(name);
             System.out.println("Creating player " + name + " with color " + color + " (AI: " + aiType + ")");
             players.add(new Player(name, color, aiType));
         }
@@ -707,7 +704,7 @@ public class GameService {
         if (playerName == null || playerName.isEmpty()) {
             throw new IllegalArgumentException("Username cannot be empty");
         }
-        boolean isAiPlayer = playerName.startsWith("AI ") || playerName.startsWith("🧠AI ");
+        boolean isAiPlayer = isAiPlayerName(playerName);
         if (!isAiPlayer && !playerName.matches("[a-zA-Z0-9]{1,12}")) {
             throw new IllegalArgumentException("Username must be letters or numbers only, max 12 characters");
         }
@@ -722,13 +719,7 @@ public class GameService {
         }
 
         String color = getNextColor(game);
-        // Check if player name starts with "🧠AI " for medium AI, or "AI " for easy AI
-        String aiType = null;
-        if (playerName.startsWith("🧠AI ")) {
-            aiType = "MEDIUM_AI";
-        } else if (playerName.startsWith("AI ")) {
-            aiType = "EASY_AI";
-        }
+        String aiType = resolveAiTypeFromName(playerName);
         System.out.println("Assigning color " + color + " to player " + playerName + " (AI: " + aiType + ")");
 
         Player player = new Player(playerName, color, aiType);
@@ -1389,9 +1380,12 @@ public class GameService {
                     ") in game " + gameId);
 
             // Check if AI can act (use appropriate service based on AI type)
-            boolean canAct = "MEDIUM_AI".equals(currentPlayer.getAiType())
-                    ? mediumAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId())
-                    : easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+            String aiType = currentPlayer.getAiType();
+            boolean canAct = switch (aiType != null ? aiType : "") {
+                case "HARD_AI" -> hardAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+                case "MEDIUM_AI" -> mediumAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+                default -> easyAIService.canAIAct(gameId, game.getRoundNumber(), currentPlayer.getId());
+            };
 
             if (!canAct) {
                 System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " already acted this turn");
@@ -1399,9 +1393,11 @@ public class GameService {
             }
 
             // Check if delay after round end has passed
-            boolean canActAfterRound = "MEDIUM_AI".equals(currentPlayer.getAiType())
-                    ? mediumAIService.canActAfterRoundEnd(gameId, game.isShowAllDice())
-                    : easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+            boolean canActAfterRound = switch (aiType != null ? aiType : "") {
+                case "HARD_AI" -> hardAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+                case "MEDIUM_AI" -> mediumAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+                default -> easyAIService.canActAfterRoundEnd(gameId, game.isShowAllDice());
+            };
 
             if (!canActAfterRound) {
                 System.out.println("🤖 AI SKIP: AI " + currentPlayer.getName() + " waiting for round end delay");
@@ -1427,68 +1423,98 @@ public class GameService {
         }
     }
 
+    /** Easy: "AI ", Medium: "🧠AI ", Hard: "🎯AI " */
+    static boolean isAiPlayerName(String name) {
+        return name != null && (name.startsWith("AI ") || name.startsWith("🧠AI ") || name.startsWith("🎯AI "));
+    }
+
+    /** Resolve AI type from name prefix. Hard checked before Easy since both could match poorly. */
+    static String resolveAiTypeFromName(String name) {
+        if (name == null) {
+            return null;
+        }
+        if (name.startsWith("🎯AI ")) {
+            return "HARD_AI";
+        }
+        if (name.startsWith("🧠AI ")) {
+            return "MEDIUM_AI";
+        }
+        if (name.startsWith("AI ")) {
+            return "EASY_AI";
+        }
+        return null;
+    }
+
+    private static String aiTypeLabel(String aiType) {
+        if ("HARD_AI".equals(aiType)) {
+            return "Hard";
+        }
+        if ("MEDIUM_AI".equals(aiType)) {
+            return "Medium";
+        }
+        return "Easy";
+    }
+
     /**
      * Execute an AI player's turn
      */
     private void executeAITurn(Game game, Player aiPlayer) {
         String gameId = game.getId();
         String aiType = aiPlayer.getAiType();
-        boolean isMediumAI = "MEDIUM_AI".equals(aiType);
+        String label = aiTypeLabel(aiType);
 
-        System.out.println("🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " is thinking...");
+        System.out.println("🤖 " + label + " AI " + aiPlayer.getName() + " is thinking...");
 
         // Mark that AI is acting (use appropriate service)
-        if (isMediumAI) {
-            mediumAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
-        } else {
-            easyAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+        switch (aiType != null ? aiType : "") {
+            case "HARD_AI" -> hardAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+            case "MEDIUM_AI" -> mediumAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
+            default -> easyAIService.markAIAction(gameId, game.getRoundNumber(), aiPlayer.getId());
         }
 
         try {
             // Check if this is the first turn (no current bid)
             boolean isFirstTurn = (game.getCurrentBid() == null);
-            
-            // Simulate thinking delay
-            long thinkingDelay = isMediumAI 
-                ? mediumAIService.getThinkingDelay(isFirstTurn) 
-                : easyAIService.getThinkingDelay(isFirstTurn);
-            
+
+            // Simulate thinking delay (Hard AI capped at 10s)
+            long thinkingDelay = switch (aiType != null ? aiType : "") {
+                case "HARD_AI" -> hardAIService.getThinkingDelay(isFirstTurn);
+                case "MEDIUM_AI" -> mediumAIService.getThinkingDelay(isFirstTurn);
+                default -> easyAIService.getThinkingDelay(isFirstTurn);
+            };
+
             if (isFirstTurn) {
-                System.out.println("🤖 First turn detected - AI will think for ~6 seconds");
+                System.out.println("🤖 First turn detected - AI will think for " + (thinkingDelay / 1000.0) + "s");
             }
-            
+
             Thread.sleep(thinkingDelay);
 
-            // Generate AI action (use appropriate service and method)
-            Object actionObj;
-            if (isMediumAI) {
-                actionObj = mediumAIService.generateEducatedAction(game, aiPlayer);
-            } else {
-                actionObj = easyAIService.generateRandomAction(
-                        game.getCurrentBid(),
-                        game.getPlayers().size(),
-                        game.getRoundNumber());
-            }
-
-            // Both services use same AIAction class structure
+            // Generate AI action
             String actionType;
             Integer quantity = null;
             Integer faceValue = null;
 
-            if (isMediumAI) {
-                MediumAIService.AIAction medAction = (MediumAIService.AIAction) actionObj;
-                actionType = medAction.getAction();
-                quantity = medAction.getQuantity();
-                faceValue = medAction.getFaceValue();
+            if ("HARD_AI".equals(aiType)) {
+                HardAIService.AIAction action = hardAIService.generateOptimalAction(game, aiPlayer);
+                actionType = action.getAction();
+                quantity = action.getQuantity();
+                faceValue = action.getFaceValue();
+            } else if ("MEDIUM_AI".equals(aiType)) {
+                MediumAIService.AIAction action = mediumAIService.generateEducatedAction(game, aiPlayer);
+                actionType = action.getAction();
+                quantity = action.getQuantity();
+                faceValue = action.getFaceValue();
             } else {
-                EasyAIService.AIAction easyAction = (EasyAIService.AIAction) actionObj;
-                actionType = easyAction.getAction();
-                quantity = easyAction.getQuantity();
-                faceValue = easyAction.getFaceValue();
+                EasyAIService.AIAction action = easyAIService.generateRandomAction(
+                        game.getCurrentBid(),
+                        game.getPlayers().size(),
+                        game.getRoundNumber());
+                actionType = action.getAction();
+                quantity = action.getQuantity();
+                faceValue = action.getFaceValue();
             }
 
-            System.out.println(
-                    "🤖 " + (isMediumAI ? "Medium" : "Easy") + " AI " + aiPlayer.getName() + " chooses: " + actionType);
+            System.out.println("🤖 " + label + " AI " + aiPlayer.getName() + " chooses: " + actionType);
 
             // Execute the action
             switch (actionType) {

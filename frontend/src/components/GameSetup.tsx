@@ -24,11 +24,17 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
   const [playerNames, setPlayerNames] = useState<string[]>(['AI Henk', 'AI Jan']);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [aiCount, setAiCount] = useState(2);
-  const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium'>('easy');
+  const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
   // Get a random Dutch name
   const getRandomDutchName = () => {
     return DUTCH_NAMES[Math.floor(Math.random() * DUTCH_NAMES.length)];
+  };
+
+  const aiPrefix = (difficulty: 'easy' | 'medium' | 'hard') => {
+    if (difficulty === 'hard') return '🎯AI ';
+    if (difficulty === 'medium') return '🧠AI ';
+    return 'AI ';
   };
 
   const addPlayer = () => {
@@ -56,21 +62,18 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
           name = getRandomDutchName();
         } while (usedNames.has(name));
         usedNames.add(name);
-        const prefix = aiDifficulty === 'medium' ? '🧠AI ' : 'AI ';
-        newPlayerNames.push(`${prefix}${name}`);
+        newPlayerNames.push(`${aiPrefix(aiDifficulty)}${name}`);
       }
       setPlayerNames(newPlayerNames);
     }
   };
 
   // Update existing AI player names when difficulty changes
-  const updateAiDifficulty = (difficulty: 'easy' | 'medium') => {
+  const updateAiDifficulty = (difficulty: 'easy' | 'medium' | 'hard') => {
     setAiDifficulty(difficulty);
     const newPlayerNames = playerNames.map(name => {
-      // Extract the base name without AI prefix
-      const baseName = name.replace(/^(AI |🧠AI )/, '');
-      const prefix = difficulty === 'medium' ? '🧠AI ' : 'AI ';
-      return `${prefix}${baseName}`;
+      const baseName = name.replace(/^(AI |🧠AI |🎯AI )/, '');
+      return `${aiPrefix(difficulty)}${baseName}`;
     });
     setPlayerNames(newPlayerNames);
   };
@@ -118,32 +121,35 @@ const GameSetup: React.FC<GameSetupProps> = ({ onCreateGame, onMultiplayer, isLo
               <button
                 type="button"
                 onClick={() => updateAiDifficulty('easy')}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  aiDifficulty === 'easy'
-                    ? ''
-                    : ''
-                }`}
+                className="flex-1 px-3 py-3 rounded-lg font-medium transition-colors"
                 style={aiDifficulty === 'easy'
                   ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
                   : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
               >
-                <div className="text-lg">🎲 Easy AI</div>
-                <div className="text-xs mt-1 opacity-80">Random decisions</div>
+                <div className="text-base">🎲 Easy</div>
+                <div className="text-xs mt-1 opacity-80">Random</div>
               </button>
               <button
                 type="button"
                 onClick={() => updateAiDifficulty('medium')}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  aiDifficulty === 'medium'
-                    ? ''
-                    : ''
-                }`}
+                className="flex-1 px-3 py-3 rounded-lg font-medium transition-colors"
                 style={aiDifficulty === 'medium'
                   ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
                   : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
               >
-                <div className="text-lg">🧠 Medium AI</div>
-                <div className="text-xs mt-1 opacity-80">Strategic thinking</div>
+                <div className="text-base">🧠 Medium</div>
+                <div className="text-xs mt-1 opacity-80">Strategic</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => updateAiDifficulty('hard')}
+                className="flex-1 px-3 py-3 rounded-lg font-medium transition-colors"
+                style={aiDifficulty === 'hard'
+                  ? { backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }
+                  : { backgroundColor: 'var(--felt-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
+              >
+                <div className="text-base">🎯 Hard</div>
+                <div className="text-xs mt-1 opacity-80">Optimal</div>
               </button>
             </div>
           </div>

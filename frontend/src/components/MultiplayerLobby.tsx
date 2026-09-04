@@ -480,14 +480,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     }
   };
 
-  const addAIPlayer = async (difficulty: "easy" | "medium" = "easy") => {
+  const addAIPlayer = async (difficulty: "easy" | "medium" | "hard" = "easy") => {
     if (!game || !isHost) return;
 
     try {
       // Get all existing AI player names to avoid duplicates
       const existingAINames = game.players
-        .filter((p) => p.name.startsWith("AI ") || p.name.startsWith("🧠AI "))
-        .map((p) => p.name.replace(/^(AI |🧠AI )/, ""));
+        .filter((p) => p.name.startsWith("AI ") || p.name.startsWith("🧠AI ") || p.name.startsWith("🎯AI "))
+        .map((p) => p.name.replace(/^(AI |🧠AI |🎯AI )/, ""));
 
       let aiName;
       let baseName;
@@ -495,7 +495,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         baseName = getRandomDutchName();
       } while (existingAINames.includes(baseName));
 
-      const prefix = difficulty === "medium" ? "🧠AI " : "AI ";
+      const prefix = difficulty === "hard" ? "🎯AI " : difficulty === "medium" ? "🧠AI " : "AI ";
       aiName = `${prefix}${baseName}`;
 
       const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
@@ -514,7 +514,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       const player = game.players.find((p) => p.id === playerId);
       const isAI =
         player &&
-        (player.name.startsWith("AI ") || player.name.startsWith("🧠AI "));
+        (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") || player.name.startsWith("🎯AI "));
       if (!player || !isAI) {
         console.warn("Cannot remove non-AI player");
         return;
@@ -1017,7 +1017,14 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                         {index + 1}
                       </span>
                       <span className="font-medium text-sm md:text-base flex-1">
-                        {player.name.startsWith("🧠AI ") ? (
+                        {player.name.startsWith("🎯AI ") ? (
+                          <span className="whitespace-nowrap">
+                            {player.name.replace(/^🎯AI /, "")}
+                            <span className="ml-1 text-xs bg-red-700 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
+                              🎯 Hard
+                            </span>
+                          </span>
+                        ) : player.name.startsWith("🧠AI ") ? (
                           <span className="whitespace-nowrap">
                             {player.name.replace(/^🧠AI /, "")}
                             <span className="ml-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
@@ -1044,7 +1051,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                             audioService.playRaise();
                             if (
                               player.name.startsWith("AI ") ||
-                              player.name.startsWith("🧠AI ")
+                              player.name.startsWith("🧠AI ") ||
+                              player.name.startsWith("🎯AI ")
                             ) {
                               removeAIPlayer(player.id);
                             } else {
@@ -1053,7 +1061,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                           }}
                           className="interactive-press ml-2 w-6 h-6 text-white rounded-full flex items-center justify-center text-xs border border-transparent"
                           style={{ backgroundColor: '#8a6a1d' }}
-                          title={player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") ? "Remove AI player" : "Kick player"}
+                          title={player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") || player.name.startsWith("🎯AI ") ? "Remove AI player" : "Kick player"}
                         >
                           ×
                         </button>
@@ -1098,6 +1106,17 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
                   >
                     🧠 Medium AI
+                  </button>
+                  <button
+                    onClick={() => {
+                      audioService.playRaise();
+                      addAIPlayer("hard");
+                    }}
+                    className="interactive-press flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
+                    style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
+                    disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
+                  >
+                    🎯 Hard AI
                   </button>
                 </div>
                 <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>

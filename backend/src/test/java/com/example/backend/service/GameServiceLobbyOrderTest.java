@@ -34,6 +34,9 @@ class GameServiceLobbyOrderTest {
     @Mock
     private MediumAIService mediumAIService;
 
+    @Mock
+    private HardAIService hardAIService;
+
     @InjectMocks
     private GameService gameService;
 

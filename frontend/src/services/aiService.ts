@@ -4,9 +4,10 @@
 // To create AI players:
 // - Easy AI: Name players starting with "AI " (e.g., "AI Sarah", "AI Bot")
 // - Medium AI: Name players starting with "🧠AI " (e.g., "🧠AI John", "🧠AI Bot")
+// - Hard AI: Name players starting with "🎯AI " (e.g., "🎯AI John", "🎯AI Bot")
 //
 // The backend automatically detects AI type based on the name prefix and handles all AI logic
-// including decision making, probability calculations, and hand analysis (for Medium AI).
+// including decision making, probability calculations, and hand analysis.
 
 export interface AIPlayer {
   id: string;

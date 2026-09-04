@@ -733,7 +733,7 @@ const GameTable: React.FC<GameTableProps> = ({
 
       // Register AI players when game is loaded
       currentGame.players.forEach((player) => {
-        if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
+        if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") || player.name.startsWith("🎯AI ")) {
           aiService.registerAIPlayer(player.id, player.name);
           console.log("Registered AI player:", player.name, player.id);
         }
@@ -748,7 +748,7 @@ const GameTable: React.FC<GameTableProps> = ({
               return;
             }
             updatedGame.players.forEach((player) => {
-              if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ")) {
+              if (player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") || player.name.startsWith("🎯AI ")) {
                 aiService.registerAIPlayer(player.id, player.name);
               }
             });
@@ -1785,7 +1785,7 @@ const GameTable: React.FC<GameTableProps> = ({
               <h2 className="text-2xl font-bold text-white mb-6">{t('game.waitingForOthers')}</h2>
               <div className="space-y-3">
                 {game.players
-                  .filter((p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI '))
+                  .filter((p) => !p.name.startsWith('AI ') && !p.name.startsWith('🧠AI ') && !p.name.startsWith('🎯AI '))
                   .map((p) => {
                     const hasContinued = playersContinued.includes(p.id);
                     return (

@@ -242,7 +242,7 @@ const BidDisplay: React.FC<BidDisplayProps> = ({
         style={
           position
             ? { left: position.left, top: position.top, transform: 'none' }
-            : { left: '50%', bottom: '20rem', transform: 'translateX(-50%)' }
+            : { left: '50%', bottom: '26rem', transform: 'translateX(-50%)' }
         }
         title="Drag to move"
       >
