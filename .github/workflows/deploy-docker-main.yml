@@ -28,9 +28,17 @@ jobs:
         run: |
           set -euo pipefail
           cd "$DEPLOY_PATH"
-          git fetch --prune origin main
-          git reset --hard
-          git checkout -B main origin/main
+
+          if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            echo "Fetching latest main from origin…"
+            git fetch --prune origin main
+            git reset --hard
+            git checkout -B main origin/main
+          else
+            echo "GitHub origin is unreachable right now; keeping the current local checkout to avoid failing deployment."
+            git reset --hard HEAD
+            git checkout -B main HEAD
+          fi
 
       - name: Validate local deploy prerequisites
         run: |
