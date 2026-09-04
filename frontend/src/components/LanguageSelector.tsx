@@ -44,7 +44,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           setIsOpen(nextOpen);
           onOpenChange?.(nextOpen);
         }}
-        className={`flex items-center gap-2 rounded-full transition-all ${buttonClassName || 'px-3 py-2 text-sm'}`}
+        className={`flex items-center gap-2 rounded-full ${buttonClassName || 'interactive-press px-3 py-2 text-sm'}`}
         aria-label="Select language"
       >
         <div className="w-6 h-4"><Flag code={currentLangConfig!.code} /></div>

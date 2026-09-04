@@ -281,10 +281,135 @@ html.theme-white {
 .menu-pill {
   background-color: var(--menu-button-bg);
   color: var(--menu-button-text);
+  border: 1px solid var(--game-border);
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.15s ease,
+    filter 0.15s ease;
+  will-change: transform;
 }
 
-.menu-pill:hover {
+.menu-pill:hover:not(:disabled) {
   background-color: var(--menu-button-hover-bg);
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--game-border-strong);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--game-highlight) 35%, transparent),
+    0 8px 18px color-mix(in srgb, var(--game-highlight) 22%, transparent);
+}
+
+.menu-pill:active:not(:disabled) {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--game-highlight) 15%, transparent);
+  filter: brightness(1.12);
+  transition-duration: 0.08s;
+}
+
+/* Shared “come alive” + physical click for lobby / start / in-game controls */
+.interactive-press {
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.15s ease,
+    filter 0.15s ease,
+    color 0.15s ease;
+  will-change: transform;
+  transform-origin: center;
+}
+
+.interactive-press:hover:not(:disabled) {
+  transform: translateY(-2.5px) scale(1.02);
+  border-color: var(--game-border-strong, var(--accent-gold-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold, var(--game-highlight)) 40%, transparent),
+    0 10px 22px color-mix(in srgb, var(--accent-gold, var(--game-highlight)) 24%, transparent);
+  filter: brightness(1.06);
+}
+
+.interactive-press:active:not(:disabled) {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold, var(--game-highlight)) 18%, transparent);
+  filter: brightness(1.14);
+  transition-duration: 0.08s;
+}
+
+.interactive-press:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Player rows / drag handles — hover lift without requiring a click target */
+.interactive-surface {
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.15s ease,
+    outline-color 0.15s ease,
+    filter 0.15s ease;
+  will-change: transform;
+}
+
+.interactive-surface:hover {
+  transform: translateY(-2px) scale(1.015);
+  border-color: var(--accent-gold-strong, var(--game-border-strong));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold, var(--game-highlight)) 35%, transparent),
+    0 8px 16px color-mix(in srgb, var(--accent-gold, var(--game-highlight)) 18%, transparent);
+  filter: brightness(1.05);
+}
+
+.lobby-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lobby-player-row {
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease,
+    box-shadow 0.2s ease,
+    outline-color 0.15s ease,
+    background-color 0.15s ease,
+    filter 0.15s ease;
+}
+
+.lobby-player-row.is-dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  z-index: 2;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent-gold) 28%, transparent);
+}
+
+.lobby-player-row.is-drag-over {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-gold) 40%, transparent),
+    0 8px 18px color-mix(in srgb, var(--accent-gold) 22%, transparent);
+}
+
+.lobby-player-row.is-dragging:hover,
+.lobby-player-row.is-drag-over:hover {
+  /* keep drag states from fighting hover transform */
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-press,
+  .interactive-surface,
+  .menu-pill,
+  .lobby-player-row {
+    transition: none !important;
+  }
+  .interactive-press:hover:not(:disabled),
+  .interactive-press:active:not(:disabled),
+  .interactive-surface:hover,
+  .menu-pill:hover:not(:disabled),
+  .menu-pill:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .menu-pill-fixed {

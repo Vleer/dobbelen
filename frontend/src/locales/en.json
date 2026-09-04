@@ -168,7 +168,7 @@
   "instructions.raise": "Raise: Click on the number of dice you believe is in all player's hands combined",
   "instructions.doubt": "Doubt: Challenge the current bid if too high — any active player can doubt at any time",
   "instructions.spotOn": "Spot On: Claim Bid is exactly correct (risky!) If true, the round resets.",
-  "instructions.winRound": "First to 7 round wins — but if two reach matchpoint, play on until someone leads by 2!",
+  "instructions.winRound": "First to 7 rounds wins",
   "settings.colorScheme": "Color Scheme",
   "settings.colorLight": "Light",
   "settings.colorDark": "Dark",

@@ -18,11 +18,13 @@ export function isMatchpointOvertime(players: Player[]): boolean {
 
 /**
  * How many overtime pips to show on the second (reverse) row.
- * Rows appear only when relevant: always exactly one empty slot ahead.
- * max=6 → 1; max=7 → 1; max=8 → 2; …
+ * Slots cover every point past the base 7 that is still required for a
+ * win-by-2 finish — e.g. 7–7 shows two empty boxes (8 and 9).
  */
 export function getOvertimeSlotCount(players: Player[]): number {
   if (!isMatchpointOvertime(players)) return 0;
-  const max = sortedWinTokens(players)[0] ?? 0;
-  return Math.max(1, max - MATCHPOINT_THRESHOLD);
+  const [first = 0, second = 0] = sortedWinTokens(players);
+  const lead = first - second;
+  const scoreNeededToEnd = first + Math.max(0, WIN_MARGIN - lead);
+  return Math.max(0, scoreNeededToEnd - BASE_POINTS_TO_WIN);
 }

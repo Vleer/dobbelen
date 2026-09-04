@@ -202,7 +202,7 @@ function App() {
                   <div className="menu-header-row">
                   <button
                     onClick={() => setIsLobbyMuted((m) => !m)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label={isLobbyMuted ? "Unmute" : "Mute"}
                   >
                     {isLobbyMuted ? "🔇" : "🔊"}
@@ -211,7 +211,7 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setShowLobbySettings((s) => !s)}
-                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
+                    className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow touch-manipulation min-h-[44px] min-w-[44px]"
                     aria-label="Settings"
                     aria-expanded={showLobbySettings}
                   >
@@ -231,7 +231,7 @@ function App() {
                     <button
                       type="button"
                       onClick={handleToggleLobbyChat}
-                      className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center hover:scale-105 active:scale-95 ${
+                      className={`rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow touch-manipulation min-h-[44px] min-w-[44px] relative flex items-center justify-center ${
                         Math.max(0, countIncomingMessages(lobbyGame.chatMessages, lobbyPlayerId) - lastSeenLobbyChatCount) > 0 ? 'animate-pulse' : ''
                       }`}
                       aria-label="Chat"

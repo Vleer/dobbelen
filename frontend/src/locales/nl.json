@@ -163,7 +163,7 @@
   "instructions.raise": "Verhogen: Klik op het aantal dobbelstenen dat je denkt dat alle spelers samen hebben",
   "instructions.doubt": "Optillen: Daag het huidige bod uit als het te hoog is — elke actieve speler mag altijd optillen",
   "instructions.spotOn": "Spot On: Beweer dat bod exact klopt, dan reset ronde. (riskant!)",
-  "instructions.winRound": "Eerste tot 7 rondezeges — maar als twee matchpoint hebben, speel door tot iemand met 2 voorstaat!",
+  "instructions.winRound": "Eerste tot 7 rondezeges",
   "settings.colorScheme": "Kleurenschema",
   "settings.colorLight": "Licht",
   "settings.colorDark": "Donker",

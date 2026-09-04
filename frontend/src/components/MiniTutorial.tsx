@@ -148,7 +148,7 @@ const MiniTutorial: React.FC<MiniTutorialProps> = ({ game, localPlayerId, onDism
               </li>
             </ul>
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--accent-gold)' }}>
-              🏆 First to 7 round wins — if two hit matchpoint, win by 2!
+              🏆 First to 7 rounds wins
             </p>
             <button onClick={() => setStep('done')} className="w-full py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: '#1f3f2b', color: '#f5d98f', border: '1px solid #8a6a1d' }}>
               I'm ready to play! 🎲

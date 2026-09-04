@@ -157,7 +157,7 @@
   "instructions.raise": "Erhöhen: Klicke auf die Anzahl der Würfel, die du glaubst, dass alle Spieler zusammen haben",
   "instructions.doubt": "Zweifel: Vorheriges Gebot anfechten, wenn zu hoch",
   "instructions.spotOn": "Genau richtig: Behaupten, Gebot ist exakt (riskant!)",
-  "instructions.winRound": "Zuerst 7 Rundensiege — bei zwei Matchpoints weiter bis jemand mit 2 führt!",
+  "instructions.winRound": "Zuerst 7 Rundensiege",
   "settings.colorScheme": "Farbschema",
   "settings.colorLight": "Hell",
   "settings.colorDark": "Dunkel",

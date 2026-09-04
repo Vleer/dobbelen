@@ -161,7 +161,7 @@
   "instructions.raise": "Subir: Pulsa el número de dados que crees que hay en total en todas las manos",
   "instructions.doubt": "Dudar: Desafía la puja anterior si te parece demasiado alta",
   "instructions.spotOn": "Justo: Afirma que la puja es exacta (¡arriesgado!) Si es verdad, la ronda se reinicia.",
-  "instructions.winRound": "Primero a 7 rondas — si dos llegan a matchpoint, seguid hasta liderar por 2!",
+  "instructions.winRound": "Primero a 7 rondas",
   "settings.colorScheme": "Esquema de color",
   "settings.colorLight": "Claro",
   "settings.colorDark": "Oscuro",

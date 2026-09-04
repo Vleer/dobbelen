@@ -157,7 +157,7 @@
   "instructions.raise": "Rilancio: Clicca sul numero di dadi che credi ci siano in mano a tutti i giocatori",
   "instructions.doubt": "Dubbio: Sfida l'offerta precedente se troppo alta",
   "instructions.spotOn": "Esatto: Afferma che l'offerta è esatta (rischioso!)",
-  "instructions.winRound": "Primo a 7 round — se due sono al matchpoint, si continua fino a 2 di scarto!",
+  "instructions.winRound": "Primo a 7 round",
   "settings.colorScheme": "Schema colori",
   "settings.colorLight": "Chiaro",
   "settings.colorDark": "Scuro",

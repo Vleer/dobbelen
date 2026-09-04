@@ -16,8 +16,9 @@ interface WinTokenTracksProps {
 }
 
 /**
- * Base row of 7 pips (L→R), plus a reverse overtime row that grows
- * one empty pip at a time once two players are at matchpoint.
+ * Base row of 7 pips (L→R), plus a reverse overtime row.
+ * Overtime uses the same 7-column flex layout (invisible spacers) so
+ * pip widths match the base row.
  */
 const WinTokenTracks: React.FC<WinTokenTracksProps> = ({
   player,
@@ -59,13 +60,19 @@ const WinTokenTracks: React.FC<WinTokenTracksProps> = ({
       {overtimeRows.map((row) => (
         <div
           key={`ot-row-${row.start}`}
-          className="flex flex-row-reverse items-center gap-1 ml-auto"
-          style={{
-            width: `${(row.count / BASE_POINTS_TO_WIN) * 100}%`,
-          }}
+          className="w-full flex flex-row-reverse items-center justify-between gap-1"
           aria-label="Overtime points"
         >
-          {Array.from({ length: row.count }, (_, i) => {
+          {Array.from({ length: BASE_POINTS_TO_WIN }, (_, i) => {
+            if (i >= row.count) {
+              return (
+                <div
+                  key={`ot-spacer-${row.start}-${i}`}
+                  className={`${pipClassName} flex-1 invisible`}
+                  aria-hidden
+                />
+              );
+            }
             const index = row.start + i;
             const filled = tokens >= BASE_POINTS_TO_WIN + 1 + index;
             return (

@@ -157,7 +157,7 @@
   "instructions.raise": "Relancer: Cliquez sur le nombre de dés que vous croyez être dans toutes les mains des joueurs",
   "instructions.doubt": "Doute: Contestez l'enchère précédente si trop haute",
   "instructions.spotOn": "Pile poil: Prétendez que l'enchère est exacte (risqué!)",
-  "instructions.winRound": "Premier à 7 manches — si deux sont au matchpoint, continuez jusqu'à 2 d'écart !",
+  "instructions.winRound": "Premier à 7 manches",
   "settings.colorScheme": "Schéma de couleurs",
   "settings.colorLight": "Clair",
   "settings.colorDark": "Sombre",

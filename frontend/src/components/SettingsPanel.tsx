@@ -101,7 +101,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               key={option.value}
               onClick={() => setColorScheme(option.value)}
               className={[
-                'flex-1 py-1.5 text-xs font-medium transition-all duration-150',
+                'flex-1 py-1.5 text-xs font-medium interactive-press',
                 idx === 0 ? '' : 'border-l',
                 colorScheme === option.value
                   ? 'font-bold'
@@ -130,7 +130,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               key={option.value}
               onClick={() => setFontSize(option.value)}
               className={[
-                'flex-1 py-1.5 font-medium transition-all duration-150 flex items-center justify-center',
+                'flex-1 py-1.5 font-medium interactive-press flex items-center justify-center',
                 idx === 0 ? '' : 'border-l',
                 fontSize === option.value
                   ? 'font-bold'
@@ -175,7 +175,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             onClose();
             onLeaveGame();
           }}
-          className="settings-leave-game-btn w-full mt-4 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
+          className="interactive-press settings-leave-game-btn w-full mt-4 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 shadow-sm"
         >
           {leaveGameLabel || t('game.leaveGame')}
         </button>
@@ -188,7 +188,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             onClose();
             onEndGame();
           }}
-          className="w-full mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 transition-colors shadow-sm"
+          className="interactive-press w-full mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold border-2 shadow-sm"
           style={{ borderColor: '#ef4444', color: '#ef4444', backgroundColor: 'transparent' }}
         >
           {endGameLabel || t('game.endGame')}

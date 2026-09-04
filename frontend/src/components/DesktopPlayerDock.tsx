@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-export type DragPos = { left: number; top: number };
+/** Dock position anchored from the bottom so height changes keep the hand fixed. */
+export type DockDragPos = { left: number; bottom: number };
 
 interface DesktopPlayerDockProps {
   /** Bid selector controls */
@@ -8,8 +9,8 @@ interface DesktopPlayerDockProps {
   /** Local player card */
   playerSlot: React.ReactNode;
   /** Controlled drag position (survives remount / bid-selector mount changes) */
-  dragPosition?: DragPos | null;
-  onDragPositionChange?: (pos: DragPos) => void;
+  dragPosition?: DockDragPos | null;
+  onDragPositionChange?: (pos: DockDragPos) => void;
 }
 
 const MAX_VIEWPORT_FRACTION = 0.8;
@@ -17,6 +18,8 @@ const MAX_VIEWPORT_FRACTION = 0.8;
 /**
  * Desktop-only: stacks bid selector + local player, moves them together when dragged,
  * and scales the stack to stay within 80% of the viewport.
+ * Always bottom-anchored so when the bid panel shrinks/grows, the hand stays put
+ * and the bid UI collapses/expands toward it.
  */
 const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
   children,
@@ -26,9 +29,9 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
 }) => {
   const dockRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragOffsetRef = useRef({ x: 0, bottom: 0 });
   const draggingRef = useRef(false);
-  const [internalPosition, setInternalPosition] = useState<DragPos | null>(null);
+  const [internalPosition, setInternalPosition] = useState<DockDragPos | null>(null);
   const [dragging, setDragging] = useState(false);
   const [scale, setScale] = useState(1);
 
@@ -36,7 +39,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
   const position = isControlled ? dragPosition : internalPosition;
 
   const setPosition = useCallback(
-    (next: DragPos | ((prev: DragPos | null) => DragPos | null)) => {
+    (next: DockDragPos | ((prev: DockDragPos | null) => DockDragPos | null)) => {
       const resolved =
         typeof next === 'function'
           ? next(isControlled ? dragPosition ?? null : internalPosition)
@@ -54,7 +57,6 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
   const updateScale = useCallback(() => {
     const el = contentRef.current;
     if (!el) return;
-    // offsetWidth/Height ignore CSS transforms — natural layout size
     const width = el.offsetWidth;
     const height = el.offsetHeight;
     if (width <= 0 || height <= 0) return;
@@ -84,24 +86,20 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
     };
   }, [updateScale]);
 
-  const clampToViewport = useCallback(
-    (left: number, top: number) => {
-      const el = dockRef.current;
-      const width = el?.getBoundingClientRect().width ?? 420;
-      const height = el?.getBoundingClientRect().height ?? 200;
-      const maxLeft = Math.max(8, window.innerWidth - width - 8);
-      const maxTop = Math.max(8, window.innerHeight - height - 8);
-      return {
-        left: Math.min(Math.max(8, left), maxLeft),
-        top: Math.min(Math.max(8, top), maxTop),
-      };
-    },
-    []
-  );
+  const clampToViewport = useCallback((left: number, bottom: number) => {
+    const el = dockRef.current;
+    const width = el?.getBoundingClientRect().width ?? 420;
+    const height = el?.getBoundingClientRect().height ?? 200;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxBottom = Math.max(8, window.innerHeight - height - 8);
+    return {
+      left: Math.min(Math.max(8, left), maxLeft),
+      bottom: Math.min(Math.max(8, bottom), maxBottom),
+    };
+  }, []);
 
   const onDockPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    // Don't start a dock drag from buttons / interactive controls
     if (e.target instanceof Element && e.target.closest('button, a, input, [role="button"]')) {
       return;
     }
@@ -109,11 +107,14 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
-    const origin = { left: rect.left, top: rect.top };
+    const origin = {
+      left: rect.left,
+      bottom: window.innerHeight - rect.bottom,
+    };
     setPosition(origin);
     dragOffsetRef.current = {
       x: e.clientX - origin.left,
-      y: e.clientY - origin.top,
+      bottom: window.innerHeight - e.clientY - origin.bottom,
     };
     draggingRef.current = true;
     setDragging(true);
@@ -131,7 +132,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
       setPosition(
         clampToViewport(
           e.clientX - dragOffsetRef.current.x,
-          e.clientY - dragOffsetRef.current.y
+          window.innerHeight - e.clientY - dragOffsetRef.current.bottom
         )
       );
     };
@@ -153,7 +154,7 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
   useEffect(() => {
     if (!position) return;
     const onResize = () =>
-      setPosition((prev) => (prev ? clampToViewport(prev.left, prev.top) : prev));
+      setPosition((prev) => (prev ? clampToViewport(prev.left, prev.bottom) : prev));
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [position, clampToViewport, setPosition]);
@@ -172,10 +173,10 @@ const DesktopPlayerDock: React.FC<DesktopPlayerDockProps> = ({
       className="fixed z-[1200] flex flex-col items-center px-2"
       style={{
         ...(position
-          ? { left: position.left, top: position.top }
+          ? { left: position.left, bottom: position.bottom }
           : { left: '50%', bottom: '0.35rem' }),
         transform: dockTransform,
-        transformOrigin: position ? 'top left' : 'bottom center',
+        transformOrigin: 'bottom center',
         maxWidth: `${MAX_VIEWPORT_FRACTION * 100}vw`,
       }}
     >

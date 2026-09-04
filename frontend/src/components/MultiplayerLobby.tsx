@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { Game } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -63,6 +63,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const nameGlowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOverPlayerIdRef = useRef<string | null>(null);
+  const playerListRef = useRef<HTMLDivElement>(null);
+  const playerRectsRef = useRef<Map<string, DOMRect>>(new Map());
+  const playerOrderKey = game?.players.map((p) => p.id).join(",") ?? "";
 
   const promptForName = useCallback(() => {
     setNameFieldGlow(false);
@@ -84,6 +87,40 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
   useEffect(() => {
     dragOverPlayerIdRef.current = dragOverPlayerId;
   }, [dragOverPlayerId]);
+
+  // FLIP animation when seat order changes (drag live-reorder or shuffle)
+  useLayoutEffect(() => {
+    const list = playerListRef.current;
+    if (!list || !playerOrderKey) {
+      playerRectsRef.current = new Map();
+      return;
+    }
+
+    const nodes = Array.from(list.querySelectorAll<HTMLElement>("[data-player-id]"));
+    const prev = playerRectsRef.current;
+    if (prev.size > 0) {
+      nodes.forEach((node) => {
+        const id = node.dataset.playerId;
+        if (!id) return;
+        const first = prev.get(id);
+        if (!first) return;
+        const last = node.getBoundingClientRect();
+        const dy = first.top - last.top;
+        if (Math.abs(dy) < 0.5) return;
+        node.animate(
+          [{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }],
+          { duration: 320, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+        );
+      });
+    }
+
+    const next = new Map<string, DOMRect>();
+    nodes.forEach((node) => {
+      const id = node.dataset.playerId;
+      if (id) next.set(id, node.getBoundingClientRect());
+    });
+    playerRectsRef.current = next;
+  }, [playerOrderKey]);
 
   // Single place: return to main lobby and allow rejoin (kicked, 404, or user clicked Back)
   const resetToMainLobby = useCallback((gameIdToClear?: string) => {
@@ -523,9 +560,11 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     return nextIds;
   }, []);
 
-  const applyPlayerOrder = async (orderedIds: string[]) => {
+  const applyPlayerOrder = useCallback(async (orderedIds: string[]) => {
     if (!game || !isHost || !myPlayerId) return;
     const previousGame = game;
+    const currentIds = previousGame.players.map((p) => p.id);
+    if (orderedIds.join(",") === currentIds.join(",")) return;
     setGame({
       ...previousGame,
       players: buildOrderedPlayers(previousGame, orderedIds),
@@ -538,7 +577,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       console.error("Error reordering players:", err);
       setError(err.response?.data?.message || err.message || "Failed to reorder players");
     }
-  };
+  }, [buildOrderedPlayers, game, isHost, myPlayerId]);
 
   const randomizePlayerOrder = async () => {
     if (!game || !isHost || !myPlayerId) return;
@@ -691,7 +730,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     setPlayerName(getRandomDutchName());
                     if (nameFieldGlow) setNameFieldGlow(false);
                   }}
-                  className="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 p-0 rounded-lg font-medium flex items-center justify-center"
+                  className="interactive-press w-10 h-10 md:w-12 md:h-12 flex-shrink-0 p-0 rounded-lg font-medium flex items-center justify-center"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', border: '1px solid var(--panel-border)' }}
                   aria-label="Randomize name"
                 >
@@ -735,7 +774,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   createGame();
                 }}
                 disabled={isCreating}
-                className="w-full py-3 md:py-4 px-4 md:px-6 rounded-2xl disabled:opacity-50 text-lg md:text-xl font-bold"
+                className="interactive-press w-full py-3 md:py-4 px-4 md:px-6 rounded-2xl text-lg md:text-xl font-bold"
                 style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
               >
                 {isCreating ? t("lobby.creating") : t("lobby.createGame")}
@@ -777,7 +816,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     joinGame();
                   }}
                   disabled={isJoining || !gameId.trim()}
-                  className="flex-shrink-0 px-3 md:px-6 py-2 md:py-3 rounded-2xl disabled:opacity-50 font-bold text-sm md:text-base whitespace-nowrap"
+                  className="interactive-press flex-shrink-0 px-3 md:px-6 py-2 md:py-3 rounded-2xl font-bold text-sm md:text-base whitespace-nowrap"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                 >
                   {isJoining ? t("lobby.joining") : t("lobby.joinGame")}
@@ -808,7 +847,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                                 audioService.playRaise();
                                 handleAutoJoin(g.id);
                               }}
-                              className="w-full text-left px-3 py-1.5 rounded flex flex-col gap-0.5"
+                              className="interactive-press interactive-surface w-full text-left px-3 py-1.5 rounded flex flex-col gap-0.5 border border-transparent"
                               style={{ backgroundColor: 'transparent', color: 'var(--text-main)' }}
                             >
                               <span className="flex items-center justify-between">
@@ -831,7 +870,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                             audioService.playRaise();
                             setLobbyExpanded((e) => !e);
                           }}
-                          className="mt-1.5 text-xs font-medium"
+                          className="interactive-press mt-1.5 text-xs font-medium px-2 py-1 rounded border border-transparent"
                           style={{ color: 'var(--accent-gold)' }}
                         >
                           {lobbyExpanded ? t("lobby.showLess") : t("lobby.showMore")}
@@ -878,7 +917,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     }
                     handleCancelNewGame();
                   }}
-                  className="mb-3 w-full py-2 px-4 rounded-lg font-medium text-sm"
+                  className="interactive-press mb-3 w-full py-2 px-4 rounded-lg font-medium text-sm"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
                 >
                   ← {t("lobby.back")}
@@ -906,7 +945,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   <button
                     type="button"
                     onClick={randomizePlayerOrder}
-                    className="shrink-0 px-2.5 py-1 rounded-lg text-xs md:text-sm font-semibold border"
+                    className="interactive-press shrink-0 px-2.5 py-1 rounded-lg text-xs md:text-sm font-semibold border"
                     style={{
                       backgroundColor: 'var(--panel-bg)',
                       color: 'var(--accent-gold)',
@@ -923,23 +962,21 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                   {t("lobby.dragToReorder")}
                 </p>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div ref={playerListRef} className="lobby-player-list">
                 {game.players.map((player, index) => {
-                  console.log("MultiplayerLobby player color:", player.color);
                   const colorClassMap: Record<string, string> = {
                     blue: "bg-indigo-600",
                     red: "bg-rose-600",
                     green: "bg-emerald-600",
                     yellow: "bg-amber-600",
-                    brown: "bg-amber-700", // rich cognac brown
+                    brown: "bg-amber-700",
                     cyan: "bg-cyan-600",
                     purple: "bg-purple-600",
                     pink: "bg-pink-600",
                   };
                   let playerColorClass = colorClassMap[player.color];
                   if (!playerColorClass) {
-                    console.warn("Unknown player color:", player.color);
-                    playerColorClass = "bg-rose-700"; // fallback to rose for visibility
+                    playerColorClass = "bg-rose-700";
                   }
                   const hostId = game.hostPlayerId || game.players[0]?.id;
                   const playerIsHost = player.id === hostId;
@@ -954,13 +991,12 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       onDragOver={onPlayerDragOver(player.id)}
                       onDrop={onPlayerDrop(player.id)}
                       onDragEnd={onPlayerDragEnd}
-                      className={`flex items-center p-2 rounded transition-opacity ${
+                      className={`lobby-player-row interactive-surface flex items-center p-2 rounded border ${
                         isHost ? "cursor-grab active:cursor-grabbing" : ""
-                      } ${isDragging ? "opacity-50" : ""}`}
+                      } ${isDragging ? "is-dragging" : ""} ${isDragOver ? "is-drag-over" : ""}`}
                       style={{
                         backgroundColor: 'var(--panel-bg-soft)',
-                        outline: isDragOver ? '2px solid var(--accent-gold)' : undefined,
-                        outlineOffset: isDragOver ? '1px' : undefined,
+                        borderColor: 'var(--panel-border)',
                       }}
                     >
                       {isHost && (
@@ -968,7 +1004,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                           type="button"
                           onTouchStart={onPlayerTouchStart(player.id)}
                           onTouchCancel={onPlayerDragEnd}
-                          className="mr-1.5 text-sm select-none bg-transparent border-0 p-0 leading-none"
+                          className="interactive-surface mr-1.5 text-sm select-none bg-transparent border border-transparent rounded px-0.5 py-0.5 leading-none"
                           style={{ color: 'var(--text-muted)', touchAction: 'none' }}
                           aria-label={t("lobby.dragToReorder")}
                         >
@@ -1015,7 +1051,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                               kickPlayer(player.id);
                             }
                           }}
-                          className="ml-2 w-6 h-6 text-white rounded-full flex items-center justify-center text-xs"
+                          className="interactive-press ml-2 w-6 h-6 text-white rounded-full flex items-center justify-center text-xs border border-transparent"
                           style={{ backgroundColor: '#8a6a1d' }}
                           title={player.name.startsWith("AI ") || player.name.startsWith("🧠AI ") ? "Remove AI player" : "Kick player"}
                         >
@@ -1035,7 +1071,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     audioService.playRaise();
                     copyGameLink();
                   }}
-                  className="w-full py-2 md:py-3 px-3 md:px-4 rounded-lg font-bold text-sm md:text-base"
+                  className="interactive-press w-full py-2 md:py-3 px-3 md:px-4 rounded-lg font-bold text-sm md:text-base"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                 >
                   📋 {t("lobby.clickToCopyLink")}
@@ -1046,7 +1082,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       audioService.playRaise();
                       addAIPlayer("easy");
                     }}
-                    className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
+                    className="interactive-press flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
                     style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                     disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
                   >
@@ -1057,7 +1093,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       audioService.playRaise();
                       addAIPlayer("medium");
                     }}
-                    className="flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
+                    className="interactive-press flex-1 min-w-0 py-2 md:py-3 px-2 md:px-3 rounded-lg font-bold text-xs md:text-sm whitespace-nowrap"
                     style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                     disabled={game.players.length >= (game.maxPlayers ?? MAX_PLAYERS_PER_GAME)}
                   >
@@ -1084,7 +1120,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       );
                     }
                   }}
-                  className="w-full py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold text-lg md:text-xl disabled:opacity-50"
+                  className="interactive-press w-full py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold text-lg md:text-xl"
                   style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
                   disabled={game.players.length < 2}
                 >
@@ -1113,7 +1149,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                     }
                   }
                 }}
-                className="w-full py-2 px-4 rounded-lg font-medium text-sm"
+                className="interactive-press w-full py-2 px-4 rounded-lg font-medium text-sm"
                 style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--text-main)', border: '1px solid var(--panel-border)' }}
               >
                 {t("lobby.cancelGame")}

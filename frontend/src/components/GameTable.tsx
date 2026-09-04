@@ -94,7 +94,7 @@ const GameTable: React.FC<GameTableProps> = ({
   const [matchpointMode, setMatchpointMode] = useState<'single' | 'overtime'>('single');
   /** Survive BidDisplay / dock remounts (dice reveal, turn changes) so drag position sticks */
   const [bidDisplayDragPos, setBidDisplayDragPos] = useState<{ left: number; top: number } | null>(null);
-  const [playerDockDragPos, setPlayerDockDragPos] = useState<{ left: number; top: number } | null>(null);
+  const [playerDockDragPos, setPlayerDockDragPos] = useState<{ left: number; bottom: number } | null>(null);
   // Chat state
   const [showChat, setShowChat] = useState(initialShowChat);
   const [lastSeenChatCount, setLastSeenChatCount] = useState(initialLastSeenIncomingCount);
@@ -1523,7 +1523,7 @@ const GameTable: React.FC<GameTableProps> = ({
           <div>
             <button
               onClick={() => setIsMuted(!isMuted)}
-              className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200"
+              className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? "🔇" : "🔊"}
@@ -1546,7 +1546,7 @@ const GameTable: React.FC<GameTableProps> = ({
                     return next;
                   })
                 }
-                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] min-w-[44px]"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-icon font-medium shadow touch-manipulation min-h-[44px] min-w-[44px]"
                 aria-label="Settings"
                 aria-expanded={showSettings}
               >
@@ -1586,7 +1586,7 @@ const GameTable: React.FC<GameTableProps> = ({
                       return next;
                     });
                   }}
-                  className={`rounded-full menu-pill menu-pill-fixed font-medium shadow transition-all duration-200 touch-manipulation min-h-[44px] relative flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 ${
+                  className={`rounded-full menu-pill menu-pill-fixed font-medium shadow touch-manipulation min-h-[44px] relative flex items-center justify-center gap-1.5 ${
                     useMobileLayout ? 'menu-pill-icon min-w-[44px]' : 'menu-pill-label px-3'
                   } ${
                     Math.max(0, countIncomingMessages(game.chatMessages) - lastSeenChatCount) > 0 ? 'animate-pulse' : ''
@@ -1658,7 +1658,7 @@ const GameTable: React.FC<GameTableProps> = ({
                   setIsHistoryOpen(!isHistoryOpen);
                   setShowRulesTooltip(false);
                 }}
-                className="rounded-full menu-pill menu-pill-fixed menu-pill-label font-medium shadow transition-all duration-200 min-w-0 max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
+                className="rounded-full menu-pill menu-pill-fixed menu-pill-label font-medium shadow min-w-0 max-w-[42vw] md:max-w-none overflow-hidden text-ellipsis"
               >
                 {t("game.gameInfo")}
               </button>
@@ -1752,14 +1752,14 @@ const GameTable: React.FC<GameTableProps> = ({
                   }
                   onBack?.();
                 }}
-                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border transition-colors"
+                className="interactive-press px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border"
                 style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border-strong)', color: 'var(--game-accent-text)' }}
               >
                 {t("game.leaveConfirmLeave")}
               </button>
               <button
                 onClick={() => setShowLeaveConfirm(false)}
-                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
+                className="interactive-press px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2"
                 style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
               >
                 {t("game.leaveConfirmCancel")}
@@ -1856,7 +1856,7 @@ const GameTable: React.FC<GameTableProps> = ({
               </div>
               <button
                 onClick={handleGameEndContinue}
-                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                className="interactive-press px-6 py-3 rounded-xl font-bold text-base shadow border"
                 style={{
                   backgroundColor: 'var(--game-surface-soft)',
                   borderColor: 'var(--game-border-strong)',
@@ -1895,7 +1895,7 @@ const GameTable: React.FC<GameTableProps> = ({
               </div>
               <button
                 onClick={handleGameEndContinue}
-                className="px-6 py-3 rounded-xl font-bold text-base shadow transition-colors border"
+                className="interactive-press px-6 py-3 rounded-xl font-bold text-base shadow border"
                 style={{
                   backgroundColor: 'var(--game-surface-soft)',
                   borderColor: 'var(--game-border-strong)',
@@ -2005,14 +2005,14 @@ const GameTable: React.FC<GameTableProps> = ({
                   }
                   onBack?.();
                 }}
-                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border transition-colors"
+                className="interactive-press px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border"
                 style={{ backgroundColor: '#7f1d1d', borderColor: '#991b1b', color: '#fca5a5' }}
               >
                 {t("game.endGame")}
               </button>
               <button
                 onClick={() => setShowEndGameConfirm(false)}
-                className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2 transition-colors"
+                className="interactive-press px-4 py-1.5 md:px-5 md:py-2 rounded-lg font-semibold text-sm md:text-base border-2"
                 style={{ backgroundColor: 'var(--game-surface-soft)', borderColor: 'var(--game-border)', color: 'var(--game-text)' }}
               >
                 {t("game.leaveConfirmCancel")}

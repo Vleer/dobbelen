@@ -161,7 +161,7 @@
   "instructions.raise": "Zvýšit: Klikněte na počet kostek, které podle vás mají všichni hráči dohromady",
   "instructions.doubt": "Nevěřím: Napadněte předchozí příhoz, pokud je příliš vysoký",
   "instructions.spotOn": "Přesně: Tvrdíte, že je příhoz přesně správný (riskantní!) Pokud ano, kolo se resetuje.",
-  "instructions.winRound": "První na 7 výher — pokud mají dva matchpoint, hraje se do vedení o 2!",
+  "instructions.winRound": "První na 7 výher",
   "settings.colorScheme": "Barevné schéma",
   "settings.colorLight": "Světlé",
   "settings.colorDark": "Tmavé",
