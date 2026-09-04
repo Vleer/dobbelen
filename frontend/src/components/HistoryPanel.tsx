@@ -5,11 +5,24 @@ import DiceAnalysisChart from './DiceAnalysisChart';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getPlayerColorFromString } from '../utils/playerColors';
 import {
+  emptyHandCounts,
   emptyPlayerStats,
   loadGameStats,
   GAME_STATS_UPDATED_EVENT,
+  HAND_TYPES,
+  HandType,
   PlayerGameStats,
 } from '../utils/gameStats';
+
+const HAND_TYPE_I18N: Record<HandType, string> = {
+  pair: 'game.history.hand.pair',
+  twoPair: 'game.history.hand.twoPair',
+  threeOfAKind: 'game.history.hand.threeOfAKind',
+  fourOfAKind: 'game.history.hand.fourOfAKind',
+  fullHouse: 'game.history.hand.fullHouse',
+  yahtzee: 'game.history.hand.yahtzee',
+  canis: 'game.history.hand.canis',
+};
 
 interface HistoryPanelProps {
   game: Game;
@@ -62,9 +75,15 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
     const stored = loadGameStats(game.id);
     const merged: Record<string, PlayerGameStats> = {};
     game.players.forEach((player) => {
+      const existing = stored[player.id];
       merged[player.id] = {
-        ...(stored[player.id] || emptyPlayerStats(player.id, player.name)),
+        ...(existing || emptyPlayerStats(player.id, player.name)),
         playerName: player.name,
+        hands: {
+          ...emptyHandCounts(),
+          ...(existing?.hands || {}),
+        },
+        finalsReached: existing?.finalsReached ?? 0,
       };
     });
     setPlayerStats(merged);
@@ -620,108 +639,161 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
           )}
 
           {activeTab === 'stats' && (
-            <div>
-              <h3 className="text-[#d9b45a] font-semibold mb-1.5 md:mb-3 text-xs md:text-base">
-                {t('game.history.stats')}
-              </h3>
-              <div className="space-y-1.5 md:space-y-2">
-                {game.players.map((player) => {
-                  const stats =
-                    playerStats[player.id] ||
-                    emptyPlayerStats(player.id, player.name);
-                  const doubts = stats.correctDoubts + stats.wrongDoubts;
-                  const spotOns = stats.correctSpotOns + stats.wrongSpotOns;
-                  const hasChallengeStats =
-                    doubts +
-                      spotOns +
-                      stats.bluffsHeld +
-                      stats.bluffsCaught +
-                      stats.spotOnsFaced +
-                      stats.eliminations >
-                    0;
-                  const playerHexColor = getPlayerColorFromString(
-                    player.color || 'blue'
-                  );
+            <div className="space-y-3 md:space-y-4">
+              <div>
+                <h3 className="text-[#d9b45a] font-semibold mb-1.5 md:mb-2 text-xs md:text-base">
+                  {t('game.history.stats')}
+                </h3>
+                <div className="space-y-1.5 md:space-y-2">
+                  {game.players.map((player) => {
+                    const stats =
+                      playerStats[player.id] ||
+                      emptyPlayerStats(player.id, player.name);
+                    const doubts = stats.correctDoubts + stats.wrongDoubts;
+                    const spotOns = stats.correctSpotOns + stats.wrongSpotOns;
+                    const hasChallengeStats =
+                      doubts +
+                        spotOns +
+                        stats.eliminations +
+                        stats.finalsReached +
+                        player.winTokens >
+                      0;
+                    const playerHexColor = getPlayerColorFromString(
+                      player.color || 'blue'
+                    );
 
-                  const formatHitRate = (correct: number, total: number) =>
-                    total === 0 ? '—' : `${correct}/${total}`;
+                    const formatHitRate = (correct: number, total: number) =>
+                      total === 0 ? '—' : `${correct}/${total}`;
 
-                  return (
-                    <div
-                      key={player.id}
-                      className="p-2 md:p-2.5 bg-[#12352b] rounded-lg border border-[#365844]"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <div
-                          className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: playerHexColor }}
-                        />
-                        <span
-                          className="font-semibold text-xs md:text-sm truncate"
-                          style={{ color: playerHexColor }}
-                        >
-                          {player.name}
-                        </span>
-                        <span
-                          className="ml-auto text-[10px] md:text-xs font-semibold tabular-nums"
-                          style={{ color: '#f5d98f' }}
-                          title={t('game.history.winTokens')}
-                        >
-                          👑 {player.winTokens}
-                        </span>
+                    return (
+                      <div
+                        key={player.id}
+                        className="p-2 md:p-2.5 bg-[#12352b] rounded-lg border border-[#365844]"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <div
+                            className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: playerHexColor }}
+                          />
+                          <span
+                            className="font-semibold text-xs md:text-sm truncate"
+                            style={{ color: playerHexColor }}
+                          >
+                            {player.name}
+                          </span>
+                        </div>
+
+                        {!hasChallengeStats ? (
+                          <div className="text-[10px] md:text-xs text-[#9cb4a5]">
+                            {t('game.history.noActions')}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] md:text-xs">
+                            <div className="flex justify-between gap-2 text-[#d4dfd7]">
+                              <span title={t('game.history.winTokens')}>
+                                {t('game.history.roundsWon')}
+                              </span>
+                              <span className="font-semibold text-[#f5d98f] tabular-nums">
+                                {player.winTokens}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2 text-[#d4dfd7]">
+                              <span title={t('game.history.finalsReachedHint')}>
+                                {t('game.history.finalsReached')}
+                              </span>
+                              <span className="font-semibold text-[#f5d98f] tabular-nums">
+                                {stats.finalsReached}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2 text-[#d4dfd7]">
+                              <span>{t('game.history.doubts')}</span>
+                              <span className="font-semibold text-[#f5d98f] tabular-nums">
+                                {formatHitRate(stats.correctDoubts, doubts)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2 text-[#d4dfd7]">
+                              <span>{t('game.history.spotOns')}</span>
+                              <span className="font-semibold text-[#f5d98f] tabular-nums">
+                                {formatHitRate(stats.correctSpotOns, spotOns)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2 text-[#d4dfd7] col-span-2">
+                              <span>{t('game.history.eliminations')}</span>
+                              <span className="font-semibold text-[#f5d98f] tabular-nums">
+                                {stats.eliminations}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-
-                      {!hasChallengeStats ? (
-                        <div className="text-[10px] md:text-xs text-[#9cb4a5]">
-                          {t('game.history.noActions')}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] md:text-xs">
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>👎 {t('game.history.doubts')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {formatHitRate(stats.correctDoubts, doubts)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>🎯 {t('game.history.spotOns')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {formatHitRate(stats.correctSpotOns, spotOns)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>{t('game.history.bluffsHeld')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {stats.bluffsHeld}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>{t('game.history.bluffsCaught')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {stats.bluffsCaught}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>{t('game.history.spotOnsFaced')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {stats.spotOnsFaced}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-2 text-[#d4dfd7]">
-                            <span>{t('game.history.eliminations')}</span>
-                            <span className="font-semibold text-[#f5d98f] tabular-nums">
-                              {stats.eliminations}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-[10px] md:text-xs text-[#9cb4a5]">
+                  {t('game.history.statsHint')}
+                </p>
               </div>
-              <p className="mt-2 text-[10px] md:text-xs text-[#9cb4a5]">
-                {t('game.history.statsHint')}
-              </p>
+
+              <div>
+                <h3 className="text-[#d9b45a] font-semibold mb-1.5 md:mb-2 text-xs md:text-base">
+                  {t('game.history.handsOverview')}
+                </h3>
+                <div className="overflow-x-auto rounded-lg border border-[#365844] bg-[#12352b]">
+                  <table className="w-full min-w-[240px] text-[11px] md:text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#365844]">
+                        <th className="text-left font-semibold text-[#9cb4a5] px-2 py-1.5 md:px-3 md:py-2">
+                          {t('game.history.handType')}
+                        </th>
+                        {game.players.map((player) => {
+                          const playerHexColor = getPlayerColorFromString(
+                            player.color || 'blue'
+                          );
+                          return (
+                            <th
+                              key={player.id}
+                              className="text-center font-semibold px-1.5 py-1.5 md:px-2 md:py-2 truncate max-w-[5.5rem]"
+                              style={{ color: playerHexColor }}
+                              title={player.name}
+                            >
+                              {player.name}
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {HAND_TYPES.map((handType) => (
+                        <tr
+                          key={handType}
+                          className="border-b border-[#2a4638] last:border-b-0"
+                        >
+                          <td className="text-[#d4dfd7] px-2 py-1 md:px-3 md:py-1.5 whitespace-nowrap">
+                            {t(HAND_TYPE_I18N[handType])}
+                          </td>
+                          {game.players.map((player) => {
+                            const stats =
+                              playerStats[player.id] ||
+                              emptyPlayerStats(player.id, player.name);
+                            const count = stats.hands?.[handType] ?? 0;
+                            return (
+                              <td
+                                key={player.id}
+                                className="text-center font-semibold text-[#f5d98f] tabular-nums px-1.5 py-1 md:px-2 md:py-1.5"
+                              >
+                                {count}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-1.5 text-[10px] md:text-xs text-[#9cb4a5]">
+                  {t('game.history.handsHint')}
+                </p>
+              </div>
             </div>
           )}
         </div>
