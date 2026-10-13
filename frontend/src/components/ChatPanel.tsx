@@ -8,8 +8,10 @@ import ChatIcon from './ChatIcon';
 import { useLanguage } from '../contexts/LanguageContext';
 
 type DragPos = { left: number; top: number };
+type PanelSize = { width: number; height: number };
 
 const chatPosKey = (gameId: string) => `dobbelen-chat-pos:${gameId}`;
+const chatSizeKey = (gameId: string) => `dobbelen-chat-size:${gameId}`;
 
 const loadChatPos = (gameId: string): DragPos | null => {
   try {
@@ -30,6 +32,30 @@ const saveChatPos = (gameId: string, pos: DragPos | null) => {
       return;
     }
     sessionStorage.setItem(chatPosKey(gameId), JSON.stringify(pos));
+  } catch {
+    // ignore quota / private mode
+  }
+};
+
+const loadChatSize = (gameId: string): PanelSize | null => {
+  try {
+    const raw = sessionStorage.getItem(chatSizeKey(gameId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PanelSize;
+    if (typeof parsed?.width !== 'number' || typeof parsed?.height !== 'number') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const saveChatSize = (gameId: string, size: PanelSize | null) => {
+  try {
+    if (!size) {
+      sessionStorage.removeItem(chatSizeKey(gameId));
+      return;
+    }
+    sessionStorage.setItem(chatSizeKey(gameId), JSON.stringify(size));
   } catch {
     // ignore quota / private mode
   }
@@ -82,6 +108,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const canDrag = !isMobile;
 
+  // Resize state (desktop only)
+  const [panelSize, setPanelSize] = useState<PanelSize | null>(() =>
+    !isMobile ? loadChatSize(gameId) : null
+  );
+  const [resizing, setResizing] = useState(false);
+  const resizingRef = useRef(false);
+  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const canResize = !isMobile;
+
+  const MIN_WIDTH = 280;
+  const MIN_HEIGHT = 240;
+  const MAX_WIDTH_PCT = 0.9;
+  const MAX_HEIGHT_PCT = 0.8;
+
   const clampToViewport = useCallback((left: number, top: number) => {
     const el = panelRef.current;
     const width = el?.offsetWidth ?? 320;
@@ -91,6 +131,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     return {
       left: Math.min(Math.max(8, left), maxLeft),
       top: Math.min(Math.max(8, top), maxTop),
+    };
+  }, []);
+
+  // Clamp size to viewport and min/max
+  const clampToSize = useCallback((width: number, height: number) => {
+    const el = panelRef.current;
+    const baseWidth = el?.offsetWidth ?? 320;
+    const baseHeight = el?.offsetHeight ?? 360;
+    const maxWidth = Math.min(baseWidth, window.innerWidth * MAX_WIDTH_PCT);
+    const maxHeight = Math.min(baseHeight, window.innerHeight * MAX_HEIGHT_PCT);
+    return {
+      width: Math.min(Math.max(MIN_WIDTH, width), maxWidth),
+      height: Math.min(Math.max(MIN_HEIGHT, height), maxHeight),
     };
   }, []);
 
@@ -118,15 +171,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
             saveChatPos(gameId, clamped);
             return clamped;
           });
+          setPanelSize((prev) => {
+            const saved = prev ?? loadChatSize(gameId);
+            if (!saved) return prev;
+            const clamped = clampToSize(
+              saved.width,
+              Math.min(saved.height, window.innerHeight * MAX_HEIGHT_PCT)
+            );
+            saveChatSize(gameId, clamped);
+            return clamped;
+          });
         });
       }
     } else {
       setShowEmojiPicker(false);
       draggingRef.current = false;
       setDragging(false);
+      resizingRef.current = false;
+      setResizing(false);
       // Keep dragPosition so reopen restores it (also persisted to sessionStorage)
     }
-  }, [isOpen, canDrag, gameId, clampToViewport]);
+  }, [isOpen, canDrag, gameId, clampToViewport, clampToSize]);
 
   useEffect(() => {
     if (isOpen) {
@@ -229,18 +294,92 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     };
   }, [canDrag, clampToViewport, gameId]);
 
+  // Resize effect for desktop
+  useEffect(() => {
+    if (!canResize) return;
+    const onResizeStart = (e: PointerEvent) => {
+      if (!isOpen) return;
+      const target = e.target as HTMLElement;
+      // Only start resize if target is the resize handle or its child
+      if (!target.closest('[data-resize-handle]')) return;
+      
+      e.preventDefault();
+      resizingRef.current = true;
+      setResizing(true);
+      
+      const el = panelRef.current;
+      if (!el) return;
+      
+      const rect = el.getBoundingClientRect();
+      resizeStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        width: rect.width,
+        height: rect.height,
+      };
+      
+      try {
+        (e.target as HTMLElement)?.setPointerCapture?.(e.pointerId);
+      } catch {
+        // ignore
+      }
+    };
+    
+    const onResizeMove = (e: PointerEvent) => {
+      if (!resizingRef.current) return;
+      const start = resizeStartRef.current;
+      if (!start) return;
+      
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      
+      const newWidth = Math.max(MIN_WIDTH, start.width + dx);
+      const newHeight = Math.max(MIN_HEIGHT, start.height + dy);
+      
+      const clamped = clampToSize(newWidth, newHeight);
+      setPanelSize(clamped);
+      saveChatSize(gameId, clamped);
+    };
+    
+    const onResizeEnd = () => {
+      if (!resizingRef.current) return;
+      resizingRef.current = false;
+      setResizing(false);
+      resizeStartRef.current = null;
+    };
+    
+    document.addEventListener('pointerdown', onResizeStart as any);
+    document.addEventListener('pointermove', onResizeMove as any);
+    document.addEventListener('pointerup', onResizeEnd as any);
+    document.addEventListener('pointercancel', onResizeEnd as any);
+    
+    return () => {
+      document.removeEventListener('pointerdown', onResizeStart as any);
+      document.removeEventListener('pointermove', onResizeMove as any);
+      document.removeEventListener('pointerup', onResizeEnd as any);
+      document.removeEventListener('pointercancel', onResizeEnd as any);
+    };
+  }, [canResize, clampToSize, gameId, isOpen]);
+
   useEffect(() => {
     if (!dragPosition) return;
-    const onResize = () =>
+    const onResize = () => {
       setDragPosition((prev) => {
         if (!prev) return prev;
         const next = clampToViewport(prev.left, prev.top);
         saveChatPos(gameId, next);
         return next;
       });
+      setPanelSize((prev) => {
+        if (!prev) return prev;
+        const next = clampToSize(prev.width, prev.height);
+        saveChatSize(gameId, next);
+        return next;
+      });
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [dragPosition, clampToViewport, gameId]);
+  }, [dragPosition, clampToViewport, clampToSize, gameId]);
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || isSending) return;
@@ -321,9 +460,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           ...(dragPosition
             ? { left: dragPosition.left, top: dragPosition.top, right: 'auto', bottom: 'auto', transform: 'none' }
             : {}),
+          ...(panelSize ? { width: panelSize.width, height: panelSize.height } : {}),
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Resize grip — desktop only */}
+        {canDrag && (
+          <div
+            data-resize-handle
+            className="absolute bottom-0 right-0 w-4 h-4 z-10 cursor-se-resize"
+            style={{ background: 'rgba(138,106,29,0.15)' }}
+            title="Drag to resize"
+          />
+        )}
         {/* Header — drag handle on desktop */}
         <div
           className={`flex items-center justify-between px-3 py-2 border-b flex-shrink-0 select-none ${

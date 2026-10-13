@@ -1,15 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 /**
- * EmojiPicker Component
+ * EmojiPicker Component - Game Reactions
  * 
- * A comprehensive emoji picker with:
- * - 6 categorized emoji collections (Smileys, Gestures, Emotions, Games, Food, Symbols)
- * - Tab-based category navigation
+ * A focused reaction picker with 10 game-emotion reactions:
+ * - Mix of emoji and text shortcuts for quick emotional expression
+ * - Single category, no tabs needed
  * - Click-outside-to-close functionality
  * - Smooth animations and hover effects
- * - Grid layout optimized for mobile and desktop
- * - Custom scrollbar styling
  */
 interface EmojiPickerProps {
   onEmojiSelect: (emoji: string) => void;
@@ -17,17 +15,21 @@ interface EmojiPickerProps {
   onClose: () => void;
 }
 
-const EMOJI_CATEGORIES = {
-  'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳'],
-  'Gestures': ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤝', '🙏', '💪', '👏', '🙌', '👐', '🤲', '🤜', '🤛', '✊', '👊', '🤚'],
-  'Emotions': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️'],
-  'Games': ['🎲', '🎯', '🎰', '🎮', '🕹️', '🎳', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎫', '🎟️', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻'],
-  'Food': ['🍕', '🍔', '🍟', '🌭', '🍿', '🧈', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍖', '🍗', '🥩', '🍞', '🥐', '🥖', '🥨', '🥯', '🧀', '🥗', '🥙', '🌮', '🌯', '🥪', '🍕', '🍝', '🍜', '🍲'],
-  'Symbols': ['⭐', '🌟', '✨', '⚡', '🔥', '💥', '💫', '💦', '💨', '🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌨️', '❄️', '☃️', '⛄', '🌬️', '💨', '🌪️', '🌫️', '🌊', '💧', '💦']
-};
+// 10 funky game-emotion reactions: emoji + text shortcuts
+const GAME_REACTIONS = [
+  '🎲',  // the dice / the game itself
+  '😄',  // happy / good roll
+  '😭',  // crying / terrible roll
+  '😤',  // steam from nose / frustrated
+  '🤔',  // thinking / calculating odds
+  '😎',  // cool / confident
+  '🤯',  // mind blown / lucky break
+  '🎉',  // celebration / victory
+  '🤡',  // clown / bad play
+  '🤝',  // handshake / "gg"
+];
 
 const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, isOpen, onClose }) => {
-  const [activeCategory, setActiveCategory] = useState<string>('Smileys');
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,42 +58,20 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, isOpen, onClos
         backgroundColor: 'var(--panel-bg)',
         borderColor: 'var(--panel-border)',
         width: '280px',
-        maxHeight: '300px',
+        maxHeight: '360px',
       }}
     >
-      {/* Category tabs */}
-      <div
-        className="flex overflow-x-auto border-b"
-        style={{ borderColor: 'var(--panel-border)' }}
-      >
-        {Object.keys(EMOJI_CATEGORIES).map((category) => (
-          <button
-            key={category}
-            onClick={() => setActiveCategory(category)}
-            className={`px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors ${
-              activeCategory === category ? 'border-b-2' : ''
-            }`}
-            style={{
-              color: activeCategory === category ? 'var(--accent-gold)' : 'var(--text-muted)',
-              borderColor: activeCategory === category ? 'var(--accent-gold-strong)' : 'transparent',
-            }}
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
-      {/* Emoji grid */}
-      <div className="p-2 overflow-y-auto chat-scrollbar" style={{ maxHeight: '240px' }}>
-        <div className="grid grid-cols-8 gap-1">
-          {EMOJI_CATEGORIES[activeCategory as keyof typeof EMOJI_CATEGORIES].map((emoji, index) => (
+      {/* Reactions grid */}
+      <div className="p-4">
+        <div className="grid grid-cols-5 gap-2">
+          {GAME_REACTIONS.map((reaction, index) => (
             <button
-              key={`${emoji}-${index}`}
+              key={`${reaction}-${index}`}
               onClick={() => {
-                onEmojiSelect(emoji);
+                onEmojiSelect(reaction);
                 onClose();
               }}
-              className="text-2xl p-1 rounded hover:bg-opacity-20 transition-all hover:scale-125 active:scale-95"
+              className="text-3xl p-2 rounded flex items-center justify-center hover:bg-opacity-20 transition-all hover:scale-110 active:scale-90"
               style={{
                 backgroundColor: 'transparent',
               }}
@@ -102,7 +82,7 @@ const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, isOpen, onClos
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              {emoji}
+              {reaction}
             </button>
           ))}
         </div>
