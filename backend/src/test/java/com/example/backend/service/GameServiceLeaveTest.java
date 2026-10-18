@@ -5,6 +5,7 @@ import com.example.backend.model.Game;
 import com.example.backend.model.GameState;
 import com.example.backend.model.Player;
 import com.example.backend.repository.mongo.GameMongoRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -40,6 +45,13 @@ class GameServiceLeaveTest {
     @Mock
     private HardAIService hardAIService;
 
+    /**
+     * Real (small) executors so the delayed game tasks actually run under test, matching how the
+     * service is wired in production instead of leaking raw Timer/Thread instances.
+     */
+    private ScheduledThreadPoolExecutor gameTaskScheduler;
+    private ThreadPoolExecutor aiTurnExecutor;
+
     @InjectMocks
     private GameService gameService;
 
@@ -49,6 +61,16 @@ class GameServiceLeaveTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
+        gameTaskScheduler = new ScheduledThreadPoolExecutor(2);
+        aiTurnExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(64));
+        gameService = new GameService(gameTaskScheduler, aiTurnExecutor);
+        injectField("messagingTemplate", messagingTemplate);
+        injectField("gameMongoRepository", gameMongoRepository);
+        injectField("easyAIService", easyAIService);
+        injectField("mediumAIService", mediumAIService);
+        injectField("hardAIService", hardAIService);
+
         // Access the internal games map via reflection so we can seed test games
         Field gamesField = GameService.class.getDeclaredField("games");
         gamesField.setAccessible(true);
@@ -58,6 +80,18 @@ class GameServiceLeaveTest {
         Field activityField = GameService.class.getDeclaredField("lastActivityByGameAndPlayer");
         activityField.setAccessible(true);
         activityMap = (Map<String, Long>) activityField.get(gameService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        gameTaskScheduler.shutdownNow();
+        aiTurnExecutor.shutdownNow();
+    }
+
+    private void injectField(String name, Object value) throws Exception {
+        Field field = GameService.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(gameService, value);
     }
 
     /** Build a minimal in-progress multiplayer game with the given players. */

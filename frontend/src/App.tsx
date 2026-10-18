@@ -12,6 +12,7 @@ import { SettingsProvider } from "./contexts/SettingsContext";
 import { Game } from "./types/game";
 import { gameApi } from "./api/gameApi";
 import { getSessionLikeStorage } from "./config/storage";
+import { setActiveGameId, clearPlayerToken, getPlayerToken } from "./config/playerToken";
 import { audioService } from "./services/audioService";
 import { getPlayerColorFromString } from "./utils/playerColors";
 import useWindowSize from "./utils/useWindowSize";
@@ -65,7 +66,11 @@ function App() {
     try {
       const { gameId, playerId: savedPlayerId, username: savedUsername } = JSON.parse(raw);
       if (!gameId || !savedPlayerId || !savedUsername) return;
-      gameApi.getMultiplayerGame(gameId)
+      setActiveGameId(gameId);
+      // Only ask for the personalised view when we still hold this game's session token;
+      // without it the server correctly refuses (403).
+      const restorePlayerId = getPlayerToken(gameId) ? savedPlayerId : undefined;
+      gameApi.getMultiplayerGame(gameId, restorePlayerId)
         .then((g) => {
           if (g.state === "IN_PROGRESS") {
             setGame(g);
@@ -74,9 +79,15 @@ function App() {
             setAppState("game");
           } else {
             storage.removeItem(GAME_SESSION_KEY);
+            clearPlayerToken(gameId);
+            setActiveGameId(null);
           }
         })
-        .catch(() => storage.removeItem(GAME_SESSION_KEY));
+        .catch(() => {
+          storage.removeItem(GAME_SESSION_KEY);
+          clearPlayerToken(gameId);
+          setActiveGameId(null);
+        });
     } catch {
       getSessionLikeStorage().removeItem(GAME_SESSION_KEY);
     }
@@ -89,6 +100,8 @@ function App() {
     // Chat always starts closed when entering a game
     setInitialGameChatOpen(false);
     setInitialGameLastSeenChatCount(seenIncomingCount);
+    // Keep this game as the active one so the auth interceptor attaches the right session token.
+    setActiveGameId(gameData.id);
     getSessionLikeStorage().setItem(GAME_SESSION_KEY, JSON.stringify({
       gameId: gameData.id,
       playerId: userPlayerId,
@@ -144,6 +157,11 @@ function App() {
     }
 
     storage.removeItem(GAME_SESSION_KEY);
+    // Leaving for good (not just the lobby): drop the credential so it cannot be reused.
+    if (!options?.preserveLobby && gameIdToClear) {
+      clearPlayerToken(gameIdToClear);
+    }
+    setActiveGameId(null);
     setAppState('lobby');
     setGame(null);
     setUsername('');

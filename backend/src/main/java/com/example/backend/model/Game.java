@@ -3,8 +3,12 @@ package com.example.backend.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Game {
+
+    /** Upper bound on retained chat history so a game cannot grow its message list without limit. */
+    public static final int MAX_CHAT_MESSAGES = 200;
     // Eliminate a player by ID
     public void eliminatePlayer(String playerId) {
         if (!eliminatedPlayers.contains(playerId)) {
@@ -173,7 +177,7 @@ public class Game {
         this.currentHandBidHistory = new ArrayList<>();
         this.playersContinued = new ArrayList<>();
         this.lastHostLobbyPresenceAt = null;
-        this.chatMessages = new ArrayList<>();
+        this.chatMessages = new CopyOnWriteArrayList<>();
     }
 
     /** Reset this game back to WAITING_FOR_PLAYERS so all players can start a new game. */
@@ -501,11 +505,30 @@ public class Game {
         this.lastHostLobbyPresenceAt = lastHostLobbyPresenceAt;
     }
 
+    /**
+     * Chat history. Replaced by a {@link CopyOnWriteArrayList} because chat messages arrive on
+     * request threads while the scheduler/AI threads serialise the game for broadcast - a plain
+     * ArrayList there races and can throw ConcurrentModificationException mid-serialisation.
+     * Chat volume is low and bounded (see {@link #MAX_CHAT_MESSAGES}), so copy-on-write is cheap.
+     */
     public List<ChatMessage> getChatMessages() {
         if (chatMessages == null) {
-            chatMessages = new ArrayList<>();
+            chatMessages = new CopyOnWriteArrayList<>();
         }
         return chatMessages;
+    }
+
+    /** Append a chat message and trim the history back to {@link #MAX_CHAT_MESSAGES}. */
+    public void addChatMessage(ChatMessage message) {
+        List<ChatMessage> msgs = getChatMessages();
+        msgs.add(message);
+        if (msgs.size() > MAX_CHAT_MESSAGES) {
+            msgs.subList(0, msgs.size() - MAX_CHAT_MESSAGES).clear();
+        }
+    }
+
+    public int getMaxChatMessages() {
+        return MAX_CHAT_MESSAGES;
     }
 
     public void setChatMessages(List<ChatMessage> chatMessages) {

@@ -115,4 +115,9 @@ export interface GameResponse {
   lastActionType?: string; // 'DOUBT' | 'SPOT_ON' | 'RAISE'
   currentHandBidHistory?: Bid[];
   chatMessages?: ChatMessage[];
+  /**
+   * Per-player session token, returned only by the join endpoint. Absent on broadcasts and on
+   * every other response - it must never be shared with other players.
+   */
+  sessionToken?: string;
 }

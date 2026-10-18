@@ -42,6 +42,13 @@ public class GameResponse {
     private List<String> playersContinued;
     private List<ChatMessageInfo> chatMessages;
 
+    /**
+     * The caller's own session token. Only ever populated on the response to a join/create call,
+     * never in a broadcast - broadcasts use the {@link #GameResponse(Game)} constructor and leave
+     * this null, so the credential cannot leak to other players.
+     */
+    private String sessionToken;
+
     public GameResponse() {}
 
     /**
@@ -110,6 +117,15 @@ public class GameResponse {
         this.chatMessages = game.getChatMessages() != null
             ? game.getChatMessages().stream().map(ChatMessageInfo::new).toList()
             : new ArrayList<>();
+    }
+
+    /**
+     * Build a response that additionally carries the caller's session token. Used only by the
+     * join endpoint; broadcast paths must not use this.
+     */
+    public GameResponse(Game game, String viewerPlayerId, String viewerToken) {
+        this(game, viewerPlayerId);
+        this.sessionToken = viewerToken;
     }
 
     // Getters and Setters
@@ -311,6 +327,14 @@ public class GameResponse {
 
     public void setChatMessages(List<ChatMessageInfo> chatMessages) {
         this.chatMessages = chatMessages;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public void setSessionToken(String sessionToken) {
+        this.sessionToken = sessionToken;
     }
 
     public static class ChatMessageInfo {

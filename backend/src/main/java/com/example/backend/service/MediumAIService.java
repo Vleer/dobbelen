@@ -108,6 +108,15 @@ public class MediumAIService {
     public void clearRoundTracking(String gameId) {
         roundEndTimes.remove(gameId);
     }
+
+    /**
+     * Drop all per-game state for a game that no longer exists.
+     * Without this the trackers kept one entry per game for the lifetime of the process.
+     */
+    public void clearGame(String gameId) {
+        aiActionTracker.remove(gameId);
+        roundEndTimes.remove(gameId);
+    }
     
     /**
      * Generate an AI action based on mathematical principles and the AI's own hand

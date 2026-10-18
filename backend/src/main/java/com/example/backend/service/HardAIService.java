@@ -132,6 +132,19 @@ public class HardAIService {
     }
 
     /**
+     * Drop all per-game state for a game that no longer exists.
+     * Without this the trackers kept one entry per game for the lifetime of the process.
+     */
+    public void clearGame(String gameId) {
+        aiActionTracker.remove(gameId);
+        roundEndTimes.remove(gameId);
+        lastRecordedReveal.remove(gameId);
+        lastSeenRound.remove(gameId);
+        lastAiBluffAttempt.remove(gameId);
+        historyStore.clearGame(gameId);
+    }
+
+    /**
      * Thinking delay capped at 10 seconds.
      * First turn: 6.5–8.5s; otherwise 1.5–3.5s.
      */

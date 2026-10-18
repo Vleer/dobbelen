@@ -6,6 +6,7 @@ import com.example.backend.repository.mongo.GameDocument;
 import com.example.backend.repository.mongo.GameMongoRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Service
 public class GameService {
@@ -30,6 +35,21 @@ public class GameService {
                                                                                  // turns
     /** Last activity timestamp (gameId:playerId -> epoch ms) for disconnect/reconnect timeout */
     private final Map<String, Long> lastActivityByGameAndPlayer = new ConcurrentHashMap<>();
+    /**
+     * Pending delayed tasks per game so they can be cancelled when the game goes away. Without this
+     * the {@link ScheduledFuture}s pile up in the scheduler queue for finished/cancelled games.
+     */
+    private final Map<String, Set<ScheduledFuture<?>>> pendingTasksByGame = new ConcurrentHashMap<>();
+
+    private final ScheduledThreadPoolExecutor gameTaskScheduler;
+    private final ThreadPoolExecutor aiTurnExecutor;
+
+    public GameService(
+            @Qualifier("gameTaskScheduler") ScheduledThreadPoolExecutor gameTaskScheduler,
+            @Qualifier("aiTurnExecutor") ThreadPoolExecutor aiTurnExecutor) {
+        this.gameTaskScheduler = gameTaskScheduler;
+        this.aiTurnExecutor = aiTurnExecutor;
+    }
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -59,6 +79,109 @@ public class GameService {
 
     private static final int MAX_PLAYERS = 8;
     private static final int MAX_PLAYER_NAME_LENGTH = 20;
+
+    /**
+     * Verify that {@code token} really belongs to {@code playerId} in this game.
+     *
+     * <p>Player ids were previously treated as a credential, but they are broadcast to every client
+     * in the game payload and appear in URLs. That let any caller impersonate any player: read their
+     * hidden dice, bid for them, or act as the host. The per-player session token is now the real
+     * credential and is only ever issued to the client that created that player.
+     *
+     * @throws SecurityException if the player exists but the token does not match
+     */
+    public Player authenticate(Game game, String playerId, String token) {
+        if (playerId == null || playerId.isBlank()) {
+            throw new SecurityException("Missing player id");
+        }
+        Player player = game.getPlayers().stream()
+                .filter(p -> p.getId().equals(playerId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Player not found in game"));
+        if (!player.matchesToken(token)) {
+            throw new SecurityException("Invalid player token");
+        }
+        return player;
+    }
+
+    /** Convenience overload that loads the game first. */
+    public Player authenticate(String gameId, String playerId, String token) {
+        return authenticate(getGame(gameId), playerId, token);
+    }
+
+    /**
+     * Schedule a one-shot delayed task on the shared scheduler and remember it, so it can be
+     * cancelled when the game is removed. Replaces the previous
+     * {@code new java.util.Timer().schedule(...)} which leaked a thread per call.
+     */
+    private void scheduleForGame(String gameId, long delayMs, Runnable task) {
+        // Holds the scheduled handle so the task can deregister itself once it has run.
+        java.util.concurrent.atomic.AtomicReference<ScheduledFuture<?>> selfRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        try {
+            ScheduledFuture<?> future = gameTaskScheduler.schedule(() -> {
+                // The game may have been removed/cancelled while we were waiting.
+                if (!games.containsKey(gameId)) {
+                    ScheduledFuture<?> self = selfRef.get();
+                    if (self != null) {
+                        forgetTask(gameId, self);
+                    }
+                    return;
+                }
+                try {
+                    task.run();
+                } finally {
+                    ScheduledFuture<?> self = selfRef.get();
+                    if (self != null) {
+                        forgetTask(gameId, self);
+                    }
+                }
+            }, delayMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+            selfRef.set(future);
+
+            Set<ScheduledFuture<?>> pending = pendingTasksByGame.computeIfAbsent(gameId,
+                    id -> ConcurrentHashMap.newKeySet());
+            pending.add(future);
+        } catch (RejectedExecutionException e) {
+            // Scheduler is shutting down - nothing left to schedule for.
+            System.err.println("Could not schedule task for game " + gameId + ": " + e.getMessage());
+        }
+    }
+
+    private void forgetTask(String gameId, ScheduledFuture<?> future) {
+        Set<ScheduledFuture<?>> pending = pendingTasksByGame.get(gameId);
+        if (pending != null) {
+            pending.remove(future);
+            if (pending.isEmpty()) {
+                pendingTasksByGame.remove(gameId, pending);
+            }
+        }
+    }
+
+    /**
+     * Remove a game and every piece of per-game state we keep in memory. Previously only the
+     * {@code games} entry was dropped; the reconnect-activity map, the AI services' per-game maps
+     * and the HardAI history lists kept growing for every game the server had ever hosted.
+     */
+    private void removeGame(String gameId) {
+        games.remove(gameId);
+
+        // Cancel any pending delayed work (countdown, reveal timers, auto-continue, next round).
+        Set<ScheduledFuture<?>> pending = pendingTasksByGame.remove(gameId);
+        if (pending != null) {
+            pending.forEach(f -> f.cancel(false));
+        }
+
+        processingAITurns.remove(gameId);
+
+        // Drop reconnect/heartbeat timestamps belonging to this game.
+        String prefix = gameId + ":";
+        lastActivityByGameAndPlayer.keySet().removeIf(key -> key.startsWith(prefix));
+
+        easyAIService.clearGame(gameId);
+        mediumAIService.clearGame(gameId);
+        hardAIService.clearGame(gameId);
+    }
 
     /** Validate a player name: AI players have prefixed names; human players are alphanumeric, max 12 chars. */
     private void validatePlayerName(String name) {
@@ -751,6 +874,26 @@ public class GameService {
         joinGame(gameId, playerName);
     }
 
+    /** Result of joining: the game plus the credential that proves you are the joining player. */
+    public record JoinResult(Game game, Player player) {
+    }
+
+    /**
+     * Join a game and hand back the new player's session token.
+     *
+     * <p>The token is returned exactly once, to the client that just joined. Every later request
+     * must present it, which is what stops a caller from guessing or copying a player id to act as
+     * somebody else.
+     */
+    public JoinResult joinGameWithToken(String gameId, String playerName) {
+        Game game = joinGame(gameId, playerName);
+        Player joined = game.getPlayers().stream()
+                .filter(p -> p.getName().equals(playerName))
+                .reduce((first, second) -> second)
+                .orElseThrow(() -> new IllegalArgumentException("Player not found in game after join"));
+        return new JoinResult(game, joined);
+    }
+
     public Game removePlayer(String gameId, String playerId) {
         System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", PlayerId=" + playerId + ", Timestamp="
                 + System.currentTimeMillis());
@@ -875,7 +1018,7 @@ public class GameService {
 
         // If the host leaves, cancel the entire game
         if (game.isHost(playerId)) {
-            games.remove(gameId);
+            removeGame(gameId);
             System.out.println("LEAVE GAME: Game " + gameId + " cancelled (host " + playerName + " left)");
             messagingTemplate.convertAndSend("/topic/game/" + gameId,
                     new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
@@ -947,7 +1090,7 @@ public class GameService {
                 new WebSocketMessage("PLAYER_LEFT", java.util.Map.of("playerName", playerName), gameId, playerId));
 
         if (newSize < 2) {
-            games.remove(gameId);
+            removeGame(gameId);
             System.out.println("LEAVE GAME: Game " + gameId + " cancelled (only " + newSize + " player(s) left)");
             messagingTemplate.convertAndSend("/topic/game/" + gameId,
                     new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
@@ -1014,7 +1157,7 @@ public class GameService {
         if (!game.isHost(playerId)) {
             throw new IllegalArgumentException("Only the host can cancel the game");
         }
-        games.remove(gameId);
+        removeGame(gameId);
         System.out.println("CANCEL GAME: Removed game " + gameId + " (host cancelled)");
     }
 
@@ -1036,7 +1179,7 @@ public class GameService {
         // Broadcast cancellation before removing the game so clients receive it
         messagingTemplate.convertAndSend("/topic/game/" + gameId,
                 new WebSocketMessage("GAME_CANCELLED", null, gameId, null));
-        games.remove(gameId);
+        removeGame(gameId);
         System.out.println("END GAME: Removed game " + gameId + " (host ended)");
     }
 
@@ -1063,12 +1206,8 @@ public class GameService {
         }
         com.example.backend.model.ChatMessage msg =
                 new com.example.backend.model.ChatMessage(playerId, resolvedName, sanitized);
-        game.getChatMessages().add(msg);
-        // Keep at most 200 messages to avoid unbounded growth
-        List<com.example.backend.model.ChatMessage> msgs = game.getChatMessages();
-        if (msgs.size() > 200) {
-            msgs.subList(0, msgs.size() - 200).clear();
-        }
+        // Appends and trims to Game.MAX_CHAT_MESSAGES on a thread-safe list
+        game.addChatMessage(msg);
         broadcastGameUpdate(gameId);
         System.out.println("CHAT: " + resolvedName + " in game " + gameId + ": " + sanitized);
     }
@@ -1154,12 +1293,7 @@ public class GameService {
         game.setCountdownEndTime(System.currentTimeMillis() + 3000L);
         broadcastGameUpdate(gameId);
 
-        new java.util.Timer().schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                doActualStart(gameId);
-            }
-        }, 3000);
+        scheduleForGame(gameId, 3000, () -> doActualStart(gameId));
     }
 
     /** Internal overload used by the WebSocket join flow (host not yet determined). */
@@ -1176,12 +1310,7 @@ public class GameService {
         game.setCountdownEndTime(System.currentTimeMillis() + 3000L);
         broadcastGameUpdate(gameId);
 
-        new java.util.Timer().schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                doActualStart(gameId);
-            }
-        }, 3000);
+        scheduleForGame(gameId, 3000, () -> doActualStart(gameId));
     }
 
     private void doActualStart(String gameId) {
@@ -1275,12 +1404,7 @@ public class GameService {
             System.out.println("Dealer button passed to next player: " + (game.getDealer() != null ? game.getDealer().getName() : "unknown"));
             System.out.println("Round won by: " + roundWinner.getName() + " with "
                     + roundWinner.getWinTokens() + " tokens. Starting new round in 8s.");
-            new java.util.Timer().schedule(new java.util.TimerTask() {
-                @Override
-                public void run() {
-                    startNewRound(gameId);
-                }
-            }, 8000);
+            scheduleForGame(gameId, 8000, () -> startNewRound(gameId));
         }
     }
 
@@ -1288,37 +1412,31 @@ public class GameService {
         // Enable continue button after 7 seconds
         System.out.println("⏰ SCHEDULE: Scheduling enableContinue for game " + gameId + " in 7 seconds at "
                 + System.currentTimeMillis());
-        new java.util.Timer().schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                Game game = games.get(gameId);
-                System.out.println(
-                        "⏰ TIMER: EnableContinue timer fired for game " + gameId + " at " + System.currentTimeMillis()
-                                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
-                if (game != null && game.isShowAllDice()) {
-                    game.setCanContinue(true);
-                    broadcastGameUpdate(gameId);
-                    System.out.println("⏰ TIMER: Set canContinue=true and broadcasted for game " + gameId);
-                }
+        scheduleForGame(gameId, 7000, () -> {
+            Game game = games.get(gameId);
+            System.out.println(
+                    "⏰ TIMER: EnableContinue timer fired for game " + gameId + " at " + System.currentTimeMillis()
+                            + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
+            if (game != null && game.isShowAllDice()) {
+                game.setCanContinue(true);
+                broadcastGameUpdate(gameId);
+                System.out.println("⏰ TIMER: Set canContinue=true and broadcasted for game " + gameId);
             }
-        }, 7000); // 7 seconds
+        });
 
         // Auto-continue after 8 seconds
         System.out.println("⏰ SCHEDULE: Scheduling auto-continue for game " + gameId + " in 8 seconds at "
                 + System.currentTimeMillis());
-        new java.util.Timer().schedule(new java.util.TimerTask() {
-            @Override
-            public void run() {
-                Game game = games.get(gameId);
-                System.out.println(
-                        "⏰ TIMER: Auto-continue timer fired for game " + gameId + " at " + System.currentTimeMillis()
-                                + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
-                if (game != null && game.isShowAllDice()) {
-                    System.out.println("⏰ TIMER: Auto-continuing game " + gameId);
-                    continueGame(gameId);
-                }
+        scheduleForGame(gameId, 8000, () -> {
+            Game game = games.get(gameId);
+            System.out.println(
+                    "⏰ TIMER: Auto-continue timer fired for game " + gameId + " at " + System.currentTimeMillis()
+                            + ", showAllDice=" + (game != null ? game.isShowAllDice() : "null"));
+            if (game != null && game.isShowAllDice()) {
+                System.out.println("⏰ TIMER: Auto-continuing game " + gameId);
+                continueGame(gameId);
             }
-        }, 8000); // 8 seconds
+        });
     }
 
     public void continueGame(String gameId) {
@@ -1419,17 +1537,25 @@ public class GameService {
 
             System.out.println("🤖 AI START: Starting AI turn for " + currentPlayer.getName());
 
-            // Process AI turn asynchronously
-            new Thread(() -> {
-                try {
-                    executeAITurn(game, currentPlayer);
-                } catch (Exception e) {
-                    System.err.println("Error processing AI turn for game " + gameId + ": " + e.getMessage());
-                    e.printStackTrace();
-                } finally {
-                    processingAITurns.remove(gameId);
-                }
-            }).start();
+            // Process AI turn on the shared bounded executor. Previously this was a bare
+            // `new Thread(...)`, which started an unmanaged thread per AI move and could never be
+            // shut down or bounded.
+            try {
+                aiTurnExecutor.execute(() -> {
+                    try {
+                        executeAITurn(game, currentPlayer);
+                    } catch (Exception e) {
+                        System.err.println("Error processing AI turn for game " + gameId + ": " + e.getMessage());
+                        e.printStackTrace();
+                    } finally {
+                        processingAITurns.remove(gameId);
+                    }
+                });
+            } catch (RejectedExecutionException e) {
+                // Executor saturated - drop this turn rather than blocking the scheduler thread.
+                processingAITurns.remove(gameId);
+                System.err.println("AI turn executor saturated, skipping turn for game " + gameId);
+            }
         }
     }
 

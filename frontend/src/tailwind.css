@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4: a single @import replaces the three v3 @tailwind directives. */
+/* The keyframe/animation definitions still live in the JS config, loaded via @config below. */
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 /* ── Mobile WebView polish ───────────────────────────────────────── */
 html, body {

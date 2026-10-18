@@ -2,7 +2,7 @@
 # Dev/default backend image. Gradle base avoids wrapper distro download;
 # BuildKit cache mounts keep ~/.gradle across rebuilds.
 
-FROM gradle:8.10-jdk21 AS builder
+FROM gradle:8.14-jdk21 AS builder
 WORKDIR /app
 
 COPY build.gradle settings.gradle ./
@@ -16,7 +16,7 @@ COPY src src
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     gradle build -x test --no-daemon
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-jre-jammy
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \

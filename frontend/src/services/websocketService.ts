@@ -2,6 +2,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { Game } from '../types/game';
 import { getWsBaseUrl } from '../config/backend';
+import { getPlayerToken } from '../config/playerToken';
 import { normalizeGame } from '../utils/normalizeGame';
 
 export interface WebSocketCallbacks {
@@ -72,6 +73,18 @@ export class WebSocketService {
         heartbeatIncoming: 10000,
         heartbeatOutgoing: 10000,
         connectionTimeout: 10000,
+        // Presented on STOMP CONNECT; the server falls back to this when an action message
+        // does not carry the token in its payload.
+        connectHeaders: (() => {
+          // Presented on STOMP CONNECT; the server falls back to this when an action message
+          // does not carry the token in its payload.
+          const token = getPlayerToken(gameId);
+          const headers: { [key: string]: string } = {};
+          if (token) {
+            headers['X-Player-Token'] = token;
+          }
+          return headers;
+        })(),
         onConnect: () => {
           console.log('✅ Connected to WebSocket successfully');
           
@@ -136,13 +149,18 @@ export class WebSocketService {
   }
 
   sendAction(action: string, data: any, playerId: string): boolean {
-    console.log('📤 WebSocketService.sendAction called:', { action, data, playerId, gameId: this.gameId });
-    if (this.stompClient && this.gameId && this.stompClient.connected) {
+    const gameId = this.gameId;
+    console.log('📤 WebSocketService.sendAction called:', { action, data, playerId, gameId });
+    if (this.stompClient && gameId && this.stompClient.connected) {
+      // The websocket transport carries no authentication, so the server requires the same
+      // per-player session token as the REST API on every action.
+      const token = getPlayerToken(gameId);
       const message = {
         type: action,
         data: data,
-        gameId: this.gameId,
-        playerId: playerId
+        gameId: gameId,
+        playerId: playerId,
+        token: token ?? null,
       };
       console.log('📤 Sending WebSocket message:', message);
       try {

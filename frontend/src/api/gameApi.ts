@@ -1,4 +1,5 @@
 import axiosInstance from "./axios";
+import { setPlayerToken } from "../config/playerToken";
 import { 
   CreateGameRequest, 
   BidRequest, 
@@ -77,11 +78,22 @@ export const gameApi = {
     return normalizeGame(response.data);
   },
 
-  joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameResponse> => {
-    // Backend only needs playerName in request body
-    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, { playerName });
-    return normalizeGame(response.data);
-  },
+  /**
+ * Join a multiplayer game.
+ *
+ * The server returns the new player's session token exactly once, here. We store it so the auth
+ * interceptor can present it on every later request - without it the server rejects (403) any
+ * call that acts as, or reveals data to, this player.
+ */
+joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameResponse> => {
+  const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, { playerName });
+  const game = normalizeGame(response.data);
+  const token = response.data?.sessionToken;
+  if (typeof token === "string" && token.length > 0) {
+    setPlayerToken(gameId, token);
+  }
+  return game;
+},
 
   getMultiplayerGame: async (gameId: string, playerId?: string): Promise<GameResponse> => {
     const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`, {

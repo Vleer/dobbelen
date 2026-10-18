@@ -113,6 +113,15 @@ public class EasyAIService {
     public void clearRoundTracking(String gameId) {
         roundEndTimes.remove(gameId);
     }
+
+    /**
+     * Drop all per-game state for a game that no longer exists.
+     * Without this the trackers kept one entry per game for the lifetime of the process.
+     */
+    public void clearGame(String gameId) {
+        aiActionTracker.remove(gameId);
+        roundEndTimes.remove(gameId);
+    }
     
     /**
      * Generate a random AI action based on the current game state

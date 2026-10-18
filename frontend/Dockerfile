@@ -2,7 +2,7 @@
 # Web image: Vite build + nginx. Capacitor packages are optionalDependencies
 # and omitted here. Same-origin API/WS via nginx — no VITE_BACKEND_URL bake.
 
-FROM node:18.20-alpine AS builder
+FROM node:22.22-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -19,7 +19,7 @@ COPY . .
 ENV CI=false
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 
 RUN apk add --no-cache curl && rm -rf /var/cache/apk/*
 

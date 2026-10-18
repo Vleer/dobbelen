@@ -1,6 +1,8 @@
 package com.example.backend.model;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +15,20 @@ public class Player {
     private String color; // Player color
     private String aiType; // null for human, "EASY_AI", "MEDIUM_AI", or "HARD_AI" for AI players
 
+    /**
+     * Secret proving this browser is this player.
+     *
+     * <p>Player ids were previously the only credential, and they are handed out to every client in
+     * the game payload. Any caller could therefore read another player's hidden dice via
+     * {@code GET /api/games/{id}/my-dice?playerId=<other>} or act as the host. This token is the
+     * actual credential: it is generated once per player and only ever returned to the client that
+     * created that player.
+     *
+     * <p>Excluded from JSON so it is never broadcast to other players in a game payload.
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private String sessionToken;
+
     public Player() {
         this.id = UUID.randomUUID().toString();
         this.dice = new ArrayList<>();
@@ -20,6 +36,27 @@ public class Player {
         this.winTokens = 0;
         this.color = "blue";  // Default color
         this.aiType = null; // Default to human
+        this.sessionToken = generateToken();
+    }
+
+    /** 256 bits from {@link SecureRandom}, URL-safe so it can travel in a header. */
+    private static String generateToken() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    /**
+     * Constant-time token comparison. Returns false for null/blank tokens so a missing header can
+     * never authenticate.
+     */
+    public boolean matchesToken(String candidate) {
+        if (sessionToken == null || candidate == null || candidate.isEmpty()) {
+            return false;
+        }
+        byte[] expected = sessionToken.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] actual = candidate.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return java.security.MessageDigest.isEqual(expected, actual);
     }
 
     // Convenience constructor when only a name is known (used for lightweight copies)
@@ -96,5 +133,21 @@ public class Player {
 
     public boolean isAI() {
         return aiType != null && !aiType.isEmpty();
+    }
+
+    // Also ignored on the accessor so the credential stays out of any serialised payload even if the
+// field annotation is ever refactored away.
+@com.fasterxml.jackson.annotation.JsonIgnore
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public void setSessionToken(String sessionToken) {
+        this.sessionToken = sessionToken;
+    }
+
+    /** Rotate the token, invalidating any previously issued credential. */
+    public void rotateSessionToken() {
+        this.sessionToken = generateToken();
     }
 }

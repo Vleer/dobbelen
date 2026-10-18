@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Production frontend (docker-compose.prod.yml). Same-origin nginx proxy.
 
-FROM node:18.20-alpine AS builder
+FROM node:22.22-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -17,7 +17,7 @@ COPY . .
 ENV CI=false
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 
 RUN apk add --no-cache curl && rm -rf /var/cache/apk/*
 
