@@ -1,5 +1,5 @@
 # Production/hosted: uses dedicated prod Dockerfiles.
-# Uses .env for CLOUDFLARED_CONFIG_PATH and CLOUDFLARED_TUNNEL_ID (898944.xyz).
+# Cloudflare Tunnel for 898944.xyz is owned by /home/vleer/domain (separate stack).
 # Run: docker compose -f docker-compose.prod.yml --env-file .env up --build -d
 
 services:
@@ -55,21 +55,6 @@ services:
     networks:
       - dobbelen-network
     restart: unless-stopped
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: dobbelen-cloudflared-prod
-    restart: unless-stopped
-    user: "1000:1000"
-    environment:
-      - HOME=/tmp
-    depends_on:
-      - frontend
-    volumes:
-      - ${CLOUDFLARED_CONFIG_PATH}:/home/vleer/.cloudflared:ro
-    command: tunnel --config /home/vleer/.cloudflared/config.yml run ${CLOUDFLARED_TUNNEL_ID}
-    networks:
-      - dobbelen-network
 
 networks:
   dobbelen-network:

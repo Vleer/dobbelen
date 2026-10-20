@@ -55,8 +55,8 @@ jobs:
           cd "$DEPLOY_PATH"
           mkdir -p .docker-cache
           docker compose --env-file .env -f docker-compose.prod.yml config >/dev/null
-          # Parallel BuildKit rebuild; pull only for non-built images (mongo, cloudflared)
-          docker compose --env-file .env -f docker-compose.prod.yml pull mongodb cloudflared || true
+          # Parallel BuildKit rebuild; pull only for non-built images (mongo)
+          docker compose --env-file .env -f docker-compose.prod.yml pull mongodb || true
           docker compose --env-file .env -f docker-compose.prod.yml build --parallel
           docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
           docker compose --env-file .env -f docker-compose.prod.yml ps
