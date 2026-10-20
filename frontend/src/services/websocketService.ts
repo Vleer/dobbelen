@@ -153,8 +153,9 @@ export class WebSocketService {
     console.log('📤 WebSocketService.sendAction called:', { action, data, playerId, gameId });
     if (this.stompClient && gameId && this.stompClient.connected) {
       // The websocket transport carries no authentication, so the server requires the same
-      // per-player session token as the REST API on every action.
-      const token = getPlayerToken(gameId);
+      // per-player session token as the REST API on every action. A credential belongs to a
+      // single player, so use the one for the player this action is made for.
+      const token = getPlayerToken(gameId, playerId);
       const message = {
         type: action,
         data: data,

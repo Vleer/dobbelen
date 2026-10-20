@@ -498,7 +498,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
       const prefix = difficulty === "hard" ? "🎯AI " : difficulty === "medium" ? "🧠AI " : "AI ";
       aiName = `${prefix}${baseName}`;
 
-      const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName);
+      // The host joins on the AI's behalf, so the AI's token is not the host's credential.
+      const updatedGame = await gameApi.joinMultiplayerGame(game.id, aiName, false);
       setGame(updatedGame);
       console.log("Added AI player:", aiName, "(difficulty:", difficulty, ")");
     } catch (err: any) {
@@ -520,7 +521,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         return;
       }
 
-      const updatedGame = await gameApi.removePlayer(gameId, playerId);
+      const updatedGame = await gameApi.removePlayer(gameId, playerId, myPlayerId ?? '');
       setGame(updatedGame);
       console.log("Removed AI player:", player.name);
     } catch (err: any) {
@@ -535,7 +536,7 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     if (playerId === hostId) return; // Host uses "Cancel game" to leave
 
     try {
-      const updatedGame = await gameApi.removePlayer(gameId, playerId);
+      const updatedGame = await gameApi.removePlayer(gameId, playerId, myPlayerId ?? '');
       setGame(updatedGame);
     } catch (err: any) {
       console.error("Error kicking player:", err);
@@ -910,7 +911,8 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                       : game.players.find((p) => p.name === playerName);
                     if (me) {
                       try {
-                        await gameApi.removePlayer(gameId, me.id);
+                        // Leaving the lobby: the caller is the player being removed.
+                        await gameApi.removePlayer(gameId, me.id, me.id);
                       } catch {
                         // Still leave the lobby locally if API fails (e.g. game already gone)
                       }

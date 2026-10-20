@@ -79,21 +79,32 @@ export const gameApi = {
   },
 
   /**
- * Join a multiplayer game.
- *
- * The server returns the new player's session token exactly once, here. We store it so the auth
- * interceptor can present it on every later request - without it the server rejects (403) any
- * call that acts as, or reveals data to, this player.
- */
-joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameResponse> => {
-  const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, { playerName });
-  const game = normalizeGame(response.data);
-  const token = response.data?.sessionToken;
-  if (typeof token === "string" && token.length > 0) {
-    setPlayerToken(gameId, token);
-  }
-  return game;
-},
+   * Join a multiplayer game.
+   *
+   * The server returns the new player's session token exactly once, here. We store it so the auth
+   * interceptor can present it on every later request - without it the server rejects (403) any
+   * call that acts as, or reveals data to, this player.
+   *
+   * @param isLocalPlayer true when this browser is the one joining. A host that adds an AI joins
+   *   on the AI's behalf, so that token must not be recorded as the host's own - doing so used to
+   *   replace the host's credential and made every later host request fail with 403.
+   */
+  joinMultiplayerGame: async (
+    gameId: string,
+    playerName: string,
+    isLocalPlayer = true
+  ): Promise<GameResponse> => {
+    const response = await axiosInstance.post<GameResponse>(`/api/games/multiplayer/${gameId}/join`, { playerName });
+    const game = normalizeGame(response.data);
+    const token = response.data?.sessionToken;
+    const joinedPlayerId = response.data?.players?.find(
+      (p: { name?: string }) => p?.name === playerName
+    )?.id;
+    if (typeof token === "string" && token.length > 0 && joinedPlayerId) {
+      setPlayerToken(gameId, joinedPlayerId, token, isLocalPlayer);
+    }
+    return game;
+  },
 
   getMultiplayerGame: async (gameId: string, playerId?: string): Promise<GameResponse> => {
     const response = await axiosInstance.get<GameResponse>(`/api/games/multiplayer/${gameId}`, {
@@ -122,8 +133,22 @@ joinMultiplayerGame: async (gameId: string, playerName: string): Promise<GameRes
     return normalizeGame(response.data);
   },
 
-  removePlayer: async (gameId: string, playerId: string): Promise<GameResponse> => {
-    const response = await axiosInstance.delete<GameResponse>(`/api/games/multiplayer/${gameId}/players/${playerId}`);
+  /**
+   * Remove another player from the lobby (an AI the host added, or a human who is kicked).
+   *
+   * @param targetPlayerId the player to remove.
+   * @param requestingPlayerId the host making the request - they prove they are the host with
+   *   their own token.
+   */
+  removePlayer: async (
+    gameId: string,
+    targetPlayerId: string,
+    requestingPlayerId: string
+  ): Promise<GameResponse> => {
+    const response = await axiosInstance.delete<GameResponse>(
+      `/api/games/multiplayer/${gameId}/players/${targetPlayerId}`,
+      { params: { playerId: requestingPlayerId } }
+    );
     return normalizeGame(response.data);
   },
 

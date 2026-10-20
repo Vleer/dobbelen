@@ -269,13 +269,24 @@ public class GameController {
         }
     }
 
-    @DeleteMapping("/multiplayer/{gameId}/players/{playerId}")
-    public ResponseEntity<GameResponse> removePlayer(@PathVariable String gameId, @PathVariable String playerId,
+    /**
+     * Remove another player from a lobby - an AI the host added, or a human who is kicked.
+     *
+     * <p>The caller proves they are the host with their own session token (passed as the
+     * {@code playerId} query parameter, consistent with the other endpoints); the player being
+     * removed is the path variable. Authenticating the caller rather than the target is what
+     * makes this a host-only operation - the caller holds the host's credential, not the
+     * removed player's.
+     */
+    @DeleteMapping("/multiplayer/{gameId}/players/{targetPlayerId}")
+    public ResponseEntity<GameResponse> removePlayer(@PathVariable String gameId,
+            @PathVariable String targetPlayerId,
+            @RequestParam(required = false) String playerId,
             @RequestHeader(value = TOKEN_HEADER, required = false) String token) {
         try {
             // The caller must be a real player in this game (they are the one kicking).
             authenticate(gameService.getGame(gameId), playerId, token);
-            Game game = gameService.removePlayer(gameId, playerId);
+            Game game = gameService.removePlayer(gameId, targetPlayerId, playerId);
             GameResponse response = new GameResponse(game);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

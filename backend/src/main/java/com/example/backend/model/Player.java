@@ -76,6 +76,12 @@ public class Player {
         this.name = name;
         this.color = color;
         this.aiType = aiType;
+        if (aiType != null) {
+            // AI players are driven by the server itself; they never make a request of their own,
+            // so they have no client to hand a credential to. Leaving the token empty means the
+            // host who added the AI never receives one and cannot act as the AI.
+            this.sessionToken = null;
+        }
     }
 
     public void rollDice() {

@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -894,9 +895,18 @@ public class GameService {
         return new JoinResult(game, joined);
     }
 
-    public Game removePlayer(String gameId, String playerId) {
-        System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", PlayerId=" + playerId + ", Timestamp="
-                + System.currentTimeMillis());
+    /**
+     * Remove a player from a game that has not started yet: an AI the host added, a human who is
+     * kicked, or the caller leaving the lobby.
+     *
+     * @param requestingPlayerId the player making the request. They are authenticated by the
+     *     controller; removing somebody else is a host privilege, so proving you are the host is
+     *     what authorises it.
+     * @param targetPlayerId the player to remove.
+     */
+    public Game removePlayer(String gameId, String targetPlayerId, String requestingPlayerId) {
+        System.out.println("REMOVE ATTEMPT: GameId=" + gameId + ", Target=" + targetPlayerId + ", Requester="
+                + requestingPlayerId + ", Timestamp=" + System.currentTimeMillis());
 
         Game game = getGame(gameId);
         if (game == null) {
@@ -910,18 +920,24 @@ public class GameService {
             throw new IllegalArgumentException("Cannot remove player after game has started");
         }
 
+        // Removing somebody else is a host privilege; removing yourself (leaving the lobby) is not.
+        if (!Objects.equals(requestingPlayerId, targetPlayerId) && !game.isHost(requestingPlayerId)) {
+            System.out.println("REMOVE FAILED: Requester " + requestingPlayerId + " is not the host");
+            throw new IllegalArgumentException("Only the host can remove other players");
+        }
+
         // Find and remove the player
-        if (game.isHost(playerId)) {
+        if (game.isHost(targetPlayerId)) {
             throw new IllegalArgumentException("Cannot remove the host");
         }
-        boolean removed = game.getPlayers().removeIf(p -> p.getId().equals(playerId));
+        boolean removed = game.getPlayers().removeIf(p -> p.getId().equals(targetPlayerId));
 
         if (!removed) {
-            System.out.println("REMOVE FAILED: Player not found with ID=" + playerId);
+            System.out.println("REMOVE FAILED: Player not found with ID=" + targetPlayerId);
             throw new IllegalArgumentException("Player not found");
         }
 
-        System.out.println("REMOVE SUCCESS: Removed player with ID=" + playerId + ", remaining players="
+        System.out.println("REMOVE SUCCESS: Removed player with ID=" + targetPlayerId + ", remaining players="
                 + game.getPlayers().size());
 
         return game;
