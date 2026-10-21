@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { Game } from '../types/game';
 import { gameApi } from '../api/gameApi';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -35,6 +36,9 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
 }) => {
   const { t } = useLanguage();
   const storage = getSessionLikeStorage();
+  // The KAČENA game lives on the same domain (/kacenka/) in the browser build.
+  // In the native app there is no such route, so link to the public URL instead.
+  const isNativePlatform = Capacitor.isNativePlatform();
   const [gameId, setGameId] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -824,6 +828,18 @@ const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Link to the KAČENA Czech-language game, served on the same domain under /kacenka/ */}
+            <a
+              href={isNativePlatform ? 'https://898944.xyz/kacenka/' : '/kacenka/'}
+              target={isNativePlatform ? '_blank' : undefined}
+              rel="noreferrer"
+              className="interactive-press flex items-center justify-center gap-2 w-full py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-semibold no-underline"
+              style={{ backgroundColor: 'var(--panel-bg-soft)', color: 'var(--accent-gold)', border: '1px solid var(--accent-gold-strong)' }}
+            >
+              <span aria-hidden="true">🦆</span>
+              <span>{t('lobby.kacenkaLink')}</span>
+            </a>
 
             {/* Game lobby - at bottom, show 3 by default; if more than 3, "Show more" expands to 8 with scroll */}
             {lobbyGames.length > 0 && (
