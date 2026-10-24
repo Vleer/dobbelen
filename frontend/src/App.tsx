@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Capacitor } from "@capacitor/core";
 import GameTable from "./components/GameTable";
 import MultiplayerLobby from "./components/MultiplayerLobby";
 import LanguageSelector from "./components/LanguageSelector";
@@ -42,6 +43,7 @@ function App() {
   const [initialGameChatOpen, setInitialGameChatOpen] = useState(false);
   const [initialGameLastSeenChatCount, setInitialGameLastSeenChatCount] = useState(0);
   const { isMobile, isTablet } = useWindowSize();
+  const isNativePlatform = Capacitor.isNativePlatform();
 
   const countIncomingMessages = (messages: Game["chatMessages"] | undefined, currentPlayerId: string | null) => {
     if (!messages || !currentPlayerId) return 0;
@@ -215,7 +217,17 @@ function App() {
           <div className="min-h-screen relative" style={{ backgroundColor: 'var(--felt-bg)' }}>
             {/* Language Selector + Settings - Only show in lobby */}
             {appState === 'lobby' && (
-              <div className="absolute top-0 left-0 right-0 z-50 px-2 pt-1.5 pb-1 md:px-3 md:pt-2 md:pb-1.5">
+              <div className="absolute top-0 left-0 right-0 z-50 pl-2 pr-11 pt-1.5 pb-1 md:pl-3 md:pr-3 md:pt-2 md:pb-1.5">
+                <a
+                  href={isNativePlatform ? 'https://898944.xyz/kacenka/' : '/kacenka/'}
+                  target={isNativePlatform ? '_blank' : undefined}
+                  rel="noreferrer"
+                  aria-label="KAČENA"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full text-base leading-none no-underline shadow touch-manipulation md:right-3"
+                  style={{ backgroundColor: 'var(--panel-bg-soft)', border: '1px solid var(--panel-border)' }}
+                >
+                  <span aria-hidden="true">🦆</span>
+                </a>
                 <div className="mx-auto rounded-full menu-shell menu-header-shell shadow-2xl">
                   <div className="menu-header-row">
                   <button
